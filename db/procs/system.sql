@@ -1,0 +1,7 @@
+CREATE OR ALTER PROCEDURE app.usp_System_Ping
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT 1 AS Ok;
+END
+GO
