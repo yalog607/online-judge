@@ -1,14 +1,14 @@
 CREATE OR ALTER PROCEDURE app.usp_Session_Create
     @UserID INT,
     @ActorID INT = NULL,
-    @ExpiresAt DATETIME2(0),
-    @SessionID UNIQUEIDENTIFIER OUTPUT
+    @ExpiresAt DATETIME2(0)
 AS
 BEGIN
     SET NOCOUNT ON;
-    SET @SessionID = NEWID();
+    DECLARE @SessionID UNIQUEIDENTIFIER = NEWID();
     INSERT dbo.Sessions (SessionID, UserID, ActorID, ExpiresAt)
     VALUES (@SessionID, @UserID, @ActorID, @ExpiresAt);
+    SELECT @SessionID AS SessionID;
 END
 GO
 
