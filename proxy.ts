@@ -8,7 +8,9 @@ export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has(sessionCookieName());
   const { pathname } = request.nextUrl;
 
-  const protectedPrefix = ["/user", "/teacher", "/admin"].find((p) => pathname.startsWith(p));
+  const protectedPrefix = ["/user", "/teacher", "/admin", "/profile"].find((p) =>
+    pathname.startsWith(p),
+  );
   if (protectedPrefix && !hasSession) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -21,5 +23,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/user/:path*", "/teacher/:path*", "/admin/:path*", "/login", "/register"],
+  matcher: [
+    "/user/:path*",
+    "/teacher/:path*",
+    "/admin/:path*",
+    "/profile/:path*",
+    "/login",
+    "/register",
+  ],
 };

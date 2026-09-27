@@ -7,12 +7,20 @@ export default function Home() {
       <p className="max-w-md text-fg-muted">
         Nền tảng luyện tập, tổ chức lớp học và kỳ thi lập trình trực tuyến.
       </p>
-      <Link
-        href="/login"
-        className="rounded-lg bg-fg px-5 py-2.5 font-medium text-bg hover:opacity-90"
-      >
-        Đăng nhập
-      </Link>
+      <div className="flex gap-3">
+        <Link
+          href="/login"
+          className="rounded-lg bg-fg px-5 py-2.5 font-medium text-bg hover:opacity-90"
+        >
+          Đăng nhập
+        </Link>
+        <Link
+          href="/register"
+          className="rounded-lg bg-muted px-5 py-2.5 font-medium text-fg hover:opacity-90"
+        >
+          Đăng ký
+        </Link>
+      </div>
     </main>
   );
 }
