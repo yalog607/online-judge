@@ -19,8 +19,7 @@ const eslintConfig = defineConfig([
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "Literal[value=/^\\s*(SELECT|INSERT|UPDATE|DELETE|MERGE|EXEC(UTE)?)\\s/i]",
+          selector: "Literal[value=/^\\s*(SELECT|INSERT|UPDATE|DELETE|MERGE|EXEC(UTE)?)\\s/i]",
           message: "Inline SQL is forbidden; call a stored procedure via execProc.",
         },
         {

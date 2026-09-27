@@ -3,14 +3,18 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${DB_SA_PASSWORD:-Itoj_Dev#2026}
+      MSSQL_SA_PASSWORD: ${DB_SA_PASSWORD:-Itoj_Dev_2026!}
       MSSQL_COLLATION: Vietnamese_CI_AS
     ports:
-      - "1433:1433"
+      - "14330:1433"
     volumes:
       - db-data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q ''SELECT 1'' || exit 1',
+        ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -18,8 +22,8 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1125:1025"
+      - "8125:8025"
 
 volumes:
   db-data:

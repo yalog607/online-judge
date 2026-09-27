@@ -25,7 +25,7 @@ npm run db:seed           # tài khoản mẫu (mật khẩu: Password@123)
 npm run dev
 ```
 
-Mailpit UI xem OTP tại http://localhost:8025.
+Mailpit UI xem OTP tại http://localhost:8125.
 
 ## Lệnh thường dùng
 
