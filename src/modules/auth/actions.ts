@@ -16,7 +16,7 @@ import * as service from "./service";
 import { AuthError } from "./service";
 import { createDbSession, getUserById, revokeDbSession, validateImpersonate } from "./repo";
 
-export type FormState = { error?: string; ok?: boolean };
+export type FormState = { error?: string; ok?: boolean; submissionId?: number };
 
 async function startSession(userId: number, actorId?: number) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
