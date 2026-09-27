@@ -26,8 +26,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
 
   worker:
     image: ${WORKER_IMAGE}
@@ -42,6 +42,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    env_file: .env
     ports:
       - "80:80"
       - "443:443"
