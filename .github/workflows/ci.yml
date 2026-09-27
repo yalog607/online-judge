@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: ${{ secrets.CI_DB_SA_PASSWORD }}
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P $MSSQL_SA_PASSWORD -Q 'SELECT 1' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DB_HOST: localhost
+      DB_PORT: "1433"
+      DB_NAME: itoj
+      DB_SA_PASSWORD: ${{ secrets.CI_DB_SA_PASSWORD }}
+      DB_APP_USER: itoj_app
+      DB_APP_PASSWORD: ${{ secrets.CI_DB_APP_PASSWORD }}
+      SESSION_SECRET: ${{ secrets.CI_SESSION_SECRET }}
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      MAIL_FROM: "ITOJ <no-reply@itoj.local>"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run db:migrate
+      - run: npm run db:test
+      - run: npm test
+      - run: npm run build

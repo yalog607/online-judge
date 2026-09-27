@@ -12,7 +12,9 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:seed": "tsx scripts/db-seed.ts",
     "db:test": "tsx scripts/db-test.ts",
-    "format": "prettier --write ."
+    "worker:start": "tsx worker/index.ts",
+    "format": "prettier --write .",
+    "prepare": "husky"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -38,6 +40,7 @@
     "dotenv": "^18.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "husky": "^9.1.7",
     "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
