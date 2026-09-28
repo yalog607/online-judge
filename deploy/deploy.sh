@@ -2,13 +2,14 @@
 set -euo pipefail
 cd /opt/itoj
 
-export WEB_IMAGE WORKER_IMAGE
-docker compose -f docker-compose.prod.yml pull db
-docker pull "$WEB_IMAGE"
-docker pull "$WORKER_IMAGE"
+git fetch origin
+git reset --hard origin/main
 
-PREV_WEB=$(docker compose -f docker-compose.prod.yml images -q web || true)
+# Keep the currently-running images as a rollback target before rebuilding.
+docker tag itoj-web:local itoj-web:prev 2>/dev/null || true
+docker tag itoj-worker:local itoj-worker:prev 2>/dev/null || true
 
+docker compose -f docker-compose.prod.yml build web worker
 docker compose -f docker-compose.prod.yml up -d db
 docker compose -f docker-compose.prod.yml run --rm worker npm run db:migrate
 
@@ -24,8 +25,8 @@ for i in $(seq 1 20); do
   sleep 3
 done
 
-echo "health check failed, rolling back web to $PREV_WEB"
-if [ -n "$PREV_WEB" ]; then
-  WEB_IMAGE="$PREV_WEB" docker compose -f docker-compose.prod.yml up -d --no-deps web
-fi
+echo "health check failed, rolling back"
+docker tag itoj-web:prev itoj-web:local 2>/dev/null || true
+docker tag itoj-worker:prev itoj-worker:local 2>/dev/null || true
+docker compose -f docker-compose.prod.yml up -d --no-deps web worker
 exit 1

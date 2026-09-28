@@ -20,7 +20,10 @@ services:
       retries: 12
 
   web:
-    image: ${WEB_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: itoj-web:local
     restart: unless-stopped
     env_file: .env
     depends_on:
@@ -30,7 +33,10 @@ services:
       - "127.0.0.1:3000:3000"
 
   worker:
-    image: ${WORKER_IMAGE}
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    image: itoj-worker:local
     restart: unless-stopped
     env_file: .env
     depends_on:
