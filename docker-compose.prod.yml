@@ -26,8 +26,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
 
   worker:
     image: ${WORKER_IMAGE}
@@ -39,9 +39,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+  # Only started when the VPS has no reverse proxy of its own:
+  # docker compose -f docker-compose.prod.yml --profile standalone-caddy up -d
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    profiles: ["standalone-caddy"]
+    env_file: .env
     ports:
       - "80:80"
       - "443:443"
