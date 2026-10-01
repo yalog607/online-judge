@@ -129,10 +129,16 @@ CREATE OR ALTER PROCEDURE app.usp_Auth_UpdateProfile
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE dbo.Users
-    SET FullName = @FullName,
-        Avatar = COALESCE(@Avatar, Avatar)
-    WHERE UserID = @UserID;
+    BEGIN TRY
+        UPDATE dbo.Users
+        SET FullName = @FullName,
+            Avatar = COALESCE(@Avatar, Avatar)
+        WHERE UserID = @UserID;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR (@ErrorMessage, 16, 1);
+    END CATCH
 END
 GO
 
@@ -142,7 +148,13 @@ CREATE OR ALTER PROCEDURE app.usp_Auth_ChangePassword
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE dbo.Users SET Password = @NewPasswordHash WHERE UserID = @UserID;
+    BEGIN TRY
+        UPDATE dbo.Users SET Password = @NewPasswordHash WHERE UserID = @UserID;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR (@ErrorMessage, 16, 1);
+    END CATCH
 END
 GO
 
@@ -154,18 +166,24 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
-    BEGIN TRANSACTION;
+    BEGIN TRY
+        BEGIN TRANSACTION;
 
-    UPDATE dbo.Users SET Status = @Status WHERE UserID = @UserID;
+        UPDATE dbo.Users SET Status = @Status WHERE UserID = @UserID;
 
-    IF @Status = 'Locked'
-        UPDATE dbo.Sessions SET RevokedAt = SYSUTCDATETIME()
-        WHERE UserID = @UserID AND RevokedAt IS NULL;
+        IF @Status = 'Locked'
+            UPDATE dbo.Sessions SET RevokedAt = SYSUTCDATETIME()
+            WHERE UserID = @UserID AND RevokedAt IS NULL;
 
-    INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID, Detail)
-    VALUES (@ActorID, 'SetUserStatus', 'User', @UserID, @Status);
+        INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID, Detail)
+        VALUES (@ActorID, 'SetUserStatus', 'User', @UserID, @Status);
 
-    COMMIT TRANSACTION;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
 END
 GO
 

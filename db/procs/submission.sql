@@ -7,20 +7,29 @@ CREATE OR ALTER PROCEDURE app.usp_Submission_Create
 AS
 BEGIN
     SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @Status VARCHAR(20), @CreatorID INT;
+        SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
 
-    DECLARE @Status VARCHAR(20), @CreatorID INT;
-    SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
+        IF @Status IS NULL
+            THROW 50020, 'Bai tap khong ton tai.', 1;
+        IF @Status <> 'Public' AND @CreatorID <> @UserID
+           AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+            THROW 50021, 'Ban khong co quyen nop bai cho bai tap nay.', 1;
 
-    IF @Status IS NULL
-        THROW 50020, 'Bai tap khong ton tai.', 1;
-    IF @Status <> 'Public' AND @CreatorID <> @UserID
-       AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
-        THROW 50021, 'Ban khong co quyen nop bai cho bai tap nay.', 1;
-
-    INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language)
-    VALUES (@UserID, @ProblemID, @ContestID, @SourceCode, @Language);
-
-    SELECT SCOPE_IDENTITY() AS SubmissionID;
+        BEGIN TRANSACTION;
+        INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language)
+        VALUES (@UserID, @ProblemID, @ContestID, @SourceCode, @Language);
+        
+        DECLARE @NewID INT = SCOPE_IDENTITY();
+        COMMIT TRANSACTION;
+        
+        SELECT @NewID AS SubmissionID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
 END
 GO
 
