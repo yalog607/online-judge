@@ -185,7 +185,6 @@ BEGIN
 END
 GO
 
--- @TestcasesJson: [{"input":"...","expectedOutput":"...","isHidden":true}, ...]
 CREATE OR ALTER PROCEDURE app.usp_Testcase_ReplaceAll
     @ProblemID INT,
     @ActorID INT,
