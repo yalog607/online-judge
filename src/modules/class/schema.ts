@@ -29,3 +29,12 @@ export const listClassQuerySchema = z.object({
 
 export type CreateClassInput = z.infer<typeof createClassSchema>;
 export type JoinClassInput = z.infer<typeof joinClassSchema>;
+
+export const updateClassSchema = z.object({
+  className: z.string().trim().min(3, "Tên lớp phải có ít nhất 3 ký tự").max(150),
+  description: z.string().trim().max(1000).optional().nullable(),
+  isPublic: z.boolean().default(true),
+});
+
+export type UpdateClassInput = z.infer<typeof updateClassSchema>;
+

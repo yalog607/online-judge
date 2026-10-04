@@ -68,6 +68,16 @@ export interface IClassRepository {
   addStudent(classId: number, teacherId: number, identifier: string): Promise<number>;
 
   removeStudent(classId: number, teacherId: number, studentId: number): Promise<boolean>;
+
+  updateClass(
+    teacherId: number,
+    classId: number,
+    input: {
+      className: string;
+      description?: string | null;
+      isPublic?: boolean;
+    }
+  ): Promise<ClassItem>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -164,6 +174,25 @@ export class ClassRepository implements IClassRepository {
       StudentID: studentId,
     });
     return true;
+  }
+
+  async updateClass(
+    teacherId: number,
+    classId: number,
+    input: {
+      className: string;
+      description?: string | null;
+      isPublic?: boolean;
+    }
+  ): Promise<ClassItem> {
+    const { rows } = await execProc<ClassItem>("usp_Class_Update", {
+      ClassID: classId,
+      TeacherID: teacherId,
+      ClassName: input.className,
+      Description: input.description ?? null,
+      IsPublic: input.isPublic ?? true,
+    });
+    return rows[0];
   }
 }
 
