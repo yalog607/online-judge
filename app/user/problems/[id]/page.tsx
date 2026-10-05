@@ -6,10 +6,18 @@ import { listForUser as listSubmissions } from "@/modules/submission/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
 import { SubmitForm } from "./submit-form";
 
-export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProblemDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ contestId?: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
+  const sParams = await searchParams;
   const problemId = Number(id);
+  const contestId = sParams?.contestId ? Number(sParams.contestId) : undefined;
   const problem = await getProblem(problemId);
   if (!problem || problem.Status !== "Public") notFound();
 
@@ -66,7 +74,15 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
       </div>
 
       <div className="flex flex-col gap-4">
-        <SubmitForm problemId={problem.ProblemID} />
+        {contestId && (
+          <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-xs flex items-center justify-between text-primary font-medium">
+            <span>Đang làm bài cho Kỳ thi #{contestId}</span>
+            <Link href={`/user/contests/${contestId}`} className="underline hover:opacity-80">
+              Quay lại kỳ thi
+            </Link>
+          </div>
+        )}
+        <SubmitForm problemId={problem.ProblemID} contestId={contestId} />
         <div className="rounded-xl bg-surface">
           <div className="border-b border-line px-5 py-3 font-semibold">Lịch sử nộp bài</div>
           <table className="w-full text-sm">
