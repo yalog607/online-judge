@@ -372,3 +372,57 @@ BEGIN
     END CATCH
 END;
 GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_Update
+    @ClassID INT,
+    @TeacherID INT,
+    @ClassName NVARCHAR(150),
+    @Description NVARCHAR(MAX) = NULL,
+    @IsPublic BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM dbo.Classes c
+            JOIN dbo.Users u ON u.UserID = @TeacherID
+            WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+        )
+        BEGIN
+            THROW 50035, 'Ban khong co quyen cap nhat thong tin lop hoc nay.', 1;
+        END;
+
+        UPDATE dbo.Classes
+        SET ClassName = @ClassName,
+            Description = @Description,
+            IsPublic = @IsPublic
+        WHERE ClassID = @ClassID;
+
+        COMMIT TRANSACTION;
+
+        SELECT 
+            ClassID,
+            TeacherID,
+            InviteCode,
+            ClassName,
+            Description,
+            IsPublic,
+            ApprovalStatus,
+            CreatedAt
+        FROM dbo.Classes
+        WHERE ClassID = @ClassID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH
+END;
+GO
+

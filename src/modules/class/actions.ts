@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { classRepository } from "./repo";
-import { createClassSchema, joinClassSchema } from "./schema";
+import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
 
 export type FormState = { error?: string; ok?: boolean; message?: string };
 
@@ -104,4 +104,35 @@ export async function removeStudentAction(
   const actor = await requireRole("Teacher", "Admin");
   await classRepository.removeStudent(classId, actor.userId, studentId);
   revalidatePath(`/teacher/classes/${classId}`);
+}
+
+export async function updateClassAction(
+  classId: number,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const actor = await requireRole("Teacher", "Admin");
+  const rawData = {
+    className: formData.get("className"),
+    description: formData.get("description") || null,
+    isPublic: formData.get("isPublic") === "true" || formData.get("isPublic") === "on",
+  };
+
+  const parsed = updateClassSchema.safeParse(rawData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  try {
+    await classRepository.updateClass(actor.userId, classId, parsed.data);
+    revalidatePath("/teacher/classes");
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true, message: "Cập nhật thông tin lớp học thành công!" };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
 }
