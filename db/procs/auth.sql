@@ -217,3 +217,46 @@ BEGIN
     SELECT @Allowed AS Allowed;
 END
 GO
+
+CREATE OR ALTER PROCEDURE app.usp_Auth_RegisterDirect
+    @Username VARCHAR(50),
+    @Email VARCHAR(100),
+    @PasswordHash VARCHAR(255),
+    @FullName NVARCHAR(100),
+    @Role VARCHAR(20) = 'User'
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
+        BEGIN
+            THROW 50001, 'Email da duoc dang ky.', 1;
+        END;
+
+        IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
+        BEGIN
+            THROW 50004, 'Ten dang nhap da duoc su dung.', 1;
+        END;
+
+        INSERT dbo.Users (Username, Password, Email, FullName, Role, Status)
+        VALUES (@Username, @PasswordHash, @Email, @FullName, @Role, 'Active');
+
+        DECLARE @NewUserID INT = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+
+        SELECT @NewUserID AS UserID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH
+END
+GO
+

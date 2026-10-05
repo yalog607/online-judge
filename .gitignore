@@ -40,3 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 !.env.example
+
+# db logs
+/db-logs/
+
+# gemini / agent skills
+/.agents/
+
