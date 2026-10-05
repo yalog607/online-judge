@@ -39,4 +39,5 @@ export const submitCodeSchema = z.object({
   problemId: z.coerce.number().int().positive(),
   language: z.enum(["cpp", "java", "python", "csharp"]),
   sourceCode: z.string().trim().min(1, "Vui lòng nhập mã nguồn"),
+  contestId: z.coerce.number().int().positive().optional(),
 });

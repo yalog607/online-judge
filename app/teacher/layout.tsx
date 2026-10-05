@@ -5,6 +5,7 @@ const NAV: NavItem[] = [
   { href: "/teacher", label: "Tổng quan" },
   { href: "/teacher/problems", label: "Bài tập" },
   { href: "/teacher/classes", label: "Lớp học" },
+  { href: "/teacher/contests", label: "Kỳ thi" },
   { href: "/profile", label: "Hồ sơ" },
 ];
 
