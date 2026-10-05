@@ -15,7 +15,7 @@ const LANGUAGES = [
   { value: "csharp", label: "C# (Mono)" },
 ];
 
-export function SubmitForm({ problemId }: { problemId: number }) {
+export function SubmitForm({ problemId, contestId }: { problemId: number; contestId?: number }) {
   const [state, action] = useActionState(submitCodeAction, initial);
   const router = useRouter();
 
@@ -26,6 +26,7 @@ export function SubmitForm({ problemId }: { problemId: number }) {
   return (
     <form action={action} className="flex flex-col gap-3 rounded-xl bg-surface p-4">
       <input type="hidden" name="problemId" value={problemId} />
+      {contestId && <input type="hidden" name="contestId" value={contestId} />}
       <div className="flex items-center justify-between">
         <select
           name="language"
