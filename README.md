@@ -28,13 +28,16 @@ Stored Procedure -> SQL Server
                          |
                          | Submission Pending
                          v
+              Redis (BullMQ queue "judge")
+                         |
+                         v
                     Judge Worker
                          |
                          v
                    Docker Sandbox
                          |
                          v
-               Kết quả trở lại SQL Server
+        Kết quả trở lại SQL Server, queue events -> SSE -> trình duyệt
 ```
 
 Dự án là **modular monolith**: giao diện và backend nằm trong một ứng dụng Next.js, còn Judge Worker là tiến trình nền chạy riêng.
@@ -52,7 +55,7 @@ db/procs/               Stored procedure nghiệp vụ
 db/functions/           SQL function
 db/views/               SQL view
 db/triggers/            SQL trigger
-db/tests/               Kiểm thử cấu trúc DB
+db/tests/               Kiểm thử cấu trúc DB và hàng đợi chấm bài
 worker/                 Judge Worker và Docker sandbox
 worker/images/          Image chạy C++, Java, Python và C#
 scripts/                Script migrate, seed và test DB
@@ -134,7 +137,7 @@ Các bước cơ bản:
 ```powershell
 npm install
 Copy-Item .env.example .env
-docker compose up -d db mailpit
+docker compose up -d db redis mailpit
 npm run db:migrate
 npm run db:seed
 npm run dev
@@ -163,7 +166,7 @@ npm run db:test      # Kiểm thử database
 npm run worker:start # Chạy Judge Worker trực tiếp
 ```
 
-Cần chạy Redis (`docker compose up -d db redis`) và đặt `REDIS_URL`. Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
+Judge Worker và web cùng cần Redis (`REDIS_URL`, `JUDGE_CONCURRENCY` trong `.env`). Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
 
 ## Quy tắc khi đóng góp
 
