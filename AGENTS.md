@@ -6,7 +6,7 @@ ITOJ là hệ thống chấm bài lập trình trực tuyến. Ứng dụng gồ
 
 - Web full-stack viết bằng Next.js App Router và TypeScript.
 - SQL Server lưu dữ liệu nghiệp vụ và hàng đợi chấm bài.
-- Judge Worker lấy bài đang chờ, chạy mã nguồn trong Docker và ghi kết quả về SQL Server.
+- Redis (BullMQ) là hàng đợi giao việc từ web xuống Judge Worker; SQL Server vẫn là nguồn sự thật. Judge Worker nhận job, chạy mã nguồn trong Docker và ghi kết quả về SQL Server.
 
 Đọc `README.md` trước khi thay đổi source code.
 
@@ -51,7 +51,8 @@ Page/Component -> Server Action hoặc API Route -> Service -> Repository
 
 ## Quy tắc Judge Worker
 
-- Worker nhận bài qua `app.usp_Judge_ClaimNext`; không tự truy vấn hàng đợi.
+- Web đẩy job `{ submissionId }` vào queue `judge` (BullMQ/Redis); worker nhận job và claim theo id qua `app.usp_Judge_Claim`; không tự truy vấn bảng hàng đợi. `usp_Judge_ClaimNext` đã deprecated.
+- Job lỗi hạ tầng phải được trả về queue (`usp_Judge_Release`) để retry; hết lượt retry thì lưu `IE`.
 - Mã nguồn phải chạy trong Docker sandbox, tắt network và có giới hạn CPU, RAM, thời gian, PID và kích thước output.
 - Testcase được đưa vào `stdin`; `stdout` được so sánh với `ExpectedOutput`.
 - Phân biệt lỗi hạ tầng với verdict của bài làm. Không biến lỗi thiếu Docker/image/mount thành `RE` của người dùng.

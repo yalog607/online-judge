@@ -3,6 +3,9 @@ import { randomBytes } from "node:crypto";
 
 const OUTPUT_CAP = 64 * 1024;
 
+// Docker itself failed (missing binary/daemon/image/mount) - never the submission's fault.
+export class InfraError extends Error {}
+
 export type RunResult = {
   stdout: string;
   stderr: string;
@@ -59,7 +62,7 @@ export function runInSandbox(opts: {
     ...opts.cmd,
   ];
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const start = Date.now();
     const child = spawn("docker", args, { stdio: ["pipe", "pipe", "pipe"] });
     const stdout = capture(child.stdout);
@@ -71,14 +74,21 @@ export function runInSandbox(opts: {
       execFile("docker", ["kill", name], () => {});
     }, opts.timeoutMs);
 
+    child.stdin.on("error", () => {});
     child.stdin.write(opts.stdin);
     child.stdin.end();
 
     child.on("close", (code) => {
       clearTimeout(timer);
+      const err = stderr.get();
+      // `docker run` exits 125 with a "docker: ..." message when the daemon/image/mount fails.
+      if (code === 125 && /^docker:/m.test(err)) {
+        reject(new InfraError(err.trim().slice(0, 500)));
+        return;
+      }
       resolve({
         stdout: stdout.get(),
-        stderr: stderr.get(),
+        stderr: err,
         exitCode: code,
         timedOut,
         oomKilled: code === 137 && !timedOut,
@@ -86,16 +96,9 @@ export function runInSandbox(opts: {
       });
     });
 
-    child.on("error", () => {
+    child.on("error", (e) => {
       clearTimeout(timer);
-      resolve({
-        stdout: "",
-        stderr: "docker exec failed",
-        exitCode: null,
-        timedOut: false,
-        oomKilled: false,
-        wallTimeMs: Date.now() - start,
-      });
+      reject(new InfraError(`docker unavailable: ${e.message}`));
     });
   });
 }
