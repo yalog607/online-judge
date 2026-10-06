@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { createSubmission } from "@/modules/submission/repo";
+import { dispatchSubmission } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
 import { parseTestcaseZip } from "./testcase-zip";
@@ -88,6 +89,7 @@ export async function submitCodeAction(_prev: FormState, formData: FormData): Pr
 
   try {
     const submissionId = await createSubmission({ userId: user.userId, ...parsed.data });
+    await dispatchSubmission(submissionId);
     return { ok: true, submissionId };
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Nộp bài thất bại." };

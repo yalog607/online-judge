@@ -10,8 +10,11 @@ const initial: FormState = {};
 
 const LANGUAGES = [
   { value: "cpp", label: "C++ 17" },
+  { value: "c", label: "C (GCC 13)" },
   { value: "java", label: "Java 21" },
   { value: "python", label: "Python 3.11" },
+  { value: "javascript", label: "JavaScript (Node.js 22)" },
+  { value: "go", label: "Go 1.23" },
   { value: "csharp", label: "C# (Mono)" },
 ];
 
