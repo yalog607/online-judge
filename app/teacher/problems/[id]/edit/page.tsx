@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
+import { classRepository } from "@/modules/class/repo";
 import { getProblem, listOwnerTestcases } from "@/modules/problem/repo";
 import { updateProblemAction } from "@/modules/problem/actions";
 import { ProblemForm } from "../../problem-form";
@@ -12,7 +13,15 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
   if (!problem) notFound();
   if (actor.role !== "Admin" && problem.CreatorID !== actor.userId) notFound();
 
-  const testcases = await listOwnerTestcases(problemId, actor.userId);
+  const [testcases, { classes }] = await Promise.all([
+    listOwnerTestcases(problemId, actor.userId),
+    classRepository.listClasses({
+      userId: actor.userId,
+      onlyMine: true,
+      page: 1,
+      pageSize: 100,
+    }),
+  ]);
 
   return (
     <div className="max-w-3xl pt-8">
@@ -21,6 +30,7 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
         action={updateProblemAction.bind(null, problemId)}
         problem={problem}
         testcases={testcases}
+        classes={classes.map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }))}
       />
     </div>
   );

@@ -155,3 +155,24 @@ export async function joinContestAction(
     throw error;
   }
 }
+
+export async function startContestNowAction(
+  contestId: number,
+  durationMinutes: number = 60
+): Promise<{ error?: string; ok?: boolean; message?: string }> {
+  const actor = await requireRole("Teacher", "Admin");
+
+  try {
+    await contestRepository.startContestNow(contestId, actor.userId, durationMinutes);
+    revalidatePath(`/teacher/contests/${contestId}`);
+    revalidatePath(`/user/contests/${contestId}`);
+    revalidatePath("/teacher/contests");
+    revalidatePath("/user/contests");
+    return { ok: true, message: "Kỳ thi đã được bắt đầu thành công." };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}

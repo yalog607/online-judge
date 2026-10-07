@@ -85,6 +85,8 @@ export interface IContestRepository {
   listProblems(contestId: number, requesterId: number): Promise<ContestProblem[]>;
   joinContest(contestId: number, userId: number, password?: string | null): Promise<void>;
   getLeaderboard(contestId: number): Promise<ContestLeaderboardEntry[]>;
+  startContestNow(contestId: number, requesterId: number, durationMinutes: number): Promise<void>;
+  checkProblemAccess(contestId: number, problemId: number, userId: number): Promise<boolean>;
 }
 
 export class ContestRepository implements IContestRepository {
@@ -215,6 +217,31 @@ export class ContestRepository implements IContestRepository {
       penaltyTime: r.PenaltyTime,
       problemsSolved: r.ProblemsSolved,
     }));
+  }
+
+  async startContestNow(
+    contestId: number,
+    requesterId: number,
+    durationMinutes: number
+  ): Promise<void> {
+    await execProc("usp_Contest_StartNow", {
+      ContestID: contestId,
+      RequesterID: requesterId,
+      DurationMinutes: durationMinutes,
+    });
+  }
+
+  async checkProblemAccess(
+    contestId: number,
+    problemId: number,
+    userId: number
+  ): Promise<boolean> {
+    const { rows } = await execProc<{ CanAccess: boolean }>("usp_Contest_CheckProblemAccess", {
+      ContestID: contestId,
+      ProblemID: problemId,
+      UserID: userId,
+    });
+    return Boolean(rows[0]?.CanAccess);
   }
 }
 

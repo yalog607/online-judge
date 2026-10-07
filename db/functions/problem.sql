@@ -21,3 +21,68 @@ BEGIN
     RETURN @Rate;
 END;
 GO
+
+CREATE OR ALTER FUNCTION app.ufn_CanUserAccessProblem
+(
+    @ProblemID INT,
+    @UserID INT
+)
+RETURNS BIT
+AS
+BEGIN
+    DECLARE @CreatorID INT, @Status VARCHAR(20);
+    SELECT @CreatorID = CreatorID, @Status = Status 
+    FROM dbo.Problems 
+    WHERE ProblemID = @ProblemID;
+
+    IF @CreatorID IS NULL
+        RETURN 0;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM dbo.Users 
+        WHERE UserID = @UserID AND Role = 'Admin'
+    )
+        RETURN 1;
+
+    IF @CreatorID = @UserID
+        RETURN 1;
+
+    IF @Status = 'Hidden'
+        RETURN 0;
+
+    IF @Status = 'Public'
+        RETURN 1;
+
+    IF @Status = 'Private'
+    BEGIN
+        IF EXISTS (
+            SELECT 1 
+            FROM dbo.Class_Problem cp
+            JOIN dbo.Class_Student cs ON cs.ClassID = cp.ClassID
+            WHERE cp.ProblemID = @ProblemID AND cs.UserID = @UserID
+        )
+            RETURN 1;
+
+        IF EXISTS (
+            SELECT 1 
+            FROM dbo.Class_Problem cp
+            JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+            WHERE cp.ProblemID = @ProblemID AND c.TeacherID = @UserID
+        )
+            RETURN 1;
+
+        IF EXISTS (
+            SELECT 1 
+            FROM dbo.Contest_Problem cp
+            JOIN dbo.Contests ct ON ct.ContestID = cp.ContestID
+            WHERE cp.ProblemID = @ProblemID 
+              AND app.ufn_CanUserAccessContest(cp.ContestID, @UserID) = 1
+              AND app.ufn_GetContestStatus(ct.StartTime, ct.EndTime) <> 'Upcoming'
+        )
+            RETURN 1;
+    END;
+
+    RETURN 0;
+END;
+GO

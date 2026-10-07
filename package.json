@@ -17,6 +17,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@types/katex": "^0.16.8",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.3.11",
     "cloudinary": "^2.11.0",
@@ -24,6 +25,7 @@
     "ioredis": "^5.11.1",
     "jose": "^6.2.12",
     "jszip": "^3.10.2",
+    "katex": "^0.19.0",
     "mssql": "^12.7.2",
     "next": "16.3.5",
     "nodemailer": "^10.0.10",
