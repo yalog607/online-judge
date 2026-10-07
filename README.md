@@ -57,7 +57,7 @@ db/views/               SQL view
 db/triggers/            SQL trigger
 db/tests/               Kiểm thử cấu trúc DB và hàng đợi chấm bài
 worker/                 Judge Worker và Docker sandbox
-worker/images/          Image chạy C++, Java, Python và C#
+worker/images/          Image chạy C, C++, Java, Python, JavaScript, Go và C#
 scripts/                Script migrate, seed và test DB
 deploy/                 Cấu hình triển khai và Caddy
 ```

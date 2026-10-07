@@ -57,7 +57,7 @@ async function judgeSubmission(
         hostDir: dir,
         cmd: lang.compile,
         stdin: "",
-        timeoutMs: COMPILE_TIMEOUT_MS,
+        timeoutMs: lang.compileTimeoutMs ?? COMPILE_TIMEOUT_MS,
         memoryMb: COMPILE_MEMORY_MB,
       });
       if (compileResult.exitCode !== 0 || compileResult.timedOut) return await finish("CE", "0/0");

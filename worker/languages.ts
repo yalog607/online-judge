@@ -2,6 +2,7 @@ export type LanguageConfig = {
   image: string;
   sourceFile: string;
   compile?: string[];
+  compileTimeoutMs?: number;
   run: string[];
 };
 
@@ -28,5 +29,27 @@ export const LANGUAGES: Record<string, LanguageConfig> = {
     sourceFile: "Main.cs",
     compile: ["mcs", "-out:main.exe", "Main.cs"],
     run: ["mono", "main.exe"],
+  },
+  c: {
+    image: "itoj-judge-c:latest",
+    sourceFile: "main.c",
+    compile: ["gcc", "-O2", "-o", "main", "main.c", "-lm"],
+    run: ["./main"],
+  },
+  javascript: {
+    image: "itoj-judge-javascript:latest",
+    sourceFile: "main.js",
+    run: ["node", "main.js"],
+  },
+  go: {
+    image: "itoj-judge-go:latest",
+    sourceFile: "main.go",
+    compile: [
+      "sh",
+      "-c",
+      "cp -r /opt/gocache /sandbox/.gocache && GOCACHE=/sandbox/.gocache go build -o main main.go",
+    ],
+    compileTimeoutMs: 30000,
+    run: ["./main"],
   },
 };
