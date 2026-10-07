@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { createSubmission } from "@/modules/submission/repo";
+import { dispatchSubmission } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
 import { parseTestcaseZip } from "./testcase-zip";
@@ -74,11 +76,17 @@ export async function updateProblemAction(
 export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus) {
   const actor = await requireRole("Teacher", "Admin");
   await repo.setProblemStatus(problemId, actor.userId, status);
+  revalidatePath("/teacher/problems");
+  revalidatePath(`/teacher/problems/${problemId}/edit`);
+  revalidatePath(`/user/problems/${problemId}`);
+  revalidatePath("/user/problems");
 }
 
 export async function deleteProblemAction(problemId: number) {
   const actor = await requireRole("Teacher", "Admin");
   await repo.deleteProblem(problemId, actor.userId);
+  revalidatePath("/teacher/problems");
+  revalidatePath("/user/problems");
 }
 
 export async function submitCodeAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -88,6 +96,7 @@ export async function submitCodeAction(_prev: FormState, formData: FormData): Pr
 
   try {
     const submissionId = await createSubmission({ userId: user.userId, ...parsed.data });
+    await dispatchSubmission(submissionId);
     return { ok: true, submissionId };
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Nộp bài thất bại." };

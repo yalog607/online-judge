@@ -10,9 +10,11 @@ export function RowActions({ problemId, status }: { problemId: number; status: P
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
+  const isHidden = status === "Hidden";
+
   const toggleLock = () =>
     startTransition(async () => {
-      await setProblemStatusAction(problemId, status === "Hidden" ? "Public" : "Hidden");
+      await setProblemStatusAction(problemId, isHidden ? "Public" : "Hidden");
       router.refresh();
     });
 
@@ -30,7 +32,7 @@ export function RowActions({ problemId, status }: { problemId: number; status: P
         Sửa
       </Link>
       <button disabled={pending} onClick={toggleLock} className="text-fg-muted hover:underline">
-        {status === "Hidden" ? "Mở khóa" : "Khóa bài"}
+        {isHidden ? "Mở khóa" : "Khóa bài"}
       </button>
       <button disabled={pending} onClick={remove} className="text-bad hover:underline">
         Xóa

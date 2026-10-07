@@ -19,9 +19,26 @@ export type TestcaseResult = {
   memory: number;
 };
 
-export async function claimNext(workerId: string): Promise<ClaimedSubmission | null> {
-  const { rows } = await execProc<ClaimedSubmission>("usp_Judge_ClaimNext", { WorkerID: workerId });
+export async function claimSubmission(
+  submissionId: number,
+  workerId: string,
+): Promise<ClaimedSubmission | null> {
+  const { rows } = await execProc<ClaimedSubmission>("usp_Judge_Claim", {
+    SubmissionID: submissionId,
+    WorkerID: workerId,
+  });
   return rows[0] ?? null;
+}
+
+export async function releaseSubmission(submissionId: number, workerId: string) {
+  await execProc("usp_Judge_Release", { SubmissionID: submissionId, WorkerID: workerId });
+}
+
+export async function requeueStale(staleSeconds: number): Promise<number[]> {
+  const { rows } = await execProc<{ SubmissionID: number }>("usp_Judge_RequeueStale", {
+    StaleSeconds: staleSeconds,
+  });
+  return rows.map((r) => r.SubmissionID);
 }
 
 export async function listTestcases(problemId: number): Promise<JudgeTestcase[]> {
@@ -33,6 +50,7 @@ export async function listTestcases(problemId: number): Promise<JudgeTestcase[]>
 
 export async function saveResult(input: {
   submissionId: number;
+  workerId: string;
   result: string;
   runtime: number | null;
   memory: number | null;
@@ -46,6 +64,7 @@ export async function saveResult(input: {
     Memory: input.memory,
     PassedCases: input.passedCases,
     ResultsJson: JSON.stringify(input.results),
+    WorkerID: input.workerId,
   });
 }
 
