@@ -7,14 +7,47 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Create
     @TimeLimit INT,
     @MemoryLimit INT,
     @Tags NVARCHAR(200),
-    @Difficulty VARCHAR(20)
+    @Difficulty VARCHAR(20),
+    @Status VARCHAR(20) = 'Public',
+    @ClassID INT = NULL,
+    @DueDate DATETIME2(0) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
-    INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty)
-    VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty);
-    SELECT SCOPE_IDENTITY() AS ProblemID;
-END
+    SET XACT_ABORT ON;
+
+    IF @Status IS NULL OR @Status NOT IN ('Public', 'Private', 'Hidden')
+        SET @Status = 'Public';
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status)
+        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status);
+
+        DECLARE @NewProblemID INT = SCOPE_IDENTITY();
+
+        IF @ClassID IS NOT NULL
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM dbo.Classes 
+                WHERE ClassID = @ClassID AND (TeacherID = @CreatorID OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
+            )
+                THROW 50012, 'Lop hoc khong ton tai hoac ban khong co quyen gan bai tap vao lop hoc nay.', 1;
+
+            INSERT dbo.Class_Problem (ClassID, ProblemID, AssignedDate, DueDate, IsClosed)
+            VALUES (@ClassID, @NewProblemID, SYSUTCDATETIME(), @DueDate, 0);
+        END;
+
+        COMMIT TRANSACTION;
+
+        SELECT @NewProblemID AS ProblemID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
 GO
 
 CREATE OR ALTER PROCEDURE app.usp_Problem_Update
@@ -27,10 +60,13 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Update
     @TimeLimit INT,
     @MemoryLimit INT,
     @Tags NVARCHAR(200),
-    @Difficulty VARCHAR(20)
+    @Difficulty VARCHAR(20),
+    @Status VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @ActorID
@@ -38,12 +74,23 @@ BEGIN
     )
         THROW 50010, 'Ban khong co quyen sua bai tap nay.', 1;
 
-    UPDATE dbo.Problems
-    SET Title = @Title, Statement = @Statement, InputFormat = @InputFormat,
-        OutputFormat = @OutputFormat, TimeLimit = @TimeLimit, MemoryLimit = @MemoryLimit,
-        Tags = @Tags, Difficulty = @Difficulty
-    WHERE ProblemID = @ProblemID;
-END
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.Problems
+        SET Title = @Title, Statement = @Statement, InputFormat = @InputFormat,
+            OutputFormat = @OutputFormat, TimeLimit = @TimeLimit, MemoryLimit = @MemoryLimit,
+            Tags = @Tags, Difficulty = @Difficulty,
+            Status = COALESCE(@Status, Status)
+        WHERE ProblemID = @ProblemID;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
 GO
 
 CREATE OR ALTER PROCEDURE app.usp_Problem_SetStatus
@@ -146,7 +193,7 @@ BEGIN
     SELECT p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.CreatedAt,
            COUNT(*) OVER () AS TotalCount
     FROM dbo.Problems p
-    WHERE (@IsAdmin = 1 OR p.CreatorID = @ActorID)
+    WHERE (@IsAdmin = 1 OR p.CreatorID = @ActorID OR p.Status = 'Public')
       AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
       AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
       AND (@Status IS NULL OR p.Status = @Status)
@@ -216,4 +263,14 @@ BEGIN
 
     COMMIT TRANSACTION;
 END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_CheckAccess
+    @ProblemID INT,
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT app.ufn_CanUserAccessProblem(@ProblemID, @UserID) AS CanAccess;
+END;
 GO

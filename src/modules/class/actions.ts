@@ -136,3 +136,53 @@ export async function updateClassAction(
     throw error;
   }
 }
+
+export async function assignClassProblemAction(
+  classId: number,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const actor = await requireRole("Teacher", "Admin");
+  const problemId = Number(formData.get("problemId"));
+  const dueDate = formData.get("dueDate") as string | null;
+
+  if (!problemId || isNaN(problemId)) {
+    return { error: "Vui lòng chọn bài tập hợp lệ." };
+  }
+
+  try {
+    await classRepository.assignProblem(
+      classId,
+      actor.userId,
+      problemId,
+      dueDate || null
+    );
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true, message: "Giao bài tập cho lớp thành công!" };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function removeClassProblemAction(
+  classId: number,
+  problemId: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const actor = await requireRole("Teacher", "Admin");
+
+  try {
+    await classRepository.removeProblem(classId, actor.userId, problemId);
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
