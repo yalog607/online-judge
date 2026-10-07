@@ -27,14 +27,15 @@ export function SubmitForm({ problemId, contestId }: { problemId: number; contes
   }, [state, router]);
 
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-xl bg-surface p-4">
+    <form action={action} className="overflow-hidden rounded-xl bg-surface">
       <input type="hidden" name="problemId" value={problemId} />
       {contestId && <input type="hidden" name="contestId" value={contestId} />}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-3.5 py-3">
         <select
           name="language"
           defaultValue="cpp"
-          className="rounded-lg border border-line bg-muted px-3 py-2"
+          aria-label="Ngôn ngữ"
+          className="rounded-lg border border-transparent bg-muted px-3 py-2"
         >
           {LANGUAGES.map((l) => (
             <option key={l.value} value={l.value}>
@@ -48,10 +49,15 @@ export function SubmitForm({ problemId, contestId }: { problemId: number; contes
         name="sourceCode"
         required
         spellCheck={false}
-        className="min-h-[320px] rounded-lg bg-code-bg p-4 font-mono text-sm outline-none"
+        className="block min-h-[320px] w-full resize-y bg-muted p-4 font-mono text-[13px] leading-relaxed outline-none"
+        style={{ tabSize: 4 }}
         placeholder="Dán hoặc viết mã nguồn tại đây..."
       />
-      <FormError message={state.error} />
+      {state.error && (
+        <div className="p-3">
+          <FormError message={state.error} />
+        </div>
+      )}
     </form>
   );
 }
