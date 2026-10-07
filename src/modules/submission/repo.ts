@@ -1,7 +1,7 @@
 import "server-only";
 import { execProc } from "@/db/exec";
 
-export type Language = "cpp" | "java" | "python" | "csharp";
+export type Language = "cpp" | "c" | "java" | "python" | "javascript" | "go" | "csharp";
 export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "IE";
 export type SubmissionStatus = "Pending" | "Judging" | Verdict;
 

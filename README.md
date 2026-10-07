@@ -28,13 +28,16 @@ Stored Procedure -> SQL Server
                          |
                          | Submission Pending
                          v
+              Redis (BullMQ queue "judge")
+                         |
+                         v
                     Judge Worker
                          |
                          v
                    Docker Sandbox
                          |
                          v
-               Kết quả trở lại SQL Server
+        Kết quả trở lại SQL Server, queue events -> SSE -> trình duyệt
 ```
 
 Dự án là **modular monolith**: giao diện và backend nằm trong một ứng dụng Next.js, còn Judge Worker là tiến trình nền chạy riêng.
@@ -52,9 +55,9 @@ db/procs/               Stored procedure nghiệp vụ
 db/functions/           SQL function
 db/views/               SQL view
 db/triggers/            SQL trigger
-db/tests/               Kiểm thử cấu trúc DB
+db/tests/               Kiểm thử cấu trúc DB và hàng đợi chấm bài
 worker/                 Judge Worker và Docker sandbox
-worker/images/          Image chạy C++, Java, Python và C#
+worker/images/          Image chạy C, C++, Java, Python, JavaScript, Go và C#
 scripts/                Script migrate, seed và test DB
 deploy/                 Cấu hình triển khai và Caddy
 ```
@@ -73,14 +76,15 @@ deploy/                 Cấu hình triển khai và Caddy
 
 ### Chấm bài
 
-1. Source code được lưu vào bảng `Submissions` với trạng thái `Pending`.
-2. Worker lấy một submission bằng `app.usp_Judge_ClaimNext` và chuyển sang `Judging`.
+1. Source code được lưu vào bảng `Submissions` với trạng thái `Pending`, sau đó web đẩy job `{ submissionId }` vào hàng đợi BullMQ `judge` trên Redis.
+2. Worker nhận job từ queue, claim submission theo id bằng `app.usp_Judge_Claim` và chuyển sang `Judging`. Job lỗi hạ tầng được retry; submission kẹt hoặc job bị mất được sweeper của worker đưa lại vào queue.
 3. Source code được ghi vào thư mục tạm.
 4. Worker biên dịch/chạy source trong Docker sandbox, không có network và bị giới hạn tài nguyên.
 5. `InputData` của từng testcase được truyền vào `stdin`.
 6. `stdout` được so sánh với `ExpectedOutput` để xác định verdict.
-7. Kết quả tổng và kết quả từng testcase được lưu lại trong SQL Server.
+7. Kết quả tổng và kết quả từng testcase được lưu lại trong SQL Server qua `app.usp_Judge_SaveResult` (chỉ worker đang giữ claim mới ghi được).
 8. Thư mục tạm được xóa sau khi chấm.
+9. Kết quả job trả về qua queue events; trang bài nộp nhận qua SSE (`/api/submissions/[id]/events`) nên cập nhật ngay, và tự chuyển sang polling nếu SSE lỗi.
 
 ## Testcase và file ZIP
 
@@ -133,7 +137,7 @@ Các bước cơ bản:
 ```powershell
 npm install
 Copy-Item .env.example .env
-docker compose up -d db mailpit
+docker compose up -d db redis mailpit
 npm run db:migrate
 npm run db:seed
 npm run dev
@@ -162,7 +166,7 @@ npm run db:test      # Kiểm thử database
 npm run worker:start # Chạy Judge Worker trực tiếp
 ```
 
-Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
+Judge Worker và web cùng cần Redis (`REDIS_URL`, `JUDGE_CONCURRENCY` trong `.env`). Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
 
 ## Quy tắc khi đóng góp
 

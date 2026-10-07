@@ -36,3 +36,11 @@ describe("env()", () => {
     await expect(loadEnv({ SESSION_SECRET: "short" })).rejects.toBeTruthy();
   });
 });
+
+describe("env() queue settings", () => {
+  it("defaults REDIS_URL and JUDGE_CONCURRENCY", async () => {
+    const e = await loadEnv();
+    expect(e.REDIS_URL).toBe("redis://localhost:6379");
+    expect(e.JUDGE_CONCURRENCY).toBe(1);
+  });
+});
