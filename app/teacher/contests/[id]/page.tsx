@@ -88,7 +88,6 @@ export default async function TeacherContestDetailPage({
     .filter(
       (p) =>
         !attachedProblemIds.has(p.ProblemID) &&
-        p.Status !== "Locked" &&
         p.Status !== "Hidden",
     )
     .map((p) => ({

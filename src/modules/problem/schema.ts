@@ -27,7 +27,7 @@ export const problemFormSchema = z.object({
         : undefined,
     ),
   difficulty: z.enum(["Easy", "Medium", "Hard"]),
-  status: z.enum(["Public", "Private", "Locked", "Hidden"]).default("Public"),
+  status: z.enum(["Public", "Private", "Hidden"]).default("Public"),
   classId: z
     .preprocess(
       (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
@@ -48,7 +48,7 @@ export const testcaseInputSchema = z.object({
 
 export const submitCodeSchema = z.object({
   problemId: z.coerce.number().int().positive(),
-  language: z.enum(["cpp", "java", "python", "csharp"]),
+  language: z.enum(["cpp", "c", "java", "python", "javascript", "go", "csharp"]),
   sourceCode: z.string().trim().min(1, "Vui lòng nhập mã nguồn"),
   contestId: z.coerce.number().int().positive().optional(),
 });

@@ -60,7 +60,7 @@ export default async function ManageProblemsPage({
           <option value="">Tất cả trạng thái</option>
           <option value="Public">Công khai</option>
           <option value="Private">Riêng tư</option>
-          <option value="Locked">Đã khóa</option>
+          <option value="Hidden">Đã khóa</option>
         </select>
         <button type="submit" className="rounded-lg bg-fg px-4 py-2 font-medium text-bg">
           Tìm kiếm

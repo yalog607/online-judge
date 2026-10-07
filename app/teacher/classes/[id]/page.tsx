@@ -38,7 +38,6 @@ export default async function TeacherClassDetailPage({
     .filter(
       (p) =>
         !assignedProblemIds.has(p.ProblemID) &&
-        p.Status !== "Locked" &&
         p.Status !== "Hidden",
     )
     .map((p) => ({

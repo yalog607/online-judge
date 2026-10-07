@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSession, destroySession, readSession, SESSION_TTL_MS } from "@/lib/session";
-import { requireUser } from "@/lib/dal";
+import { requireUser, roleHome } from "@/lib/dal";
 import {
   changePasswordSchema,
   loginSchema,
@@ -59,7 +59,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     return { error: e instanceof AuthError ? e.message : "Đăng nhập thất bại." };
   }
   await startSession(user.UserID);
-  redirect(user.Role === "Admin" ? "/admin" : user.Role === "Teacher" ? "/teacher" : "/user");
+  redirect(roleHome(user.Role));
 }
 
 export async function logoutAction() {
@@ -153,5 +153,5 @@ export async function endImpersonationAction() {
     redirect("/login");
   }
   await startSession(actor.UserID);
-  redirect(actor.Role === "Admin" ? "/admin" : actor.Role === "Teacher" ? "/teacher" : "/user");
+  redirect(roleHome(actor.Role));
 }

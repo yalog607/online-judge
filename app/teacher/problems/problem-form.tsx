@@ -40,11 +40,9 @@ export function ProblemForm({
   const [inputFormat, setInputFormat] = useState(problem?.InputFormat ?? "");
   const [outputFormat, setOutputFormat] = useState(problem?.OutputFormat ?? "");
   const [mathTab, setMathTab] = useState<"edit" | "preview">("edit");
-  const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>(() => {
-    const s = problem?.Status;
-    if (s === "Hidden") return "Locked";
-    return s ?? "Public";
-  });
+  const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>(
+    problem?.Status ?? "Public",
+  );
 
   const updateRow = (key: number, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -90,7 +88,7 @@ export function ProblemForm({
           >
             <option value="Public">Công khai (Public - Mọi người có thể làm)</option>
             <option value="Private">Riêng tư (Private - Dành cho lớp học &amp; kỳ thi)</option>
-            <option value="Locked">Khóa (Locked - Không cho làm bài nữa)</option>
+            <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
           </select>
         </label>
       </div>
@@ -153,18 +151,15 @@ export function ProblemForm({
                   : "bg-muted text-fg-muted hover:text-fg"
               }`}
             >
-              Xem trước công thức Math
+              Xem trước
             </button>
           </div>
-          <span className="text-xs text-fg-muted">
-            Hỗ trợ công thức Math (KaTeX): <code className="text-primary font-mono">$x^2$</code> hoặc <code className="text-primary font-mono">$$\sum_{"{i=1}"}^n x_i$$</code>
-          </span>
         </div>
 
         {mathTab === "edit" ? (
           <div className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-              <span>Đề bài (Hỗ trợ định dạng Math $...$ và $$...$$)</span>
+              <span>Đề bài</span>
               <textarea
                 name="statement"
                 value={statement}

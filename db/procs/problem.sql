@@ -16,7 +16,7 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    IF @Status IS NULL OR @Status NOT IN ('Public', 'Private', 'Locked', 'Hidden')
+    IF @Status IS NULL OR @Status NOT IN ('Public', 'Private', 'Hidden')
         SET @Status = 'Public';
 
     BEGIN TRY

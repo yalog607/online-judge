@@ -169,7 +169,7 @@ BEGIN
 
     IF EXISTS (
         SELECT 1 FROM dbo.Problems 
-        WHERE ProblemID = @ProblemID AND Status IN ('Locked', 'Hidden')
+        WHERE ProblemID = @ProblemID AND Status = 'Hidden'
     )
         THROW 50037, 'Khong the them bai tap da bi khoa vao ky thi.', 1;
 

@@ -4,6 +4,8 @@ import { sessionCookieName } from "@/lib/session";
 
 // Optimistic check only: presence of the cookie, not its validity or role.
 // Real authorization happens in the DAL (verifySession/requireRole) on the server.
+// /login and /register are NOT redirected here: a stale cookie (session expired or revoked in DB)
+// would bounce the user away and make it impossible to sign in again.
 export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has(sessionCookieName());
   const { pathname } = request.nextUrl;
@@ -13,10 +15,6 @@ export function proxy(request: NextRequest) {
   );
   if (protectedPrefix && !hasSession) {
     return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if ((pathname === "/login" || pathname === "/register") && hasSession) {
-    return NextResponse.redirect(new URL("/user", request.url));
   }
 
   return NextResponse.next();
@@ -29,7 +27,5 @@ export const config = {
     "/admin/:path*",
     "/profile/:path*",
     "/submissions/:path*",
-    "/login",
-    "/register",
   ],
 };

@@ -13,6 +13,8 @@ const schema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().min(1),
+  REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
+  JUDGE_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(1),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),

@@ -2,7 +2,7 @@ import "server-only";
 import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
-export type ProblemStatus = "Public" | "Private" | "Locked" | "Hidden";
+export type ProblemStatus = "Public" | "Private" | "Hidden";
 
 export type ProblemListRow = {
   ProblemID: number;

@@ -128,7 +128,7 @@ BEGIN
 
     IF EXISTS (
         SELECT 1 FROM dbo.Problems 
-        WHERE ProblemID = @ProblemID AND Status IN ('Locked', 'Hidden')
+        WHERE ProblemID = @ProblemID AND Status = 'Hidden'
     ) AND @IsAdmin = 0 AND @CreatorID <> @UserID
         RETURN 0;
 

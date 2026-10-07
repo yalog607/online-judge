@@ -35,6 +35,15 @@ export const verifySession = cache(async (): Promise<CurrentUser | null> => {
   };
 });
 
+export function roleHome(role: Role) {
+  return role === "Admin" ? "/admin" : role === "Teacher" ? "/teacher" : "/user";
+}
+
+export async function redirectIfSignedIn() {
+  const user = await verifySession();
+  if (user) redirect(roleHome(user.role));
+}
+
 export async function requireUser(): Promise<CurrentUser> {
   const user = await verifySession();
   if (!user) redirect("/login");
@@ -43,6 +52,6 @@ export async function requireUser(): Promise<CurrentUser> {
 
 export async function requireRole(...roles: Role[]): Promise<CurrentUser> {
   const user = await requireUser();
-  if (!roles.includes(user.role)) redirect("/");
+  if (!roles.includes(user.role)) redirect(roleHome(user.role));
   return user;
 }

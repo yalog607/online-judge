@@ -48,7 +48,7 @@ BEGIN
     IF @CreatorID = @UserID
         RETURN 1;
 
-    IF @Status IN ('Locked', 'Hidden')
+    IF @Status = 'Hidden'
         RETURN 0;
 
     IF @Status = 'Public'

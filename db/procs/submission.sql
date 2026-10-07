@@ -14,7 +14,7 @@ BEGIN
     IF @Status IS NULL
         THROW 50020, 'Bai tap khong ton tai.', 1;
 
-    IF @Status IN ('Locked', 'Hidden')
+    IF @Status = 'Hidden'
         THROW 50026, 'Bai tap da bi khoa.', 1;
 
     IF @ContestID IS NOT NULL

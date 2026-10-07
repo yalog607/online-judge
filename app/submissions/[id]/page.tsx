@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { getSubmission } from "@/modules/submission/repo";
 import { VerdictBadge } from "@/components/badge";
-import { AutoRefresh } from "@/components/auto-refresh";
+import { SubmissionLive } from "@/components/submission-live";
 import { DomainError } from "@/db/exec";
 
 export default async function SubmissionDetailPage({
@@ -27,7 +27,7 @@ export default async function SubmissionDetailPage({
 
   return (
     <div className="flex flex-col gap-6 pt-8">
-      {isPending && <AutoRefresh />}
+      {isPending && <SubmissionLive submissionId={detail.SubmissionID} />}
       <div className="flex items-center justify-between">
         <div>
           <Link

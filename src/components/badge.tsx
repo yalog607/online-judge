@@ -37,13 +37,11 @@ export function DifficultyBadge({ value, difficulty }: { value?: string; difficu
 const STATUS_LABEL: Record<string, string> = {
   Public: "Công khai",
   Private: "Riêng tư",
-  Locked: "Đã khóa",
   Hidden: "Đã khóa",
 };
 const STATUS_KIND: Record<string, keyof typeof KIND_CLASS> = {
   Public: "ok",
   Private: "warn",
-  Locked: "bad",
   Hidden: "bad",
 };
 
