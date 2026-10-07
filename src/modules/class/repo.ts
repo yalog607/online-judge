@@ -1,5 +1,6 @@
 import "server-only";
 import { execProc } from "@/db/exec";
+import type { ProblemStatus } from "@/modules/problem/repo";
 
 export interface ClassItem {
   ClassID: number;
@@ -31,6 +32,7 @@ export interface ClassProblemItem {
   ProblemID: number;
   Title: string;
   Difficulty: "Easy" | "Medium" | "Hard";
+  Status: ProblemStatus;
   TimeLimit: number;
   MemoryLimit: number;
   AssignedDate: string;
@@ -68,6 +70,15 @@ export interface IClassRepository {
   addStudent(classId: number, teacherId: number, identifier: string): Promise<number>;
 
   removeStudent(classId: number, teacherId: number, studentId: number): Promise<boolean>;
+
+  assignProblem(
+    classId: number,
+    teacherId: number,
+    problemId: number,
+    dueDate?: string | null
+  ): Promise<void>;
+
+  removeProblem(classId: number, teacherId: number, problemId: number): Promise<void>;
 
   updateClass(
     teacherId: number,
@@ -193,6 +204,28 @@ export class ClassRepository implements IClassRepository {
       IsPublic: input.isPublic ?? true,
     });
     return rows[0];
+  }
+
+  async assignProblem(
+    classId: number,
+    teacherId: number,
+    problemId: number,
+    dueDate?: string | null
+  ): Promise<void> {
+    await execProc("usp_Class_AssignProblem", {
+      ClassID: classId,
+      ProblemID: problemId,
+      TeacherID: teacherId,
+      DueDate: dueDate ? new Date(dueDate) : null,
+    });
+  }
+
+  async removeProblem(classId: number, teacherId: number, problemId: number): Promise<void> {
+    await execProc("usp_Class_RemoveProblem", {
+      ClassID: classId,
+      ProblemID: problemId,
+      TeacherID: teacherId,
+    });
   }
 }
 

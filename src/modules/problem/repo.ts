@@ -2,7 +2,7 @@ import "server-only";
 import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
-export type ProblemStatus = "Public" | "Private" | "Hidden";
+export type ProblemStatus = "Public" | "Private" | "Locked" | "Hidden";
 
 export type ProblemListRow = {
   ProblemID: number;
@@ -96,6 +96,9 @@ export async function createProblem(input: {
   memoryLimit: number;
   tags?: string;
   difficulty: Difficulty;
+  status?: ProblemStatus;
+  classId?: number;
+  dueDate?: string | null;
 }): Promise<number> {
   const { rows } = await execProc<{ ProblemID: number }>("usp_Problem_Create", {
     CreatorID: input.creatorId,
@@ -107,6 +110,9 @@ export async function createProblem(input: {
     MemoryLimit: input.memoryLimit,
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
+    Status: input.status ?? "Public",
+    ClassID: input.classId ?? null,
+    DueDate: input.dueDate ? new Date(input.dueDate) : null,
   });
   return rows[0].ProblemID;
 }
@@ -122,6 +128,7 @@ export async function updateProblem(input: {
   memoryLimit: number;
   tags?: string;
   difficulty: Difficulty;
+  status?: ProblemStatus;
 }) {
   await execProc("usp_Problem_Update", {
     ProblemID: input.problemId,
@@ -134,6 +141,7 @@ export async function updateProblem(input: {
     MemoryLimit: input.memoryLimit,
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
+    Status: input.status ?? null,
   });
 }
 
@@ -177,4 +185,12 @@ export async function replaceTestcases(
     ActorID: actorId,
     TestcasesJson: JSON.stringify(testcases),
   });
+}
+
+export async function checkProblemAccess(problemId: number, userId: number): Promise<boolean> {
+  const { rows } = await execProc<{ CanAccess: boolean }>("usp_Problem_CheckAccess", {
+    ProblemID: problemId,
+    UserID: userId,
+  });
+  return Boolean(rows[0]?.CanAccess);
 }

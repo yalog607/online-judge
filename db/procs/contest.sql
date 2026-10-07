@@ -104,9 +104,9 @@ BEGIN
     SELECT 
         co.*,
         CAST(CASE 
-            WHEN @RequesterID IS NOT NULL AND EXISTS (
-                SELECT 1 FROM dbo.Contest_User cu 
-                WHERE cu.ContestID = @ContestID AND cu.UserID = @RequesterID
+            WHEN @RequesterID IS NOT NULL AND (
+                EXISTS (SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = @ContestID AND cu.UserID = @RequesterID)
+                OR app.ufn_CanUserAccessContest(@ContestID, @RequesterID) = 1
             ) THEN 1 
             ELSE 0 
         END AS BIT) AS IsJoined
@@ -166,6 +166,12 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID)
         THROW 50036, 'Bai tap khong ton tai.', 1;
+
+    IF EXISTS (
+        SELECT 1 FROM dbo.Problems 
+        WHERE ProblemID = @ProblemID AND Status IN ('Locked', 'Hidden')
+    )
+        THROW 50037, 'Khong the them bai tap da bi khoa vao ky thi.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -299,7 +305,16 @@ BEGIN
     IF EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         RETURN;
 
-    IF @ExpectedPassword IS NOT NULL AND LEN(@ExpectedPassword) > 0
+    IF @ClassID IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
+           AND NOT EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID AND TeacherID = @UserID)
+           AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+        BEGIN
+            THROW 50042, 'Ban khong thuoc lop hoc cua ky thi nay.', 1;
+        END;
+    END
+    ELSE IF @ExpectedPassword IS NOT NULL AND LEN(@ExpectedPassword) > 0
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
            AND @CreatorID <> @UserID
@@ -341,5 +356,57 @@ BEGIN
         ProblemsSolved
     FROM app.ufn_GetContestLeaderboard(@ContestID)
     ORDER BY [Rank] ASC, PenaltyTime ASC;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Contest_StartNow
+    @ContestID INT,
+    @RequesterID INT,
+    @DurationMinutes INT = 60
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.Contests c
+        LEFT JOIN dbo.Users u ON u.UserID = @RequesterID
+        WHERE c.ContestID = @ContestID 
+          AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
+    )
+        THROW 50033, 'Ban khong co quyen bat dau ky thi nay.', 1;
+
+    IF @DurationMinutes <= 0
+        SET @DurationMinutes = 60;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @Now DATETIME2(0) = SYSUTCDATETIME();
+
+        UPDATE dbo.Contests
+        SET StartTime = @Now,
+            EndTime = DATEADD(MINUTE, @DurationMinutes, @Now)
+        WHERE ContestID = @ContestID;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Contest_CheckProblemAccess
+    @ContestID INT,
+    @ProblemID INT,
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT app.ufn_CanUserAccessContestProblem(@ContestID, @ProblemID, @UserID) AS CanAccess;
 END;
 GO

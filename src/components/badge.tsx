@@ -29,25 +29,27 @@ const DIFFICULTY_KIND: Record<string, keyof typeof KIND_CLASS> = {
 };
 const DIFFICULTY_LABEL: Record<string, string> = { Easy: "Dễ", Medium: "Trung bình", Hard: "Khó" };
 
-export function DifficultyBadge({ value }: { value: string }) {
-  return (
-    <Badge kind={DIFFICULTY_KIND[value] ?? "neutral"}>{DIFFICULTY_LABEL[value] ?? value}</Badge>
-  );
+export function DifficultyBadge({ value, difficulty }: { value?: string; difficulty?: string }) {
+  const v = value ?? difficulty ?? "";
+  return <Badge kind={DIFFICULTY_KIND[v] ?? "neutral"}>{DIFFICULTY_LABEL[v] ?? v}</Badge>;
 }
 
 const STATUS_LABEL: Record<string, string> = {
   Public: "Công khai",
   Private: "Riêng tư",
+  Locked: "Đã khóa",
   Hidden: "Đã khóa",
 };
 const STATUS_KIND: Record<string, keyof typeof KIND_CLASS> = {
   Public: "ok",
   Private: "warn",
+  Locked: "bad",
   Hidden: "bad",
 };
 
-export function ProblemStatusBadge({ value }: { value: string }) {
-  return <Badge kind={STATUS_KIND[value] ?? "neutral"}>{STATUS_LABEL[value] ?? value}</Badge>;
+export function ProblemStatusBadge({ value, status }: { value?: string; status?: string }) {
+  const v = value ?? status ?? "";
+  return <Badge kind={STATUS_KIND[v] ?? "neutral"}>{STATUS_LABEL[v] ?? v}</Badge>;
 }
 
 const USER_STATUS_LABEL: Record<string, string> = {

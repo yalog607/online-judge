@@ -17,11 +17,13 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@types/katex": "^0.16.8",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "exceljs": "^4.4.0",
     "jose": "^6.2.12",
     "jszip": "^3.10.2",
+    "katex": "^0.19.0",
     "mssql": "^12.7.2",
     "next": "16.3.5",
     "nodemailer": "^10.0.10",

@@ -27,6 +27,17 @@ export const problemFormSchema = z.object({
         : undefined,
     ),
   difficulty: z.enum(["Easy", "Medium", "Hard"]),
+  status: z.enum(["Public", "Private", "Locked", "Hidden"]).default("Public"),
+  classId: z
+    .preprocess(
+      (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+      z.number().int().positive().optional(),
+    ),
+  dueDate: z
+    .preprocess(
+      (val) => (val === "" || val === undefined || val === null ? undefined : String(val)),
+      z.string().optional(),
+    ),
 });
 
 export const testcaseInputSchema = z.object({

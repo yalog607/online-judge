@@ -260,6 +260,7 @@ BEGIN
         p.ProblemID,
         p.Title,
         p.Difficulty,
+        p.Status,
         p.TimeLimit,
         p.MemoryLimit,
         cp.AssignedDate,
@@ -423,6 +424,89 @@ BEGIN
 
         THROW;
     END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_AssignProblem
+    @ClassID INT,
+    @ProblemID INT,
+    @TeacherID INT,
+    @DueDate DATETIME2(0) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+    )
+        THROW 50027, 'Ban khong co quyen giao bai tap cho lop hoc nay.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID)
+        THROW 50028, 'Bai tap khong ton tai.', 1;
+
+    IF EXISTS (
+        SELECT 1 FROM dbo.Problems 
+        WHERE ProblemID = @ProblemID AND Status IN ('Locked', 'Hidden')
+    )
+        THROW 50033, 'Khong the giao bai tap da bi khoa.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF EXISTS (SELECT 1 FROM dbo.Class_Problem WHERE ClassID = @ClassID AND ProblemID = @ProblemID)
+        BEGIN
+            UPDATE dbo.Class_Problem
+            SET DueDate = @DueDate
+            WHERE ClassID = @ClassID AND ProblemID = @ProblemID;
+        END
+        ELSE
+        BEGIN
+            INSERT dbo.Class_Problem (ClassID, ProblemID, AssignedDate, DueDate, IsClosed)
+            VALUES (@ClassID, @ProblemID, SYSUTCDATETIME(), @DueDate, 0);
+        END;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_RemoveProblem
+    @ClassID INT,
+    @ProblemID INT,
+    @TeacherID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+    )
+        THROW 50027, 'Ban khong co quyen go bai tap khoi lop hoc nay.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DELETE FROM dbo.Class_Problem
+        WHERE ClassID = @ClassID AND ProblemID = @ProblemID;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 END;
 GO
 

@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
-import { getProblem, listPublicTestcases } from "@/modules/problem/repo";
+import { getProblem, listPublicTestcases, checkProblemAccess } from "@/modules/problem/repo";
 import { listForUser as listSubmissions } from "@/modules/submission/repo";
+import { contestRepository } from "@/modules/contest/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
+import { MathContent } from "@/components/math-content";
 import { SubmitForm } from "./submit-form";
 
 export default async function ProblemDetailPage({
@@ -19,7 +21,16 @@ export default async function ProblemDetailPage({
   const problemId = Number(id);
   const contestId = sParams?.contestId ? Number(sParams.contestId) : undefined;
   const problem = await getProblem(problemId);
-  if (!problem || problem.Status !== "Public") notFound();
+  if (!problem) notFound();
+
+  let canAccessContest = false;
+  if (contestId) {
+    canAccessContest = await contestRepository.checkProblemAccess(contestId, problemId, user.userId);
+  }
+
+  const canAccessDirect = await checkProblemAccess(problemId, user.userId);
+  const canAccess = canAccessDirect || canAccessContest;
+  if (!canAccess) notFound();
 
   const [examples, history] = await Promise.all([
     listPublicTestcases(problemId),
@@ -40,18 +51,18 @@ export default async function ProblemDetailPage({
             Giới hạn: {(problem.TimeLimit / 1000).toFixed(1)}s, {problem.MemoryLimit}MB
           </span>
         </div>
-        <div className="mt-6 flex flex-col gap-4 whitespace-pre-wrap text-sm leading-relaxed">
-          <p>{problem.Statement}</p>
+        <div className="mt-6 flex flex-col gap-4 text-sm leading-relaxed">
+          <MathContent content={problem.Statement} />
           {problem.InputFormat && (
             <div>
-              <h3 className="font-semibold">Dữ liệu vào</h3>
-              <p className="text-fg-muted">{problem.InputFormat}</p>
+              <h3 className="font-semibold mb-1">Dữ liệu vào</h3>
+              <MathContent content={problem.InputFormat} className="text-fg-muted" />
             </div>
           )}
           {problem.OutputFormat && (
             <div>
-              <h3 className="font-semibold">Dữ liệu ra</h3>
-              <p className="text-fg-muted">{problem.OutputFormat}</p>
+              <h3 className="font-semibold mb-1">Dữ liệu ra</h3>
+              <MathContent content={problem.OutputFormat} className="text-fg-muted" />
             </div>
           )}
           {examples.map((ex, i) => (
@@ -74,7 +85,7 @@ export default async function ProblemDetailPage({
       </div>
 
       <div className="flex flex-col gap-4">
-        {contestId && (
+        {contestId && canAccessContest && (
           <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-xs flex items-center justify-between text-primary font-medium">
             <span>Đang làm bài cho Kỳ thi #{contestId}</span>
             <Link href={`/user/contests/${contestId}`} className="underline hover:opacity-80">
@@ -82,7 +93,13 @@ export default async function ProblemDetailPage({
             </Link>
           </div>
         )}
-        <SubmitForm problemId={problem.ProblemID} contestId={contestId} />
+        {problem.Status === "Locked" || problem.Status === "Hidden" ? (
+          <div className="rounded-xl border border-bad/30 bg-bad-soft p-4 text-center text-sm font-semibold text-bad">
+            Bài tập này đã bị khóa. Không thể nộp bài.
+          </div>
+        ) : (
+          <SubmitForm problemId={problem.ProblemID} contestId={canAccessContest ? contestId : undefined} />
+        )}
         <div className="rounded-xl bg-surface">
           <div className="border-b border-line px-5 py-3 font-semibold">Lịch sử nộp bài</div>
           <table className="w-full text-sm">

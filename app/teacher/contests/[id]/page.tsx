@@ -8,6 +8,7 @@ import { DifficultyBadge } from "@/components/badge";
 import { EditContestDialog } from "./edit-contest-dialog";
 import { AddProblemDialog } from "./add-problem-dialog";
 import { RemoveProblemButton } from "./remove-problem-button";
+import { StartContestDialog } from "./start-contest-dialog";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -84,7 +85,12 @@ export default async function TeacherContestDetailPage({
 
   const attachedProblemIds = new Set(problems.map((p) => p.problemId));
   const availableToAdd = allProblems.rows
-    .filter((p) => !attachedProblemIds.has(p.ProblemID))
+    .filter(
+      (p) =>
+        !attachedProblemIds.has(p.ProblemID) &&
+        p.Status !== "Locked" &&
+        p.Status !== "Hidden",
+    )
     .map((p) => ({
       problemId: p.ProblemID,
       title: p.Title,
@@ -115,7 +121,14 @@ export default async function TeacherContestDetailPage({
               <p className="mt-1 text-sm text-fg-muted whitespace-pre-line">{contest.description}</p>
             )}
           </div>
-          <EditContestDialog contest={contest} classes={classOptions} />
+          <div className="flex items-center gap-2">
+            <StartContestDialog
+              contestId={contestId}
+              currentStatus={contest.status}
+              contestName={contest.contestName}
+            />
+            <EditContestDialog contest={contest} classes={classOptions} />
+          </div>
         </div>
       </div>
 

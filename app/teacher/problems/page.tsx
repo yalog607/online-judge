@@ -52,6 +52,16 @@ export default async function ManageProblemsPage({
           placeholder="Tìm theo tên bài..."
           className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2"
         />
+        <select
+          name="status"
+          defaultValue={sp.status ?? ""}
+          className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="Public">Công khai</option>
+          <option value="Private">Riêng tư</option>
+          <option value="Locked">Đã khóa</option>
+        </select>
         <button type="submit" className="rounded-lg bg-fg px-4 py-2 font-medium text-bg">
           Tìm kiếm
         </button>
