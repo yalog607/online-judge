@@ -132,14 +132,12 @@ export async function registerDirect(input: {
   email: string;
   passwordHash: string;
   fullName: string;
-  role?: Role;
 }): Promise<number> {
   const { rows } = await execProc<{ UserID: number }>("usp_Auth_RegisterDirect", {
     Username: input.username,
     Email: input.email,
     PasswordHash: input.passwordHash,
     FullName: input.fullName,
-    Role: input.role ?? "User",
   });
   return rows[0].UserID;
 }
