@@ -11,11 +11,43 @@ BEGIN
         DECLARE @Status VARCHAR(20), @CreatorID INT;
         SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
 
-        IF @Status IS NULL
-            THROW 50020, 'Bai tap khong ton tai.', 1;
-        IF @Status <> 'Public' AND @CreatorID <> @UserID
-           AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+    IF @Status IS NULL
+        THROW 50020, 'Bai tap khong ton tai.', 1;
+
+    IF @Status = 'Hidden'
+        THROW 50026, 'Bai tap da bi khoa.', 1;
+
+    IF @ContestID IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.Contest_Problem 
+            WHERE ContestID = @ContestID AND ProblemID = @ProblemID
+        )
+            THROW 50022, 'Bai tap khong thuoc ky thi nay.', 1;
+
+        DECLARE @ContestStatus VARCHAR(20);
+        SELECT @ContestStatus = app.ufn_GetContestStatus(StartTime, EndTime)
+        FROM dbo.Contests WHERE ContestID = @ContestID;
+
+        IF @ContestStatus = 'Upcoming'
+            THROW 50023, 'Ky thi chua bat dau.', 1;
+        IF @ContestStatus = 'Ended'
+            THROW 50024, 'Ky thi da ket thuc.', 1;
+
+        IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 0
+            THROW 50025, 'Ban khong co quyen tham gia ky thi nay.', 1;
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
+        BEGIN
+            INSERT dbo.Contest_User (ContestID, UserID, TotalScore, PenaltyTime)
+            VALUES (@ContestID, @UserID, 0, 0);
+        END;
+    END
+    ELSE
+    BEGIN
+        IF app.ufn_CanUserAccessProblem(@ProblemID, @UserID) = 0
             THROW 50021, 'Ban khong co quyen nop bai cho bai tap nay.', 1;
+    END;
 
         BEGIN TRANSACTION;
         INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language)

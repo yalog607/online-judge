@@ -11,7 +11,7 @@ interface ClassOption {
 
 function getDefaultTimes() {
   const now = new Date();
-  now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5, 0, 0);
+  now.setSeconds(0, 0);
   const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
   const toVal = (d: Date) =>

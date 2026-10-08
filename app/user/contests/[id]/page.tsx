@@ -108,7 +108,7 @@ export default async function UserContestDetailPage({
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
           <span className="text-xs text-fg-muted">Số lượng đề bài</span>
-          <p className="mt-1 text-sm font-semibold text-fg">{problems.length} bài tập</p>
+          <p className="mt-1 text-sm font-semibold text-fg">{contest.problemCount} bài tập</p>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
           <span className="text-xs text-fg-muted">Thí sinh đã tham gia</span>
@@ -120,7 +120,7 @@ export default async function UserContestDetailPage({
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 text-center">
           <h3 className="text-base font-semibold text-amber-500">Kỳ thi chưa bắt đầu</h3>
           <p className="mt-1 text-xs text-fg-muted">
-            Đề thi sẽ chính thức được mở khi đến thời gian bắt đầu vào lúc <strong>{formatDateTime(contest.startTime)}</strong>. Vui lòng quay lại sau.
+            Đề thi gồm <strong>{contest.problemCount} bài tập</strong> sẽ chính thức được mở khi đến thời gian bắt đầu vào lúc <strong>{formatDateTime(contest.startTime)}</strong>. Vui lòng quay lại sau.
           </p>
         </div>
       )}
@@ -143,7 +143,7 @@ export default async function UserContestDetailPage({
               : "border-transparent text-fg-muted hover:text-fg"
           }`}
         >
-          Đề thi ({problems.length})
+          Đề thi ({contest.status === "Upcoming" ? contest.problemCount : problems.length})
         </Link>
         <Link
           href={`/user/contests/${contestId}?tab=leaderboard`}

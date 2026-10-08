@@ -1,7 +1,9 @@
+import { redirectIfSignedIn } from "@/lib/dal";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  await redirectIfSignedIn();
   return (
     <main className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="w-full max-w-[440px] rounded-2xl bg-surface p-10">

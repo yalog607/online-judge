@@ -2,8 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { Field, FormError, SubmitButton } from "@/components/form";
+import { MathContent } from "@/components/math-content";
 import type { FormState } from "@/modules/auth/actions";
-import type { ProblemDetail, TestcaseFull } from "@/modules/problem/repo";
+import type { ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
 
 type Row = { key: number; input: string; expectedOutput: string; isHidden: boolean };
 
@@ -20,10 +21,12 @@ export function ProblemForm({
   action,
   problem,
   testcases,
+  classes = [],
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   problem?: ProblemDetail;
   testcases?: TestcaseFull[];
+  classes?: Array<{ ClassID: number; ClassName: string }>;
 }) {
   const [state, formAction] = useActionState(action, {});
   const [rows, setRows] = useState<Row[]>(
@@ -33,11 +36,19 @@ export function ProblemForm({
   );
   const [nextKey, setNextKey] = useState(rows.length);
 
+  const [statement, setStatement] = useState(problem?.Statement ?? "");
+  const [inputFormat, setInputFormat] = useState(problem?.InputFormat ?? "");
+  const [outputFormat, setOutputFormat] = useState(problem?.OutputFormat ?? "");
+  const [mathTab, setMathTab] = useState<"edit" | "preview">("edit");
+  const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>(
+    problem?.Status ?? "Public",
+  );
+
   const updateRow = (key: number, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={formAction} className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field id="title" label="Tên bài tập" defaultValue={problem?.Title} required />
         <Field id="tags" label="Thẻ (phân cách bằng dấu phẩy)" defaultValue={problem?.Tags ?? ""} />
@@ -60,49 +71,177 @@ export function ProblemForm({
           <select
             name="difficulty"
             defaultValue={problem?.Difficulty ?? "Easy"}
-            className="rounded-lg border border-line bg-muted px-3.5 py-2.5"
+            className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
           >
             <option value="Easy">Dễ</option>
             <option value="Medium">Trung bình</option>
             <option value="Hard">Khó</option>
           </select>
         </label>
-      </div>
-
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-        <span>Đề bài</span>
-        <textarea
-          name="statement"
-          defaultValue={problem?.Statement}
-          required
-          className="min-h-[160px] rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
-        />
-      </label>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-          <span>Định dạng đầu vào</span>
-          <textarea
-            name="inputFormat"
-            defaultValue={problem?.InputFormat ?? ""}
-            className="min-h-[80px] rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-          <span>Định dạng đầu ra</span>
-          <textarea
-            name="outputFormat"
-            defaultValue={problem?.OutputFormat ?? ""}
-            className="min-h-[80px] rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
-          />
+          <span>Trạng thái bài tập</span>
+          <select
+            name="status"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value as ProblemStatus)}
+            className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+          >
+            <option value="Public">Công khai (Public - Mọi người có thể làm)</option>
+            <option value="Private">Riêng tư (Private - Dành cho lớp học &amp; kỳ thi)</option>
+            <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
+          </select>
         </label>
       </div>
 
-      <div className="rounded-xl bg-surface p-4">
+      {classes.length > 0 && !problem && (
+        <div className="rounded-xl border border-line bg-surface p-4">
+          <div className="mb-3">
+            <h3 className="text-sm font-semibold text-fg">Giao cho lớp học ngay (Tùy chọn)</h3>
+            <p className="text-xs text-fg-muted">
+              Chọn lớp học để tự động giao bài tập này ngay sau khi tạo thành công.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+              <span>Lớp học</span>
+              <select
+                name="classId"
+                className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
+              >
+                <option value="">-- Không giao cho lớp học --</option>
+                {classes.map((c) => (
+                  <option key={c.ClassID} value={c.ClassID}>
+                    {c.ClassName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+              <span>Hạn nộp bài (Tùy chọn)</span>
+              <input
+                type="datetime-local"
+                name="dueDate"
+                className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMathTab("edit")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                mathTab === "edit"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-fg-muted hover:text-fg"
+              }`}
+            >
+              Soạn thảo
+            </button>
+            <button
+              type="button"
+              onClick={() => setMathTab("preview")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                mathTab === "preview"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-fg-muted hover:text-fg"
+              }`}
+            >
+              Xem trước
+            </button>
+          </div>
+        </div>
+
+        {mathTab === "edit" ? (
+          <div className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+              <span>Đề bài</span>
+              <textarea
+                name="statement"
+                value={statement}
+                onChange={(e) => setStatement(e.target.value)}
+                required
+                className="min-h-[160px] rounded-lg border border-line bg-muted px-3.5 py-2.5 font-mono text-sm text-fg"
+              />
+            </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+                <span>Định dạng đầu vào</span>
+                <textarea
+                  name="inputFormat"
+                  value={inputFormat}
+                  onChange={(e) => setInputFormat(e.target.value)}
+                  className="min-h-[90px] rounded-lg border border-line bg-muted px-3.5 py-2.5 font-mono text-sm text-fg"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+                <span>Định dạng đầu ra</span>
+                <textarea
+                  name="outputFormat"
+                  value={outputFormat}
+                  onChange={(e) => setOutputFormat(e.target.value)}
+                  className="min-h-[90px] rounded-lg border border-line bg-muted px-3.5 py-2.5 font-mono text-sm text-fg"
+                />
+              </label>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <input type="hidden" name="statement" value={statement} />
+            <input type="hidden" name="inputFormat" value={inputFormat} />
+            <input type="hidden" name="outputFormat" value={outputFormat} />
+            <div className="rounded-lg border border-line bg-muted/40 p-3.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                Xem trước đề bài
+              </span>
+              <div className="mt-2 text-sm text-fg">
+                {statement ? (
+                  <MathContent content={statement} />
+                ) : (
+                  <span className="italic text-fg-muted">Chưa có nội dung đề bài</span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border border-line bg-muted/40 p-3.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                  Xem trước định dạng đầu vào
+                </span>
+                <div className="mt-2 text-sm text-fg">
+                  {inputFormat ? (
+                    <MathContent content={inputFormat} />
+                  ) : (
+                    <span className="italic text-fg-muted">Chưa có</span>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-lg border border-line bg-muted/40 p-3.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                  Xem trước định dạng đầu ra
+                </span>
+                <div className="mt-2 text-sm text-fg">
+                  {outputFormat ? (
+                    <MathContent content={outputFormat} />
+                  ) : (
+                    <span className="italic text-fg-muted">Chưa có</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-line bg-surface p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Bộ testcase</h2>
+          <h2 className="font-semibold text-fg">Bộ testcase</h2>
           <button
             type="button"
-            className="rounded-lg bg-muted px-3 py-1.5 text-sm"
+            className="rounded-lg bg-muted px-3 py-1.5 text-sm font-medium hover:bg-muted/80"
             onClick={() => {
               setRows((rs) => [
                 ...rs,
@@ -149,7 +288,7 @@ export function ProblemForm({
                 </label>
                 <button
                   type="button"
-                  className="text-bad"
+                  className="text-bad hover:underline"
                   onClick={() => setRows((rs) => rs.filter((r) => r.key !== row.key))}
                 >
                   Xóa
@@ -168,7 +307,7 @@ export function ProblemForm({
         <p className="rounded-lg bg-ok-soft px-3 py-2 text-sm text-ok">Đã lưu bài tập.</p>
       )}
       <FormError message={state.error} />
-      <SubmitButton className="self-start">Lưu và xuất bản</SubmitButton>
+      <SubmitButton className="self-start">Lưu bài tập</SubmitButton>
     </form>
   );
 }
