@@ -5,6 +5,10 @@ cd /root/online-judge
 git fetch origin
 git reset --hard origin/main
 
+# Docker daemon receives sandbox bind mounts, so this must exist on the host
+# and be mounted into the worker at the same absolute path.
+install -d -m 0755 /var/lib/itoj/judge
+
 # Keep the currently-running images as a rollback target before rebuilding.
 docker tag itoj-web:local itoj-web:prev 2>/dev/null || true
 docker tag itoj-worker:local itoj-worker:prev 2>/dev/null || true
