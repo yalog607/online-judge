@@ -1,0 +1,24 @@
+# Local dependencies and build output are recreated inside the image.
+node_modules
+.next
+out
+coverage
+
+# Docker does not need repository metadata, local configuration, or runtime data.
+.git
+.github
+.husky
+.agents
+.env
+.env.*
+!.env.example
+backups
+db-logs
+
+# Local editor, log, and TypeScript cache files.
+.DS_Store
+*.log
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
