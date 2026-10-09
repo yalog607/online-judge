@@ -6,7 +6,6 @@ const otp = z.string().regex(/^\d{6}$/, "Mã OTP gồm 6 chữ số");
 
 export const requestRegisterOtpSchema = z.object({ email });
 
-// Public registration never accepts a role: unknown keys are stripped by zod.
 export const directRegisterSchema = z.object({
   username: z.string().trim().min(3).max(50),
   email: z.string().trim().email(),
@@ -46,10 +45,15 @@ export const updateProfileSchema = z.object({
 
 export const changePasswordSchema = z
   .object({
-    oldPassword: z.string().min(1),
+    oldPassword: z.string().min(1, "Vui lòng nhập mật khẩu cũ"),
     newPassword: password,
+    confirmPassword: z.string().optional(),
   })
   .refine((v) => v.oldPassword !== v.newPassword, {
     message: "Mật khẩu mới phải khác mật khẩu cũ",
     path: ["newPassword"],
+  })
+  .refine((v) => !v.confirmPassword || v.newPassword === v.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp",
+    path: ["confirmPassword"],
   });

@@ -215,7 +215,7 @@ BEGIN
             @OwnerOnly = 0 AND (p.Status = 'Public' OR p.CreatorID = @UserID)
         )
           AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
-          AND (@Tag IS NULL OR ',' + p.Tags + ',' LIKE '%,' + @Tag + ',%')
+          AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
           AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
     )
     SELECT *, COUNT(*) OVER () AS TotalCount
@@ -229,6 +229,7 @@ GO
 CREATE OR ALTER PROCEDURE app.usp_Problem_ListForManage
     @ActorID INT,
     @Search NVARCHAR(200) = NULL,
+    @Tag VARCHAR(100) = NULL,
     @Difficulty VARCHAR(20) = NULL,
     @Status VARCHAR(20) = NULL,
     @Page INT = 1,
@@ -257,6 +258,7 @@ BEGIN
         )
     )
       AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
+      AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
       AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
       AND (@Status IS NULL OR p.Status = @Status)
     ORDER BY p.ProblemID DESC

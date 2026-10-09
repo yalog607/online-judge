@@ -13,6 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <AppShell
       roleLabel="Quản trị"
       fullName={user.fullName}
+      avatar={user.avatar}
       nav={NAV}
       impersonating={Boolean(user.actorId)}
     >

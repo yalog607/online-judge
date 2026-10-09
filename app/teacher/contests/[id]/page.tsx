@@ -9,6 +9,7 @@ import { EditContestDialog } from "./edit-contest-dialog";
 import { AddProblemDialog } from "./add-problem-dialog";
 import { RemoveProblemButton } from "./remove-problem-button";
 import { StartContestDialog } from "./start-contest-dialog";
+import { DeleteContestDialog } from "../delete-contest-dialog";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -127,6 +128,11 @@ export default async function TeacherContestDetailPage({
               contestName={contest.contestName}
             />
             <EditContestDialog contest={contest} classes={classOptions} />
+            <DeleteContestDialog
+              contestId={contestId}
+              contestName={contest.contestName}
+              redirectTo="/teacher/contests"
+            />
           </div>
         </div>
       </div>

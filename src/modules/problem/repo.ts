@@ -77,6 +77,7 @@ export async function listForUser(input: {
 export async function listForManage(input: {
   actorId: number;
   search?: string;
+  tag?: string;
   difficulty?: Difficulty;
   status?: ProblemStatus;
   page: number;
@@ -86,6 +87,7 @@ export async function listForManage(input: {
   const { rows } = await execProc<ManageProblemRow>("usp_Problem_ListForManage", {
     ActorID: input.actorId,
     Search: input.search ?? null,
+    Tag: input.tag ?? null,
     Difficulty: input.difficulty ?? null,
     Status: input.status ?? null,
     Page: input.page,

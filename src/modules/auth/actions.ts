@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createSession, destroySession, readSession, SESSION_TTL_MS } from "@/lib/session";
 import { requireUser, roleHome } from "@/lib/dal";
 import {
@@ -114,6 +115,8 @@ export async function updateProfileAction(
   }
 
   await service.repo.updateProfile(user.userId, parsed.data.fullName, avatarUrl);
+  revalidatePath("/", "layout");
+  revalidatePath("/profile");
   return { ok: true };
 }
 
@@ -126,6 +129,7 @@ export async function changePasswordAction(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   try {
     await service.changePassword(user.userId, parsed.data.oldPassword, parsed.data.newPassword);
+    revalidatePath("/profile");
   } catch (e) {
     return { error: e instanceof AuthError ? e.message : "Đổi mật khẩu thất bại." };
   }

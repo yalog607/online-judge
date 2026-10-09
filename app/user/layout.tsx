@@ -22,6 +22,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     <AppShell
       roleLabel={roleLabel}
       fullName={user.fullName}
+      avatar={user.avatar}
       nav={nav}
       impersonating={Boolean(user.actorId)}
     >

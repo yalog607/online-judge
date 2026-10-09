@@ -141,7 +141,6 @@ BEGIN
     INSERT @Results VALUES ('ufn_GetContestLeaderboard lists joined student', 0);
 END;
 
--- Test
 UPDATE dbo.Contests 
 SET StartTime = DATEADD(HOUR, -3, SYSUTCDATETIME()), 
     EndTime = DATEADD(HOUR, -1, SYSUTCDATETIME()) 
@@ -180,9 +179,47 @@ BEGIN CATCH
     INSERT @Results VALUES ('app.usp_Submission_Create blocks ended contest', 1);
 END CATCH;
 
-IF @ContestID IS NOT NULL
+BEGIN TRY
+    EXEC app.usp_Contest_Delete
+        @ContestID = @ContestID,
+        @RequesterID = @UserID;
+    INSERT @Results VALUES ('app.usp_Contest_Delete blocks unauthorized user', 0);
+END TRY
+BEGIN CATCH
+    INSERT @Results VALUES ('app.usp_Contest_Delete blocks unauthorized user', 1);
+END CATCH;
+
+BEGIN TRY
+    EXEC app.usp_Contest_Delete
+        @ContestID = @ContestID,
+        @RequesterID = @TeacherID;
+    INSERT @Results VALUES ('app.usp_Contest_Delete succeeds for creator', 1);
+END TRY
+BEGIN CATCH
+    INSERT @Results VALUES ('app.usp_Contest_Delete succeeds for creator', 0);
+END CATCH;
+
+IF EXISTS (
+    SELECT 1 
+    FROM dbo.AuditLog 
+    WHERE TargetType = 'Contest' AND TargetID = @ContestID AND Action = 'CONTEST_DELETE'
+)
 BEGIN
-    DELETE FROM dbo.Contests WHERE ContestID = @ContestID;
+    INSERT @Results VALUES ('trg_Contests_AuditLog logs contest deletion', 1);
+END
+ELSE
+BEGIN
+    INSERT @Results VALUES ('trg_Contests_AuditLog logs contest deletion', 0);
+END;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID)
+BEGIN
+    INSERT @Results VALUES ('app.usp_Contest_Delete removes contest record', 1);
+END
+ELSE
+BEGIN
+    INSERT @Results VALUES ('app.usp_Contest_Delete removes contest record', 0);
 END;
 
 SELECT Assertion, Passed FROM @Results;
+
