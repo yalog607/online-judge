@@ -19,6 +19,10 @@
   --warn-soft: #fef3c7;
   --neutral-soft: #e8eaee;
   --code-bg: #fafafb;
+  --primary-fg: #ffffff;
+  --sh: 0 1px 2px rgba(11, 15, 25, 0.04), 0 4px 14px rgba(11, 15, 25, 0.04);
+  --sh-pop: 0 2px 4px rgba(11, 15, 25, 0.05), 0 14px 36px rgba(11, 15, 25, 0.1);
+  --grid-line: rgba(11, 15, 25, 0.045);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,6 +44,10 @@
     --warn-soft: #402c0e;
     --neutral-soft: #232c40;
     --code-bg: #0e1420;
+    --primary-fg: #06122b;
+    --sh: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --sh-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
+    --grid-line: rgba(255, 255, 255, 0.045);
   }
 }
 
@@ -61,6 +69,10 @@
   --warn-soft: #402c0e;
   --neutral-soft: #232c40;
   --code-bg: #0e1420;
+  --primary-fg: #06122b;
+  --sh: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sh-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
+  --grid-line: rgba(255, 255, 255, 0.045);
 }
 
 @theme inline {
@@ -81,6 +93,10 @@
   --color-warn-soft: var(--warn-soft);
   --color-neutral-soft: var(--neutral-soft);
   --color-code-bg: var(--code-bg);
+  --color-primary-fg: var(--primary-fg);
+  --color-grid-line: var(--grid-line);
+  --shadow-card: var(--sh);
+  --shadow-pop: var(--sh-pop);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 }
@@ -95,6 +111,44 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.rise {
+  animation: rise 0.45s both;
+}
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.875rem;
+    box-shadow: var(--sh);
+  }
+  .card-hover {
+    transition:
+      transform 0.15s,
+      box-shadow 0.15s,
+      border-color 0.15s;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sh-pop);
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--line));
+  }
 }
 
 :focus-visible {

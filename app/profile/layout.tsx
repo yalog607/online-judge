@@ -13,7 +13,7 @@ export default async function ProfileLayout({ children }: { children: React.Reac
           ← Về trang chủ
         </Link>
         <form action={logoutAction}>
-          <SubmitButton className="bg-transparent text-fg-muted hover:bg-muted">
+          <SubmitButton variant="ghost">
             Đăng xuất
           </SubmitButton>
         </form>

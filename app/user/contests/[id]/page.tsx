@@ -98,19 +98,19 @@ export default async function UserContestDetailPage({
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Thời gian bắt đầu</span>
           <p className="mt-1 text-sm font-semibold text-fg">{formatDateTime(contest.startTime)}</p>
         </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Thời gian kết thúc</span>
           <p className="mt-1 text-sm font-semibold text-fg">{formatDateTime(contest.endTime)}</p>
         </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Số lượng đề bài</span>
           <p className="mt-1 text-sm font-semibold text-fg">{contest.problemCount} bài tập</p>
         </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Thí sinh đã tham gia</span>
           <p className="mt-1 text-sm font-semibold text-fg">{contest.participantCount} người</p>
         </div>
@@ -160,11 +160,11 @@ export default async function UserContestDetailPage({
       {activeTab === "problems" && (
         <div className="flex flex-col gap-4">
           {contest.status === "Upcoming" ? (
-            <div className="rounded-xl border border-line bg-surface p-12 text-center text-fg-muted text-sm">
+            <div className="card p-12 text-center text-fg-muted text-sm">
               Đề thi đang được bảo mật và sẽ mở khi kỳ thi bắt đầu.
             </div>
           ) : (
-            <div className="rounded-xl bg-surface overflow-hidden border border-line">
+            <div className="card overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                   <tr>
@@ -259,7 +259,7 @@ export default async function UserContestDetailPage({
             </Link>
           </div>
 
-          <div className="rounded-xl bg-surface overflow-hidden border border-line">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>

@@ -13,7 +13,7 @@ export default async function NewClassPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-line bg-surface p-6">
+      <div className="card p-6">
         <CreateClassForm />
       </div>
     </div>

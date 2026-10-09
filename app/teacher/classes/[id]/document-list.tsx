@@ -28,7 +28,7 @@ export function TeacherDocumentList({
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+    <div className="card overflow-hidden">
       <table className="w-full text-left text-sm">
         <thead className="border-b border-line bg-muted font-medium text-fg-muted">
           <tr>

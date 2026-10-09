@@ -2,11 +2,11 @@ import { requireRole } from "@/lib/dal";
 import { AppShell, type NavItem } from "@/components/app-shell";
 
 const NAV: NavItem[] = [
-  { href: "/user", label: "Tổng quan" },
-  { href: "/user/problems", label: "Bài tập" },
-  { href: "/user/classes", label: "Lớp học" },
-  { href: "/user/contests", label: "Kỳ thi" },
-  { href: "/profile", label: "Hồ sơ" },
+  { href: "/user", label: "Tổng quan", icon: "home" },
+  { href: "/user/problems", label: "Bài tập", icon: "code" },
+  { href: "/user/classes", label: "Lớp học", icon: "users" },
+  { href: "/user/contests", label: "Kỳ thi", icon: "trophy" },
+  { href: "/profile", label: "Hồ sơ", icon: "user" },
 ];
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {

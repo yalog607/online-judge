@@ -50,7 +50,7 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
           setError(null);
           setIsOpen(true);
         }}
-        className="rounded-lg bg-fg px-4 py-2 font-medium text-bg hover:opacity-90 transition-opacity flex items-center gap-1.5"
+        className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:opacity-90 transition-opacity flex items-center gap-1.5"
       >
         <span>+ Tạo kỳ thi</span>
       </button>

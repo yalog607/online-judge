@@ -119,7 +119,7 @@ export function ProblemForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+      <div className="flex flex-col gap-3 card p-4">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
           <span>Kiểu chấm bài</span>
           <select
@@ -221,7 +221,7 @@ export function ProblemForm({
       </div>
 
       {classes.length > 0 && !problem && (
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <div className="mb-3">
             <h3 className="text-sm font-semibold text-fg">Giao cho lớp học ngay (Tùy chọn)</h3>
             <p className="text-xs text-fg-muted">
@@ -257,7 +257,7 @@ export function ProblemForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+      <div className="flex flex-col gap-3 card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
           <div className="flex items-center gap-2">
             <button
@@ -365,7 +365,7 @@ export function ProblemForm({
         )}
       </div>
 
-      <div className="rounded-xl border border-line bg-surface p-4">
+      <div className="card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold text-fg">Bộ testcase</h2>
           <button

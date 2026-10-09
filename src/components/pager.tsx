@@ -27,7 +27,7 @@ export function Pager({
           <Link
             key={p}
             href={buildHref(p)}
-            className={`grid h-8 w-8 place-items-center rounded-lg ${p === page ? "bg-fg text-bg" : "hover:bg-muted"}`}
+            className={`grid h-8 w-8 place-items-center rounded-lg ${p === page ? "bg-primary text-primary-fg" : "hover:bg-muted"}`}
           >
             {p}
           </Link>
