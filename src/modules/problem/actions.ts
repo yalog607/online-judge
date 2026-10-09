@@ -51,7 +51,8 @@ export async function createProblemAction(
 
   const testcases = await collectTestcases(formData);
   if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
-  redirect(`/teacher/problems/${problemId}/edit`);
+  revalidatePath("/teacher/problems");
+  redirect("/teacher/problems");
 }
 
 export async function updateProblemAction(
