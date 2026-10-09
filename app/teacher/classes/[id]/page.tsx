@@ -12,24 +12,33 @@ import { TeacherDocumentList } from "./document-list";
 import { EditClassDialog } from "./edit-class-dialog";
 import { AssignProblemDialog } from "./assign-problem-dialog";
 import { RemoveClassProblemButton } from "./remove-class-problem-button";
+import { RequestTAUpgradeButton } from "./request-ta-button";
+import { ApproveProblemButton } from "./approve-problem-button";
 
 export default async function TeacherClassDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ tab?: string }>;
 }) {
   const actor = await requireRole("Teacher", "Admin");
   const { id } = await params;
+  const sParams = await searchParams;
+  const activeTab = sParams?.tab || "overview";
+
   const classId = parseInt(id, 10);
   if (isNaN(classId)) notFound();
 
-  const [classDetail, students, documents, problems, allProblems] = await Promise.all([
+  const [classDetail, students, documents, problems, allProblems, submissions] = await Promise.all([
     classRepository.getClassDetail(classId, actor.userId),
     classRepository.getClassStudents(classId, actor.userId),
     documentRepository.listDocuments(classId, actor.userId),
     classRepository.getClassProblems(classId, actor.userId),
     listProblemsForManage({ actorId: actor.userId, page: 1, pageSize: 100 }),
+    activeTab === "submissions" ? classRepository.getClassSubmissions(classId, actor.userId) : Promise.resolve({ items: [], total: 0 }),
   ]);
+
 
   if (!classDetail) notFound();
 
@@ -81,7 +90,33 @@ export default async function TeacherClassDetailPage({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
+      <div className="flex border-b border-line gap-4">
+        <Link
+          href={`/teacher/classes/${classId}?tab=overview`}
+          className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === "overview"
+              ? "border-primary text-primary"
+              : "border-transparent text-fg-muted hover:text-fg"
+          }`}
+        >
+          Tổng quan lớp học
+        </Link>
+        <Link
+          href={`/teacher/classes/${classId}?tab=submissions`}
+          className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === "submissions"
+              ? "border-primary text-primary"
+              : "border-transparent text-fg-muted hover:text-fg"
+          }`}
+        >
+          Lịch sử nộp bài
+        </Link>
+      </div>
+
+      {activeTab === "overview" && (
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
+
         <div className="rounded-xl border border-line bg-surface p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Mã mời tham gia
@@ -161,7 +196,7 @@ export default async function TeacherClassDetailPage({
                     <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
                     <td className="px-4 py-3 font-medium text-fg">
                       <Link
-                        href={`/user/problems/${p.ProblemID}`}
+                        href={`/teacher/problems/${p.ProblemID}`}
                         className="hover:text-primary hover:underline"
                         target="_blank"
                       >
@@ -183,11 +218,16 @@ export default async function TeacherClassDetailPage({
                         : "Không thời hạn"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <RemoveClassProblemButton
-                        classId={classId}
-                        problemId={p.ProblemID}
-                        problemTitle={p.Title}
-                      />
+                      <div className="flex items-center justify-end gap-3">
+                        {p.Status === "Pending" && (
+                          <ApproveProblemButton problemId={p.ProblemID} />
+                        )}
+                        <RemoveClassProblemButton
+                          classId={classId}
+                          problemId={p.ProblemID}
+                          problemTitle={p.Title}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -244,7 +284,16 @@ export default async function TeacherClassDetailPage({
                 students.map((s, idx) => (
                   <tr key={s.UserID} className="hover:bg-muted/50">
                     <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
-                    <td className="px-4 py-3 font-medium text-fg">{s.FullName}</td>
+                    <td className="px-4 py-3 font-medium text-fg">
+                      <div className="flex items-center gap-2">
+                        {s.FullName}
+                        {Boolean(s.IsTA) && (
+                          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                            Trợ giảng
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-mono text-fg-muted">{s.Username}</td>
                     <td className="px-4 py-3 text-fg-muted">{s.Email}</td>
                     <td className="px-4 py-3 text-fg-muted">
@@ -259,6 +308,12 @@ export default async function TeacherClassDetailPage({
                         studentId={s.UserID}
                         studentName={s.FullName}
                       />
+                      {!s.IsTA && (
+                        <RequestTAUpgradeButton
+                          classId={classId}
+                          studentId={s.UserID}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))
@@ -267,6 +322,75 @@ export default async function TeacherClassDetailPage({
           </table>
         </div>
       </div>
+        </div>
+      )}
+
+      {activeTab === "submissions" && (
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
+          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-line bg-muted font-medium text-fg-muted">
+                <tr>
+                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">Sinh viên</th>
+                  <th className="px-4 py-3">Bài tập</th>
+                  <th className="px-4 py-3">Kết quả</th>
+                  <th className="px-4 py-3">Thời gian</th>
+                  <th className="px-4 py-3 text-right">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {submissions.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
+                      Chưa có lượt nộp bài nào từ học sinh trong lớp.
+                    </td>
+                  </tr>
+                ) : (
+                  submissions.items.map((s: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
+                    <tr key={s.SubmissionID} className="hover:bg-muted/50">
+                      <td className="px-4 py-3 font-mono text-xs text-fg-muted">#{s.SubmissionID}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-fg">{s.FullName}</div>
+                        <div className="text-xs text-fg-muted">@{s.Username}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/teacher/problems/${s.ProblemID}`}
+                          className="font-medium text-fg hover:text-primary hover:underline"
+                        >
+                          {s.ProblemTitle}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          s.Result === "AC" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : 
+                          s.Result === "Pending" || s.Result === "Judging" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                          "bg-red-500/10 text-red-500 border border-red-500/20"
+                        }`}>
+                          {s.Result}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-fg-muted">
+                        {new Date(s.SubmitTime).toLocaleString("vi-VN")}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`/submissions/${s.SubmissionID}`}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          Xem mã nguồn →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -80,6 +80,7 @@ export default async function ProblemDetailPage({
     timeAgo: timeAgo(new Date(c.CreatedAt)),
     likes: c.LikeCount,
     liked: c.LikedByMe,
+    authorRole: c.AuthorRole,
   }));
   const tags = (problem.Tags ?? "")
     .split(",")

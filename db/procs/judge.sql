@@ -101,10 +101,16 @@ CREATE OR ALTER PROCEDURE app.usp_Judge_Heartbeat
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE dbo.JudgeWorkers SET LastSeenAt = SYSUTCDATETIME() WHERE WorkerID = @WorkerID;
-    IF @@ROWCOUNT = 0
-        INSERT dbo.JudgeWorkers (WorkerID, StartedAt, LastSeenAt)
-        VALUES (@WorkerID, SYSUTCDATETIME(), SYSUTCDATETIME());
+    BEGIN TRY
+        UPDATE dbo.JudgeWorkers SET LastSeenAt = SYSUTCDATETIME() WHERE WorkerID = @WorkerID;
+        IF @@ROWCOUNT = 0
+            INSERT dbo.JudgeWorkers (WorkerID, StartedAt, LastSeenAt)
+            VALUES (@WorkerID, SYSUTCDATETIME(), SYSUTCDATETIME());
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR (@ErrorMessage, 16, 1);
+    END CATCH
 END
 GO
 

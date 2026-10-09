@@ -23,6 +23,7 @@ export default async function ManageProblemsPage({
     status: sp.status as never,
     page,
     pageSize: PAGE_SIZE,
+    ownerOnly: sp.view === "mine",
   });
 
   const buildHref = (p: number) => {
@@ -46,6 +47,7 @@ export default async function ManageProblemsPage({
       </div>
 
       <form className="flex flex-wrap gap-3 rounded-xl bg-surface p-3" method="get">
+        {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
         <input
           name="q"
           defaultValue={sp.q}
@@ -61,11 +63,36 @@ export default async function ManageProblemsPage({
           <option value="Public">Công khai</option>
           <option value="Private">Riêng tư</option>
           <option value="Hidden">Đã khóa</option>
+          <option value="Pending">Chờ duyệt</option>
+          <option value="Rejected">Đã từ chối</option>
         </select>
         <button type="submit" className="rounded-lg bg-fg px-4 py-2 font-medium text-bg">
           Tìm kiếm
         </button>
       </form>
+
+      <div className="flex gap-4 border-b border-line pb-2">
+        <Link 
+          href="/teacher/problems" 
+          className={`font-medium pb-2 -mb-[9px] ${!sp.status && sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Tất cả
+        </Link>
+        <Link 
+          href="/teacher/problems?view=mine" 
+          className={`font-medium pb-2 -mb-[9px] ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Bài tập của tôi
+        </Link>
+        {actor.role !== "TA" && (
+          <Link 
+            href="/teacher/problems?status=Pending" 
+            className={`font-medium pb-2 -mb-[9px] ${sp.status === 'Pending' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+          >
+            Chờ duyệt
+          </Link>
+        )}
+      </div>
 
       <div className="rounded-xl bg-surface">
         <table className="w-full text-sm">
@@ -81,7 +108,16 @@ export default async function ManageProblemsPage({
           <tbody>
             {rows.map((p) => (
               <tr key={p.ProblemID} className="border-b border-line last:border-0">
-                <td className="px-5 py-3 font-medium">{p.Title}</td>
+                <td className="px-5 py-3 font-medium">
+                  <Link href={`/teacher/problems/${p.ProblemID}`} className="hover:underline" title="Xem đề bài">
+                    {p.Title}
+                  </Link>
+                  {p.ClassName && (
+                    <div className="mt-1 text-xs text-fg-muted font-normal">
+                      Lớp: {p.ClassName}
+                    </div>
+                  )}
+                </td>
                 <td className="px-5 py-3 text-fg-muted">{p.Tags}</td>
                 <td className="px-5 py-3">
                   <DifficultyBadge value={p.Difficulty} />
@@ -90,7 +126,13 @@ export default async function ManageProblemsPage({
                   <ProblemStatusBadge value={p.Status} />
                 </td>
                 <td className="px-5 py-3">
-                  <RowActions problemId={p.ProblemID} status={p.Status} />
+                  <RowActions 
+                    problemId={p.ProblemID} 
+                    status={p.Status} 
+                    creatorId={p.CreatorID}
+                    actorId={actor.userId}
+                    actorRole={actor.role}
+                  />
                 </td>
               </tr>
             ))}

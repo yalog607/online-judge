@@ -120,7 +120,9 @@ CREATE OR ALTER PROCEDURE app.usp_Contest_List
     @ClassID INT = NULL,
     @Search NVARCHAR(100) = NULL,
     @Page INT = 1,
-    @PageSize INT = 20
+    @PageSize INT = 20,
+    @UserID INT = NULL,
+    @OnlyMine BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -132,6 +134,7 @@ BEGIN
     WHERE (@Status = 'All' OR co.[Status] = @Status)
       AND (@ClassID IS NULL OR co.ClassID = @ClassID)
       AND (@Search IS NULL OR co.ContestName LIKE '%' + @Search + '%')
+      AND (@OnlyMine = 0 OR (@UserID IS NOT NULL AND co.CreatorID = @UserID))
     ORDER BY 
         CASE 
             WHEN co.[Status] = 'Ongoing' THEN 1
@@ -303,6 +306,12 @@ BEGIN
 
     IF @CreatorID IS NULL
         THROW 50040, 'Ky thi khong ton tai.', 1;
+
+    IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('Teacher', 'Admin'))
+        THROW 50043, 'Giao vien hoac Admin khong the tham gia ky thi.', 1;
+
+    IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
+        THROW 50043, 'Ban da co quyen quan ly ky thi nay.', 1;
 
     IF @Status = 'Ended'
         THROW 50043, 'Ky thi da ket thuc.', 1;

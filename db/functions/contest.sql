@@ -62,6 +62,13 @@ BEGIN
             WHERE ClassID = @ClassID AND UserID = @UserID
         )
             RETURN 1;
+
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.Class_TA
+            WHERE ClassID = @ClassID AND UserID_TA = @UserID
+        )
+            RETURN 1;
     END;
 
     RETURN 0;

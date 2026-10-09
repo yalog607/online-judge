@@ -15,6 +15,7 @@ export interface ClassItem {
   CreatedAt: string;
   StudentCount: number;
   IsJoined: boolean;
+  IsTA?: boolean;
   TotalCount?: number;
 }
 
@@ -26,6 +27,7 @@ export interface StudentItem {
   Email: string;
   JoinDate: string;
   ProgressPercent: number;
+  IsTA?: boolean;
 }
 
 export interface ClassProblemItem {
@@ -50,6 +52,8 @@ export interface IClassRepository {
   }): Promise<{ classId: number; inviteCode: string }>;
 
   joinByInviteCode(userId: number, inviteCode: string): Promise<number>;
+
+  joinPublicClass(userId: number, classId: number): Promise<number>;
 
   leaveClass(userId: number, classId: number): Promise<boolean>;
 
@@ -89,6 +93,14 @@ export interface IClassRepository {
       isPublic?: boolean;
     }
   ): Promise<ClassItem>;
+
+  requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<void>;
+
+  listTARequests(adminId: number): Promise<any[]>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void>;
+
+  getClassesForTA(taUserId: number): Promise<ClassItem[]>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -115,6 +127,14 @@ export class ClassRepository implements IClassRepository {
     const { rows } = await execProc<{ ClassID: number }>("usp_Class_JoinByInviteCode", {
       UserID: userId,
       InviteCode: inviteCode,
+    });
+    return rows[0].ClassID;
+  }
+
+  async joinPublicClass(userId: number, classId: number): Promise<number> {
+    const { rows } = await execProc<{ ClassID: number }>("usp_Class_JoinPublic", {
+      UserID: userId,
+      ClassID: classId,
     });
     return rows[0].ClassID;
   }
@@ -226,6 +246,49 @@ export class ClassRepository implements IClassRepository {
       ProblemID: problemId,
       TeacherID: teacherId,
     });
+  }
+
+  async requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<void> {
+    await execProc("usp_Class_RequestUpgradeToTA", {
+      ClassID: classId,
+      UserID: studentId,
+      TeacherID: teacherId,
+    });
+  }
+
+  async listTARequests(adminId: number) {
+    const { rows } = await execProc("usp_Admin_ListTARequests", {
+      AdminID: adminId,
+    });
+    return rows;
+  }
+
+  async approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void> {
+    await execProc("usp_Admin_ApproveTA", {
+      AdminID: adminId,
+      RequestID: requestId,
+      IsApproved: isApproved,
+    });
+  }
+
+  async getClassesForTA(taUserId: number): Promise<ClassItem[]> {
+    const { rows } = await execProc<ClassItem>("usp_Class_GetForTA", {
+      TAUserID: taUserId,
+    });
+    return rows;
+  }
+
+  async getClassSubmissions(classId: number, actorId: number, page: number = 1, pageSize: number = 20) {
+    const { rows } = await execProc("usp_Class_GetSubmissions", {
+      ClassID: classId,
+      ActorID: actorId,
+      Page: page,
+      PageSize: pageSize,
+    });
+    return {
+      items: rows,
+      total: rows[0]?.TotalCount ?? 0,
+    };
   }
 }
 

@@ -10,12 +10,19 @@ const NAV: NavItem[] = [
 ];
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireRole("User");
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
+  
+  const nav = [...NAV];
+  let roleLabel = "Học viên";
+  if (user.role === "TA") roleLabel = "Trợ giảng";
+  if (user.role === "Admin") roleLabel = "Quản trị viên";
+  if (user.role === "Teacher") roleLabel = "Giảng viên";
+
   return (
     <AppShell
-      roleLabel="Học viên"
+      roleLabel={roleLabel}
       fullName={user.fullName}
-      nav={NAV}
+      nav={nav}
       impersonating={Boolean(user.actorId)}
     >
       {children}

@@ -64,6 +64,10 @@ export default async function UserContestsPage({
     })
   );
 
+  const getHref = (contestId: number) => {
+    return `/user/contests/${contestId}`;
+  };
+
   const tabs = [
     { label: "Tất cả", value: "All" },
     { label: "Đang diễn ra", value: "Ongoing" },
@@ -134,7 +138,7 @@ export default async function UserContestsPage({
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link
-                        href={`/user/contests/${c.contestId}`}
+                        href={getHref(c.contestId)}
                         className="font-bold text-base text-fg hover:text-primary transition-colors"
                       >
                         {c.contestName}

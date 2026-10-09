@@ -49,7 +49,8 @@ RETURN
         u.FullName,
         u.Email,
         cs.JoinDate,
-        cs.ProgressPercent
+        cs.ProgressPercent,
+        CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = cs.ClassID AND ta.UserID_TA = cs.UserID) THEN 1 ELSE 0 END AS BIT) AS IsTA
     FROM dbo.Class_Student cs
     INNER JOIN dbo.Users u ON cs.UserID = u.UserID
     WHERE cs.ClassID = @ClassID

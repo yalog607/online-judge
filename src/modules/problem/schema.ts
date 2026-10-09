@@ -27,7 +27,7 @@ export const problemFormSchema = z.object({
         : undefined,
     ),
   difficulty: z.enum(["Easy", "Medium", "Hard"]),
-  status: z.enum(["Public", "Private", "Hidden"]).default("Public"),
+  status: z.enum(["Public", "Private", "Hidden", "Pending", "Rejected"]).default("Public"),
   judgeMode: z.enum(["stdin", "function"]).default("stdin"),
   classId: z
     .preprocess(

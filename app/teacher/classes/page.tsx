@@ -17,7 +17,7 @@ export default async function TeacherClassesPage({
   const { classes, totalCount } = await classRepository.listClasses({
     userId: actor.userId,
     search: sp.q,
-    onlyMine: true,
+    onlyMine: sp.view === "mine",
     page,
     pageSize: PAGE_SIZE,
   });
@@ -37,7 +37,23 @@ export default async function TeacherClassesPage({
         </Link>
       </div>
 
+      <div className="flex gap-4 border-b border-line pb-2">
+        <Link 
+          href="/teacher/classes" 
+          className={`font-medium pb-2 -mb-[9px] ${sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Tất cả
+        </Link>
+        <Link 
+          href="/teacher/classes?view=mine" 
+          className={`font-medium pb-2 -mb-[9px] ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Lớp học của tôi
+        </Link>
+      </div>
+
       <form className="flex flex-wrap gap-3 rounded-xl bg-surface p-3" method="get">
+        {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
         <input
           name="q"
           defaultValue={sp.q}

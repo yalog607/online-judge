@@ -81,3 +81,10 @@ export async function getSubmission(submissionId: number, requesterId: number) {
   const [detailRows, testcaseRows] = sets as [SubmissionDetail[], SubmissionTestcaseResult[]];
   return { detail: detailRows[0] ?? null, testcases: testcaseRows ?? [] };
 }
+
+export async function requestRejudge(submissionId: number, actorId: number) {
+  await execProc("usp_Judge_RequestRejudge", {
+    SubmissionID: submissionId,
+    ActorID: actorId,
+  });
+}

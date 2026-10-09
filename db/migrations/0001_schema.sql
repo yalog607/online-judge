@@ -283,3 +283,20 @@ CREATE ROLE app_executor;
 GRANT EXECUTE ON SCHEMA::app TO app_executor;
 DENY SELECT, INSERT, UPDATE, DELETE ON SCHEMA::dbo TO app_executor;
 GO
+-- THÊM 3 ROLE YÊU C?U CHO RUBRIC (T?i thi?u 4 Role bao g?m c? app_executor)
+CREATE ROLE db_admin;
+CREATE ROLE db_teacher;
+CREATE ROLE db_student;
+GO
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Problems TO db_admin;
+GRANT SELECT, INSERT, UPDATE ON dbo.Problems TO db_teacher;
+GRANT SELECT ON dbo.Problems TO db_student;
+
+GRANT EXECUTE ON SCHEMA::app TO db_admin;
+GRANT EXECUTE ON SCHEMA::app TO db_teacher;
+GRANT EXECUTE ON SCHEMA::app TO db_student;
+
+DENY DELETE ON dbo.Submissions TO db_student;
+DENY DELETE ON dbo.Users TO db_teacher;
+GO

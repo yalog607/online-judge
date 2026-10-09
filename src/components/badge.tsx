@@ -38,11 +38,15 @@ const STATUS_LABEL: Record<string, string> = {
   Public: "Công khai",
   Private: "Riêng tư",
   Hidden: "Đã khóa",
+  Pending: "Chờ duyệt",
+  Rejected: "Bị từ chối",
 };
 const STATUS_KIND: Record<string, keyof typeof KIND_CLASS> = {
   Public: "ok",
   Private: "warn",
   Hidden: "bad",
+  Pending: "info",
+  Rejected: "bad",
 };
 
 export function ProblemStatusBadge({ value, status }: { value?: string; status?: string }) {

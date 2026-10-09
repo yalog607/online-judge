@@ -138,6 +138,8 @@ export class ContestRepository implements IContestRepository {
       Search: filter.search ?? null,
       Page: filter.page,
       PageSize: filter.pageSize,
+      UserID: filter.userId ?? null,
+      OnlyMine: filter.onlyMine ? 1 : 0,
     });
     const total = rows[0]?.TotalCount ?? 0;
     return {

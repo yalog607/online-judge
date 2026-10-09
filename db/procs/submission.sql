@@ -7,9 +7,9 @@ CREATE OR ALTER PROCEDURE app.usp_Submission_Create
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @Status VARCHAR(20), @CreatorID INT;
-    SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
+    BEGIN TRY
+        DECLARE @Status VARCHAR(20), @CreatorID INT;
+        SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
 
     IF @Status IS NULL
         THROW 50020, 'Bai tap khong ton tai.', 1;
@@ -37,6 +37,12 @@ BEGIN
         IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 0
             THROW 50025, 'Ban khong co quyen tham gia ky thi nay.', 1;
 
+        IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('Teacher', 'Admin'))
+            THROW 50027, 'Giao vien hoac Admin khong the tham gia hay nop bai trong ky thi.', 1;
+
+        IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
+            THROW 50027, 'Ban dang co quyen quan ly ky thi nay nen khong the nop bai nhu thi sinh.', 1;
+
         IF NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         BEGIN
             INSERT dbo.Contest_User (ContestID, UserID, TotalScore, PenaltyTime)
@@ -49,10 +55,19 @@ BEGIN
             THROW 50021, 'Ban khong co quyen nop bai cho bai tap nay.', 1;
     END;
 
-    INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language)
-    VALUES (@UserID, @ProblemID, @ContestID, @SourceCode, @Language);
-
-    SELECT SCOPE_IDENTITY() AS SubmissionID;
+        BEGIN TRANSACTION;
+        INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language)
+        VALUES (@UserID, @ProblemID, @ContestID, @SourceCode, @Language);
+        
+        DECLARE @NewID INT = SCOPE_IDENTITY();
+        COMMIT TRANSACTION;
+        
+        SELECT @NewID AS SubmissionID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
 END
 GO
 
@@ -97,5 +112,33 @@ BEGIN
     JOIN dbo.Testcases t ON t.TestCaseID = sr.TestCaseID
     WHERE sr.SubmissionID = @SubmissionID
     ORDER BY t.OrderIndex;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Judge_RequestRejudge
+    @SubmissionID INT,
+    @ActorID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Check permissions
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin', 'TA'))
+        THROW 50050, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+
+    -- Check if submission exists
+    IF NOT EXISTS (SELECT 1 FROM dbo.Submissions WHERE SubmissionID = @SubmissionID)
+        THROW 50051, 'Bai nop khong ton tai.', 1;
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.Submissions
+    SET Result = 'Pending', ClaimedBy = NULL, ClaimedAt = NULL, JudgedAt = NULL,
+        Runtime = NULL, Memory = NULL, PassedCases = NULL
+    WHERE SubmissionID = @SubmissionID;
+
+    DELETE FROM dbo.SubmissionResults WHERE SubmissionID = @SubmissionID;
+
+    COMMIT TRANSACTION;
 END
 GO

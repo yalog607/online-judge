@@ -2,7 +2,7 @@ import "server-only";
 import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
-export type ProblemStatus = "Public" | "Private" | "Hidden";
+export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejected";
 export type JudgeMode = "stdin" | "function";
 
 export type ProblemListRow = {
@@ -10,18 +10,24 @@ export type ProblemListRow = {
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
+  Status: ProblemStatus;
+  CreatorID: number;
   AcRate: number;
   UserStatus: "done" | "tried" | "todo";
+  ClassName?: string;
   TotalCount: number;
 };
 
 export type ManageProblemRow = {
   ProblemID: number;
+  CreatorID: number;
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
   CreatedAt: string;
+  ClassID: number | null;
+  ClassName: string | null;
   TotalCount: number;
 };
 
@@ -37,6 +43,7 @@ export type ProblemDetail = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  RejectionReason: string | null;
   JudgeMode: JudgeMode;
   FunctionSpec: string | null;
 };
@@ -52,6 +59,7 @@ export async function listForUser(input: {
   userStatus?: "done" | "tried" | "todo";
   page: number;
   pageSize: number;
+  ownerOnly?: boolean;
 }) {
   const { rows } = await execProc<ProblemListRow>("usp_Problem_ListForUser", {
     UserID: input.userId,
@@ -61,6 +69,7 @@ export async function listForUser(input: {
     UserStatus: input.userStatus ?? null,
     Page: input.page,
     PageSize: input.pageSize,
+    OwnerOnly: input.ownerOnly ? 1 : 0,
   });
   return { rows, total: rows[0]?.TotalCount ?? 0 };
 }
@@ -72,6 +81,7 @@ export async function listForManage(input: {
   status?: ProblemStatus;
   page: number;
   pageSize: number;
+  ownerOnly?: boolean;
 }) {
   const { rows } = await execProc<ManageProblemRow>("usp_Problem_ListForManage", {
     ActorID: input.actorId,
@@ -80,6 +90,7 @@ export async function listForManage(input: {
     Status: input.status ?? null,
     Page: input.page,
     PageSize: input.pageSize,
+    OwnerOnly: input.ownerOnly ? 1 : 0,
   });
   return { rows, total: rows[0]?.TotalCount ?? 0 };
 }
@@ -156,11 +167,12 @@ export async function updateProblem(input: {
   });
 }
 
-export async function setProblemStatus(problemId: number, actorId: number, status: ProblemStatus) {
+export async function setProblemStatus(problemId: number, actorId: number, status: ProblemStatus, rejectionReason?: string) {
   await execProc("usp_Problem_SetStatus", {
     ProblemID: problemId,
     ActorID: actorId,
     Status: status,
+    RejectionReason: rejectionReason ?? null,
   });
 }
 

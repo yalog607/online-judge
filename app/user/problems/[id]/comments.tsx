@@ -18,6 +18,7 @@ export type CommentView = {
   timeAgo: string;
   likes: number;
   liked: boolean;
+  authorRole: string;
 };
 
 const initial: FormState = {};
@@ -101,8 +102,24 @@ function CommentItem({
     <div className="flex gap-3">
       <Avatar userId={c.userId} name={c.fullName} size={replies ? 34 : 28} />
       <div className="min-w-0 flex-1">
-        <div className="text-sm">
-          <b>{c.fullName}</b> <span className="text-fg-muted">· {c.timeAgo}</span>
+        <div className="text-sm flex items-center gap-2">
+          <b>{c.fullName}</b>
+          {c.authorRole === "Admin" && (
+            <span className="rounded bg-bad/10 px-1.5 py-0.5 text-[10px] font-bold text-bad">
+              Admin
+            </span>
+          )}
+          {c.authorRole === "Teacher" && (
+            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+              Giảng viên
+            </span>
+          )}
+          {c.authorRole === "TA" && (
+            <span className="rounded bg-ok/10 px-1.5 py-0.5 text-[10px] font-bold text-ok">
+              Trợ giảng
+            </span>
+          )}
+          <span className="text-fg-muted">· {c.timeAgo}</span>
         </div>
         <p className="mt-0.5 whitespace-pre-wrap break-words text-sm">{c.content}</p>
         <div className="mt-1.5 flex items-center gap-4 text-xs text-fg-muted">
