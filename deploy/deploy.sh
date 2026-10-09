@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd /root/online-judge
+cd ~/online-judge
 
 git fetch origin
 git reset --hard origin/main
