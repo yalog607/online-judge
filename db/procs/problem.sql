@@ -21,16 +21,14 @@ BEGIN
     IF @Status IS NULL OR @Status NOT IN ('Public', 'Private', 'Hidden', 'Pending')
         SET @Status = 'Public';
 
-<<<<<<< HEAD
     DECLARE @CreatorRole VARCHAR(20);
     SELECT @CreatorRole = Role FROM dbo.Users WHERE UserID = @CreatorID;
     
     IF @CreatorRole = 'TA'
         SET @Status = 'Pending';
-=======
+
     IF @JudgeMode IS NULL OR @JudgeMode NOT IN ('stdin', 'function')
         SET @JudgeMode = 'stdin';
->>>>>>> main
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -108,14 +106,10 @@ BEGIN
         SET Title = @Title, Statement = @Statement, InputFormat = @InputFormat,
             OutputFormat = @OutputFormat, TimeLimit = @TimeLimit, MemoryLimit = @MemoryLimit,
             Tags = @Tags, Difficulty = @Difficulty,
-<<<<<<< HEAD
             Status = CASE WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Rejected' THEN 'Pending' ELSE COALESCE(@Status, Status) END,
-            RejectionReason = CASE WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Rejected' THEN NULL ELSE RejectionReason END
-=======
-            Status = COALESCE(@Status, Status),
+            RejectionReason = CASE WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Rejected' THEN NULL ELSE RejectionReason END,
             JudgeMode = COALESCE(@JudgeMode, JudgeMode),
             FunctionSpec = CASE WHEN COALESCE(@JudgeMode, JudgeMode) = 'function' THEN COALESCE(@FunctionSpec, FunctionSpec) ELSE NULL END
->>>>>>> main
         WHERE ProblemID = @ProblemID;
 
         COMMIT TRANSACTION;
@@ -184,11 +178,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT ProblemID, CreatorID, Title, Statement, InputFormat, OutputFormat,
-<<<<<<< HEAD
-           TimeLimit, MemoryLimit, Tags, Difficulty, Status, RejectionReason
-=======
-           TimeLimit, MemoryLimit, Tags, Difficulty, Status, JudgeMode, FunctionSpec
->>>>>>> main
+           TimeLimit, MemoryLimit, Tags, Difficulty, Status, RejectionReason, JudgeMode, FunctionSpec
     FROM dbo.Problems WHERE ProblemID = @ProblemID;
 END
 GO
