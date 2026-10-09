@@ -84,7 +84,7 @@ export default async function UserContestsPage({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = statusParam === tab.value;
@@ -115,7 +115,7 @@ export default async function UserContestsPage({
           />
           <button
             type="submit"
-            className="rounded-lg bg-fg px-3 py-1.5 text-xs font-semibold text-bg hover:opacity-90"
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg hover:opacity-90"
           >
             Tìm
           </button>
@@ -124,7 +124,7 @@ export default async function UserContestsPage({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {detailedContests.length === 0 ? (
-          <div className="col-span-full rounded-xl border border-line bg-surface p-12 text-center text-fg-muted">
+          <div className="col-span-full card p-12 text-center text-fg-muted">
             Không tìm thấy kỳ thi nào phù hợp.
           </div>
         ) : (

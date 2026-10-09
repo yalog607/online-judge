@@ -23,7 +23,7 @@ export default async function AdminApprovalsPage() {
         <p className="mt-1 text-fg-muted">Quản lý các yêu cầu thăng cấp Trợ giảng.</p>
       </div>
 
-      <div className="rounded-xl bg-surface">
+      <div className="card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-fg-muted">
@@ -78,7 +78,7 @@ export default async function AdminApprovalsPage() {
         <p className="mt-1 mb-4 text-sm text-fg-muted">Bài tập do Trợ giảng tạo cần được duyệt trước khi public.</p>
       </div>
 
-      <div className="rounded-xl bg-surface">
+      <div className="card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-fg-muted">

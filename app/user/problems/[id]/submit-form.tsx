@@ -54,7 +54,7 @@ export function SubmitForm({
           setClientError("Vui lòng nhập mã nguồn");
         } else setClientError(undefined);
       }}
-      className="overflow-hidden rounded-xl bg-surface"
+      className="overflow-hidden card"
     >
       <input type="hidden" name="problemId" value={problemId} />
       {contestId && <input type="hidden" name="contestId" value={contestId} />}

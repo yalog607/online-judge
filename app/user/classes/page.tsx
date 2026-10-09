@@ -35,7 +35,7 @@ export default async function UserClassesPage({
         </p>
       </div>
 
-      <div className="rounded-xl border border-line bg-surface p-6">
+      <div className="card p-6">
         <h2 className="mb-2 text-base font-semibold">Tham gia lớp học mới</h2>
         <p className="mb-4 text-sm text-fg-muted">
           Nhập mã mời được cung cấp bởi giảng viên để tham gia vào lớp.
@@ -46,7 +46,7 @@ export default async function UserClassesPage({
       <div className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Lớp học bạn đã tham gia ({myClasses.length})</h2>
         {myClasses.length === 0 ? (
-          <div className="rounded-xl border border-line bg-surface p-8 text-center text-fg-muted">
+          <div className="card p-8 text-center text-fg-muted">
             Bạn chưa tham gia lớp học nào. Hãy nhập mã mời phía trên để tham gia lớp.
           </div>
         ) : (
@@ -54,7 +54,7 @@ export default async function UserClassesPage({
             {myClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between rounded-xl border border-line bg-surface p-5 hover:border-fg-muted transition-colors"
+                className="flex flex-col justify-between card p-5 hover:border-fg-muted transition-colors"
               >
                 <div>
                   <span className="text-xs font-medium text-primary">Đang tham gia</span>
@@ -126,7 +126,7 @@ export default async function UserClassesPage({
             {otherClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between rounded-xl border border-line bg-surface p-5"
+                className="flex flex-col justify-between card p-5"
               >
                 <div>
                   <span className="text-xs font-medium text-fg-muted">

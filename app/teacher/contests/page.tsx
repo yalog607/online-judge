@@ -107,7 +107,7 @@ export default async function TeacherContestsPage({
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = statusParam === tab.value;
@@ -139,14 +139,14 @@ export default async function TeacherContestsPage({
           />
           <button
             type="submit"
-            className="rounded-lg bg-fg px-3 py-1.5 text-xs font-semibold text-bg hover:opacity-90"
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg hover:opacity-90"
           >
             Tìm
           </button>
         </form>
       </div>
 
-      <div className="rounded-xl bg-surface overflow-hidden border border-line">
+      <div className="card overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-line bg-muted text-fg-muted font-medium">
             <tr>

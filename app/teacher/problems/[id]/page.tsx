@@ -59,7 +59,7 @@ export default async function TeacherProblemPreviewPage({
       >
         ← Quay lại danh sách
       </Link>
-      <div className="rounded-xl bg-surface">
+      <div className="card">
         <div className="border-b border-line px-5 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-[22px] font-semibold tracking-tight">
@@ -67,7 +67,7 @@ export default async function TeacherProblemPreviewPage({
             </h1>
             <Link
               href={`/user/problems/${problem.ProblemID}`}
-              className="rounded-lg bg-fg px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg hover:opacity-90"
             >
               Làm thử bài này
             </Link>
@@ -118,7 +118,7 @@ export default async function TeacherProblemPreviewPage({
         </div>
       </div>
 
-      <div className="rounded-xl bg-surface p-5">
+      <div className="card p-5">
         <h2 className="text-xl font-semibold mb-4">Bình luận & Thảo luận</h2>
         <Comments comments={comments} problemId={problemId} currentUserId={user.userId} canModerate={true} />
       </div>

@@ -40,13 +40,13 @@ export default async function ManageProblemsPage({
         </div>
         <Link
           href="/teacher/problems/new"
-          className="rounded-lg bg-fg px-4 py-2 font-medium text-bg"
+          className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg"
         >
           + Tạo bài tập
         </Link>
       </div>
 
-      <form className="flex flex-wrap gap-3 rounded-xl bg-surface p-3" method="get">
+      <form className="flex flex-wrap gap-3 card p-3" method="get">
         {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
         <input
           name="q"
@@ -66,7 +66,7 @@ export default async function ManageProblemsPage({
           <option value="Pending">Chờ duyệt</option>
           <option value="Rejected">Đã từ chối</option>
         </select>
-        <button type="submit" className="rounded-lg bg-fg px-4 py-2 font-medium text-bg">
+        <button type="submit" className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg">
           Tìm kiếm
         </button>
       </form>
@@ -94,7 +94,7 @@ export default async function ManageProblemsPage({
         )}
       </div>
 
-      <div className="rounded-xl bg-surface">
+      <div className="card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-fg-muted">

@@ -132,19 +132,19 @@ export default async function TeacherContestDetailPage({
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Thời gian bắt đầu</span>
           <p className="mt-1 text-sm font-semibold text-fg">{formatDateTime(contest.startTime)}</p>
         </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Thời gian kết thúc</span>
           <p className="mt-1 text-sm font-semibold text-fg">{formatDateTime(contest.endTime)}</p>
         </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Số lượng bài tập</span>
           <p className="mt-1 text-sm font-semibold text-fg">{problems.length} bài</p>
         </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs text-fg-muted">Số thí sinh tham gia</span>
           <p className="mt-1 text-sm font-semibold text-fg">{contest.participantCount} thí sinh</p>
         </div>
@@ -184,7 +184,7 @@ export default async function TeacherContestDetailPage({
             />
           </div>
 
-          <div className="rounded-xl bg-surface overflow-hidden border border-line">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>
@@ -254,7 +254,7 @@ export default async function TeacherContestDetailPage({
             </Link>
           </div>
 
-          <div className="rounded-xl bg-surface overflow-hidden border border-line">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>

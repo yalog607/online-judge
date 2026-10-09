@@ -173,7 +173,7 @@ export default async function ProblemDetailPage({
         </div>
       )}
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        <div className="rounded-xl bg-surface">
+        <div className="card">
           <div className="border-b border-line px-5 py-4">
             <h1 className="text-[22px] font-semibold tracking-tight">
               {problem.ProblemID}. {problem.Title}

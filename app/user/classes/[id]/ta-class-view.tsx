@@ -79,7 +79,7 @@ export async function TAClassView({
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Mã mời tham gia
           </span>
@@ -90,28 +90,28 @@ export async function TAClassView({
           </div>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Tổng số học sinh
           </span>
           <p className="mt-2 text-xl font-bold text-fg">{students.length} học sinh</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Bài tập đã giao
           </span>
           <p className="mt-2 text-xl font-bold text-fg">{problems.length} bài tập</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Tài liệu đã đăng
           </span>
           <p className="mt-2 text-xl font-bold text-fg">{documents.length} tài liệu</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Ngày thành lập
           </span>
@@ -128,7 +128,7 @@ export async function TAClassView({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="card overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line bg-muted font-medium text-fg-muted">
               <tr>
@@ -184,7 +184,7 @@ export async function TAClassView({
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="card overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line bg-muted font-medium text-fg-muted">
               <tr>
@@ -229,7 +229,7 @@ export async function TAClassView({
       {activeTab === "submissions" && (
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>

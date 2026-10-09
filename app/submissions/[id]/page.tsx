@@ -54,7 +54,7 @@ export default async function SubmissionDetailPage({
           ["Số test qua", detail.PassedCases ?? "—"],
           ["Ngôn ngữ", detail.Language],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-surface p-4">
+          <div key={label} className="card p-4">
             <div className="text-sm text-fg-muted">{label}</div>
             <div className="mt-1 text-lg font-semibold">{value}</div>
           </div>
@@ -62,13 +62,13 @@ export default async function SubmissionDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-xl bg-surface p-4">
+        <div className="card p-4">
           <h2 className="mb-3 font-semibold">Mã nguồn</h2>
           <pre className="overflow-x-auto rounded-lg bg-code-bg p-4 font-mono text-xs">
             {detail.SourceCode}
           </pre>
         </div>
-        <div className="rounded-xl bg-surface">
+        <div className="card">
           <h2 className="border-b border-line px-4 py-3 font-semibold">Kết quả từng testcase</h2>
           <table className="w-full text-sm">
             <thead>

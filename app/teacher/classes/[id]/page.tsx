@@ -117,7 +117,7 @@ export default async function TeacherClassDetailPage({
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Mã mời tham gia
           </span>
@@ -128,28 +128,28 @@ export default async function TeacherClassDetailPage({
           </div>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Tổng số học sinh
           </span>
           <p className="mt-2 text-xl font-bold text-fg">{students.length} học sinh</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Bài tập đã giao
           </span>
           <p className="mt-2 text-xl font-bold text-fg">{problems.length} bài tập</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Tài liệu đã đăng
           </span>
           <p className="mt-2 text-xl font-bold text-fg">{documents.length} tài liệu</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Ngày thành lập
           </span>
@@ -170,7 +170,7 @@ export default async function TeacherClassDetailPage({
           <AssignProblemDialog classId={classId} availableProblems={availableToAdd} />
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="card overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line bg-muted font-medium text-fg-muted">
               <tr>
@@ -237,7 +237,7 @@ export default async function TeacherClassDetailPage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-line bg-surface p-5">
+      <div className="card p-5">
         <h2 className="mb-2 text-base font-semibold text-fg">Đăng tải tài liệu học tập</h2>
         <p className="mb-4 text-xs text-fg-muted">
           Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học sinh trong lớp.
@@ -250,7 +250,7 @@ export default async function TeacherClassDetailPage({
         <TeacherDocumentList classId={classId} documents={documents} />
       </div>
 
-      <div className="rounded-xl border border-line bg-surface p-5">
+      <div className="card p-5">
         <h2 className="mb-2 text-base font-semibold text-fg">Thêm học sinh vào lớp</h2>
         <p className="mb-4 text-xs text-fg-muted">
           Nhập địa chỉ email hoặc tên đăng nhập của học sinh để thêm trực tiếp vào lớp.
@@ -260,7 +260,7 @@ export default async function TeacherClassDetailPage({
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="card overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line bg-muted font-medium text-fg-muted">
               <tr>
@@ -328,7 +328,7 @@ export default async function TeacherClassDetailPage({
       {activeTab === "submissions" && (
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>

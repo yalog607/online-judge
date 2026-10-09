@@ -73,7 +73,7 @@ export default async function UserClassDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Giảng viên
           </span>
@@ -81,7 +81,7 @@ export default async function UserClassDetailPage({
           <span className="text-xs text-fg-muted">{classDetail.TeacherEmail}</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Trạng thái tham gia
           </span>
@@ -90,7 +90,7 @@ export default async function UserClassDetailPage({
           </p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Sĩ số lớp
           </span>
@@ -98,7 +98,7 @@ export default async function UserClassDetailPage({
         </div>
 
         {Boolean(classDetail.IsJoined) && (
-          <div className="rounded-xl border border-line bg-surface p-4">
+          <div className="card p-4">
             <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
               Tài liệu học tập
             </span>
@@ -116,11 +116,11 @@ export default async function UserClassDetailPage({
         </div>
 
         {documents.length === 0 ? (
-          <div className="rounded-xl border border-line bg-surface p-8 text-center text-fg-muted">
+          <div className="card p-8 text-center text-fg-muted">
             Lớp học hiện chưa có tài liệu nào được chia sẻ.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-xs uppercase text-fg-muted">
                 <tr>
@@ -186,11 +186,11 @@ export default async function UserClassDetailPage({
         </div>
 
         {problems.length === 0 ? (
-          <div className="rounded-xl border border-line bg-surface p-8 text-center text-fg-muted">
+          <div className="card p-8 text-center text-fg-muted">
             Lớp học hiện chưa có bài tập nào được giao. Vui lòng quay lại sau!
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-xs uppercase text-fg-muted">
                 <tr>

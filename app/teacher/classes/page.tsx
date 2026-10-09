@@ -31,7 +31,7 @@ export default async function TeacherClassesPage({
         </div>
         <Link
           href="/teacher/classes/new"
-          className="rounded-lg bg-fg px-4 py-2 font-medium text-bg hover:opacity-90"
+          className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:opacity-90"
         >
           + Tạo lớp học
         </Link>
@@ -52,7 +52,7 @@ export default async function TeacherClassesPage({
         </Link>
       </div>
 
-      <form className="flex flex-wrap gap-3 rounded-xl bg-surface p-3" method="get">
+      <form className="flex flex-wrap gap-3 card p-3" method="get">
         {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
         <input
           name="q"
@@ -60,12 +60,12 @@ export default async function TeacherClassesPage({
           placeholder="Tìm theo tên lớp học..."
           className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-fg"
         />
-        <button type="submit" className="rounded-lg bg-fg px-4 py-2 font-medium text-bg">
+        <button type="submit" className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg">
           Tìm kiếm
         </button>
       </form>
 
-      <div className="rounded-xl bg-surface overflow-hidden border border-line">
+      <div className="card overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-line bg-muted text-fg-muted font-medium">
             <tr>
