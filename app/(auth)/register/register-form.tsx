@@ -26,7 +26,15 @@ export function RegisterForm() {
         <div className="flex-1">
           <Field id="otp" label="Mã OTP" required inputMode="numeric" maxLength={6} />
         </div>
+<<<<<<< HEAD
         <SubmitButton formAction={otpAction} formNoValidate className="whitespace-nowrap bg-muted text-fg">
+=======
+        <SubmitButton
+          formAction={otpAction}
+          formNoValidate
+          className="whitespace-nowrap bg-muted text-fg"
+        >
+>>>>>>> main
           Nhận mã OTP
         </SubmitButton>
       </div>

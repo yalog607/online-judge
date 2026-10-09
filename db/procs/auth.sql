@@ -222,8 +222,7 @@ CREATE OR ALTER PROCEDURE app.usp_Auth_RegisterDirect
     @Username VARCHAR(50),
     @Email VARCHAR(100),
     @PasswordHash VARCHAR(255),
-    @FullName NVARCHAR(100),
-    @Role VARCHAR(20) = 'User'
+    @FullName NVARCHAR(100)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -243,7 +242,7 @@ BEGIN
         END;
 
         INSERT dbo.Users (Username, Password, Email, FullName, Role, Status)
-        VALUES (@Username, @PasswordHash, @Email, @FullName, @Role, 'Active');
+        VALUES (@Username, @PasswordHash, @Email, @FullName, 'User', 'Active');
 
         DECLARE @NewUserID INT = SCOPE_IDENTITY();
 

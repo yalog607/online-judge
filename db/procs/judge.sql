@@ -14,7 +14,7 @@ BEGIN
     OUTPUT inserted.SubmissionID INTO @Ids
     WHERE Result = 'Pending';
 
-    SELECT s.SubmissionID, s.ProblemID, s.SourceCode, s.Language, p.TimeLimit, p.MemoryLimit
+    SELECT s.SubmissionID, s.ProblemID, s.SourceCode, s.Language, p.TimeLimit, p.MemoryLimit, p.JudgeMode, p.FunctionSpec
     FROM dbo.Submissions s
     JOIN dbo.Problems p ON p.ProblemID = s.ProblemID
     WHERE s.SubmissionID IN (SELECT SubmissionID FROM @Ids);
@@ -36,7 +36,7 @@ BEGIN
 
     IF @@ROWCOUNT = 0 RETURN;
 
-    SELECT s.SubmissionID, s.ProblemID, s.SourceCode, s.Language, p.TimeLimit, p.MemoryLimit
+    SELECT s.SubmissionID, s.ProblemID, s.SourceCode, s.Language, p.TimeLimit, p.MemoryLimit, p.JudgeMode, p.FunctionSpec
     FROM dbo.Submissions s
     JOIN dbo.Problems p ON p.ProblemID = s.ProblemID
     WHERE s.SubmissionID = @SubmissionID;

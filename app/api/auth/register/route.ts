@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { DomainError } from "@/db/exec";
 import * as authRepo from "@/modules/auth/repo";
-
-const registerSchema = z.object({
-  username: z.string().trim().min(3).max(50),
-  email: z.string().trim().email(),
-  password: z.string().min(6),
-  fullName: z.string().trim().min(2).max(100),
-  role: z.enum(["User", "Teacher", "Admin"]).optional(),
-});
+import { directRegisterSchema } from "@/modules/auth/schema";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const parsed = registerSchema.safeParse(body);
+    const parsed = directRegisterSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0].message },
@@ -23,20 +15,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { username, email, password, fullName, role } = parsed.data;
+    const { username, email, password, fullName } = parsed.data;
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = await authRepo.registerDirect({
       username,
       email,
       passwordHash,
       fullName,
-      role,
     });
 
     return NextResponse.json(
       {
         success: true,
-        data: { userId, username, email, fullName, role: role ?? "User" },
+        data: { userId, username, email, fullName, role: "User" },
       },
       { status: 201 }
     );

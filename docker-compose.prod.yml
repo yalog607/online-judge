@@ -53,6 +53,8 @@ services:
     image: itoj-worker:local
     restart: unless-stopped
     env_file: .env
+    environment:
+      TMPDIR: /var/lib/itoj/judge
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +62,7 @@ services:
         condition: service_healthy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/itoj/judge:/var/lib/itoj/judge
 
   # Only started when the VPS has no reverse proxy of its own:
   # docker compose -f docker-compose.prod.yml --profile standalone-caddy up -d

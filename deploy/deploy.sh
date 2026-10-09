@@ -1,16 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd /opt/itoj
+cd ~/online-judge
 
 git fetch origin
 git reset --hard origin/main
+
+# Docker daemon receives sandbox bind mounts, so this must exist on the host
+# and be mounted into the worker at the same absolute path.
+install -d -m 0755 /var/lib/itoj/judge
 
 # Keep the currently-running images as a rollback target before rebuilding.
 docker tag itoj-web:local itoj-web:prev 2>/dev/null || true
 docker tag itoj-worker:local itoj-worker:prev 2>/dev/null || true
 
-docker compose -f docker-compose.prod.yml build web worker
-docker compose -f docker-compose.prod.yml up -d db
+# Image được build sẵn ở CI và push lên GHCR; VPS chỉ pull rồi gán lại tag
+# local mà docker-compose.prod.yml đang dùng.
+: "${IMAGE_PREFIX:?IMAGE_PREFIX is required}"
+: "${IMAGE_TAG:?IMAGE_TAG is required}"
+for svc in web worker; do
+  docker pull "$IMAGE_PREFIX/itoj-$svc:$IMAGE_TAG"
+  docker tag "$IMAGE_PREFIX/itoj-$svc:$IMAGE_TAG" "itoj-$svc:local"
+done
+docker compose -f docker-compose.prod.yml up -d --wait db
+# Backup trước khi migrate; lỗi backup thì set -e dừng deploy.
+bash deploy/backup.sh
 docker compose -f docker-compose.prod.yml run --rm worker npm run db:migrate
 
 # caddy is not started here: the VPS's own native Caddy reverse-proxies to

@@ -8,6 +8,8 @@ export type ClaimedSubmission = {
   Language: Language;
   TimeLimit: number;
   MemoryLimit: number;
+  JudgeMode: "stdin" | "function";
+  FunctionSpec: string | null;
 };
 
 export type JudgeTestcase = { TestCaseID: number; InputData: string; ExpectedOutput: string };

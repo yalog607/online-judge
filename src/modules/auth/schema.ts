@@ -6,6 +6,14 @@ const otp = z.string().regex(/^\d{6}$/, "Mã OTP gồm 6 chữ số");
 
 export const requestRegisterOtpSchema = z.object({ email });
 
+// Public registration never accepts a role: unknown keys are stripped by zod.
+export const directRegisterSchema = z.object({
+  username: z.string().trim().min(3).max(50),
+  email: z.string().trim().email(),
+  password: z.string().min(6),
+  fullName: z.string().trim().min(2).max(100),
+});
+
 export const registerSchema = z
   .object({
     fullName: z.string().trim().min(2, "Họ tên tối thiểu 2 ký tự"),

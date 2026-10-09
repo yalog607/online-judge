@@ -10,6 +10,7 @@ import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
 import { parseTestcaseZip } from "./testcase-zip";
 import { problemFormSchema, submitCodeSchema } from "./schema";
+import { functionSpecSchema, validateFunctionTestcase } from "./function-spec";
 
 function parseManualTestcases(formData: FormData) {
   const inputs = formData.getAll("tcInput") as string[];
@@ -34,6 +35,31 @@ async function collectTestcases(formData: FormData) {
   return manual;
 }
 
+// Reads the function-mode fields (fnName / fnParamName[] / fnParamType[] / fnReturns) and
+// checks every testcase against the declared signature so mistakes show up when saving.
+function parseFunctionMode(
+  formData: FormData,
+  judgeMode: "stdin" | "function",
+  testcases: { input: string; expectedOutput: string }[],
+): { functionSpec: string | null; error?: string } {
+  if (judgeMode !== "function") return { functionSpec: null };
+
+  const names = formData.getAll("fnParamName") as string[];
+  const types = formData.getAll("fnParamType") as string[];
+  const spec = functionSpecSchema.safeParse({
+    name: formData.get("fnName"),
+    params: names.map((name, i) => ({ name, type: types[i] })),
+    returns: formData.get("fnReturns"),
+  });
+  if (!spec.success) return { functionSpec: null, error: spec.error.issues[0].message };
+
+  for (let i = 0; i < testcases.length; i++) {
+    const problem = validateFunctionTestcase(spec.data, testcases[i].input, testcases[i].expectedOutput);
+    if (problem) return { functionSpec: null, error: `Testcase #${i + 1}: ${problem}` };
+  }
+  return { functionSpec: JSON.stringify(spec.data) };
+}
+
 export async function createProblemAction(
   _prev: FormState,
   formData: FormData,
@@ -42,14 +68,26 @@ export async function createProblemAction(
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  let testcases;
+  try {
+    testcases = await collectTestcases(formData);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Không đọc được testcase." };
+  }
+  const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
+  if (fn.error) return { error: fn.error };
+
   let problemId: number;
   try {
-    problemId = await repo.createProblem({ creatorId: actor.userId, ...parsed.data });
+    problemId = await repo.createProblem({
+      creatorId: actor.userId,
+      ...parsed.data,
+      functionSpec: fn.functionSpec,
+    });
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Tạo bài tập thất bại." };
   }
 
-  const testcases = await collectTestcases(formData);
   if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
   
   if (actor.role === "TA") {
@@ -69,8 +107,15 @@ export async function updateProblemAction(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   try {
-    await repo.updateProblem({ problemId, actorId: actor.userId, ...parsed.data });
     const testcases = await collectTestcases(formData);
+    const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
+    if (fn.error) return { error: fn.error };
+    await repo.updateProblem({
+      problemId,
+      actorId: actor.userId,
+      ...parsed.data,
+      functionSpec: fn.functionSpec,
+    });
     if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Cập nhật bài tập thất bại." };

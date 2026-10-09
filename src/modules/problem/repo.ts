@@ -2,7 +2,12 @@ import "server-only";
 import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
+<<<<<<< HEAD
 export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejected";
+=======
+export type ProblemStatus = "Public" | "Private" | "Hidden";
+export type JudgeMode = "stdin" | "function";
+>>>>>>> main
 
 export type ProblemListRow = {
   ProblemID: number;
@@ -42,7 +47,12 @@ export type ProblemDetail = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+<<<<<<< HEAD
   RejectionReason: string | null;
+=======
+  JudgeMode: JudgeMode;
+  FunctionSpec: string | null;
+>>>>>>> main
 };
 
 export type TestcasePublic = { TestCaseID: number; InputData: string; ExpectedOutput: string };
@@ -110,6 +120,8 @@ export async function createProblem(input: {
   status?: ProblemStatus;
   classId?: number;
   dueDate?: string | null;
+  judgeMode?: JudgeMode;
+  functionSpec?: string | null;
 }): Promise<number> {
   const { rows } = await execProc<{ ProblemID: number }>("usp_Problem_Create", {
     CreatorID: input.creatorId,
@@ -124,6 +136,8 @@ export async function createProblem(input: {
     Status: input.status ?? "Public",
     ClassID: input.classId ?? null,
     DueDate: input.dueDate ? new Date(input.dueDate) : null,
+    JudgeMode: input.judgeMode ?? "stdin",
+    FunctionSpec: input.functionSpec ?? null,
   });
   return rows[0].ProblemID;
 }
@@ -140,6 +154,8 @@ export async function updateProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
+  judgeMode?: JudgeMode;
+  functionSpec?: string | null;
 }) {
   await execProc("usp_Problem_Update", {
     ProblemID: input.problemId,
@@ -153,6 +169,8 @@ export async function updateProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? null,
+    JudgeMode: input.judgeMode ?? null,
+    FunctionSpec: input.functionSpec ?? null,
   });
 }
 
