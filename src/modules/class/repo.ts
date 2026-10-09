@@ -12,6 +12,7 @@ export interface ClassItem {
   Description: string | null;
   IsPublic: boolean;
   ApprovalStatus: string;
+  RejectionReason?: string;
   CreatedAt: string;
   StudentCount: number;
   IsJoined: boolean;
@@ -101,6 +102,9 @@ export interface IClassRepository {
   approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void>;
 
   getClassesForTA(taUserId: number): Promise<ClassItem[]>;
+
+  listClassRequests(): Promise<ClassItem[]>;
+  approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -289,6 +293,20 @@ export class ClassRepository implements IClassRepository {
       items: rows,
       total: rows[0]?.TotalCount ?? 0,
     };
+  }
+
+  async listClassRequests(): Promise<ClassItem[]> {
+    const { rows } = await execProc("usp_Admin_ListClassRequests");
+    return rows as unknown as ClassItem[];
+  }
+
+  async approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void> {
+    await execProc("usp_Admin_ReviewClass", {
+      AdminID: adminId,
+      ClassID: classId,
+      IsApproved: isApproved,
+      RejectionReason: rejectionReason ?? null,
+    });
   }
 }
 

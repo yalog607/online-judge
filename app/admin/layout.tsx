@@ -3,7 +3,7 @@ import { AppShell, type NavItem } from "@/components/app-shell";
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Tổng quan", icon: "home" },
-  { href: "/admin/approvals", label: "Duyệt Yêu Cầu TA", icon: "shield" },
+  { href: "/admin/approvals", label: "Duyệt Yêu Cầu", icon: "shield" },
   { href: "/profile", label: "Hồ sơ", icon: "user" },
 ];
 

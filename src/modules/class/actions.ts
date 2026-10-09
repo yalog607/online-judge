@@ -229,3 +229,22 @@ export async function approveTARequestAction(
     throw error;
   }
 }
+
+export async function approveClassRequestAction(
+  classId: number,
+  isApproved: boolean,
+  rejectionReason?: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const actor = await requireRole("Admin");
+
+  try {
+    await classRepository.approveClassRequest(actor.userId, classId, isApproved, rejectionReason);
+    revalidatePath("/admin/approvals");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}

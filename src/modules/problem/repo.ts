@@ -36,6 +36,7 @@ export type ManageProblemRow = {
 export type ProblemDetail = {
   ProblemID: number;
   CreatorID: number;
+  CreatorFullName: string;
   Title: string;
   Statement: string;
   InputFormat: string | null;

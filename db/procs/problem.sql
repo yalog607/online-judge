@@ -177,9 +177,11 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Get
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT ProblemID, CreatorID, Title, Statement, InputFormat, OutputFormat,
-           TimeLimit, MemoryLimit, Tags, Difficulty, Status, RejectionReason, JudgeMode, FunctionSpec
-    FROM dbo.Problems WHERE ProblemID = @ProblemID;
+    SELECT p.ProblemID, p.CreatorID, u.FullName AS CreatorFullName, p.Title, p.Statement, p.InputFormat, p.OutputFormat,
+           p.TimeLimit, p.MemoryLimit, p.Tags, p.Difficulty, p.Status, p.RejectionReason, p.JudgeMode, p.FunctionSpec
+    FROM dbo.Problems p
+    LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID
+    WHERE p.ProblemID = @ProblemID;
 END
 GO
 

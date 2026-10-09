@@ -136,7 +136,7 @@ export default async function ManageProblemsPage({
             <tr className="border-b border-line text-left text-fg-muted bg-muted font-medium">
               <th className="px-5 py-3">#</th>
               <th className="px-5 py-3">Tên bài</th>
-              <th className="px-5 py-3">Tác giả</th>
+              <th className="px-5 py-3">Người tạo</th>
               <th className="px-5 py-3">Chủ đề</th>
               <th className="px-5 py-3">Độ khó</th>
               <th className="px-5 py-3">Trạng thái</th>
@@ -196,8 +196,8 @@ export default async function ManageProblemsPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-fg-muted">
-                  Không có bài tập nào khớp bộ lọc.
+                <td colSpan={6} className="px-5 py-12 text-center text-fg-muted">
+                  Chưa có bài tập nào.
                 </td>
               </tr>
             )}

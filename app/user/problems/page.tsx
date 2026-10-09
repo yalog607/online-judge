@@ -127,20 +127,21 @@ export default async function ProblemListPage({
         <table className="w-full">
           <thead>
             <tr className="border-b border-line text-left text-sm text-fg-muted">
-              <th className="px-5 py-3">#</th>
+              <th className="px-5 py-3">STT</th>
               <th className="px-5 py-3">Tên bài</th>
-              <th className="px-5 py-3">Tác giả</th>
+              <th className="px-5 py-3">Người tạo</th>
               <th className="px-5 py-3">Chủ đề</th>
               <th className="px-5 py-3">Độ khó</th>
+              <th className="px-5 py-3">Trạng thái bài</th>
               <th className="px-5 py-3">Tỉ lệ AC</th>
-              <th className="px-5 py-3">Trạng thái</th>
+              <th className="px-5 py-3">Trạng thái giải</th>
               {sp.view === "mine" && <th className="px-5 py-3 text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody>
-            {rows.map((p) => (
+            {rows.map((p, i) => (
               <tr key={p.ProblemID} className="border-b border-line last:border-0 hover:bg-muted">
-                <td className="px-5 py-3">{p.ProblemID}</td>
+                <td className="px-5 py-3">{(page - 1) * PAGE_SIZE + i + 1}</td>
                 <td className="px-5 py-3">
                   <Link
                     href={`/user/problems/${p.ProblemID}`}
@@ -152,11 +153,6 @@ export default async function ProblemListPage({
                     <div className="mt-1 text-xs text-fg-muted font-normal">
                       Lớp: {p.ClassName}
                     </div>
-                  )}
-                  {p.Status !== "Public" && (
-                    <span className="ml-2 inline-block">
-                      <ProblemStatusBadge value={p.Status} />
-                    </span>
                   )}
                 </td>
                 <td className="px-5 py-3">{p.CreatorFullName ?? "-"}</td>
@@ -179,6 +175,13 @@ export default async function ProblemListPage({
                 </td>
                 <td className="px-5 py-3">
                   <DifficultyBadge value={p.Difficulty} />
+                </td>
+                <td className="px-5 py-3">
+                  {p.Status !== "Public" ? (
+                    <ProblemStatusBadge value={p.Status} />
+                  ) : (
+                    <span className="text-fg-muted text-sm">Công khai</span>
+                  )}
                 </td>
                 <td className="px-5 py-3">{p.AcRate}%</td>
                 <td className="px-5 py-3">
