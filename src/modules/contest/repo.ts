@@ -87,6 +87,7 @@ export interface IContestRepository {
   getLeaderboard(contestId: number): Promise<ContestLeaderboardEntry[]>;
   startContestNow(contestId: number, requesterId: number, durationMinutes: number): Promise<void>;
   checkProblemAccess(contestId: number, problemId: number, userId: number): Promise<boolean>;
+  deleteContest(contestId: number, requesterId: number): Promise<void>;
 }
 
 export class ContestRepository implements IContestRepository {
@@ -244,6 +245,13 @@ export class ContestRepository implements IContestRepository {
       UserID: userId,
     });
     return Boolean(rows[0]?.CanAccess);
+  }
+
+  async deleteContest(contestId: number, requesterId: number): Promise<void> {
+    await execProc("usp_Contest_Delete", {
+      ContestID: contestId,
+      RequesterID: requesterId,
+    });
   }
 }
 

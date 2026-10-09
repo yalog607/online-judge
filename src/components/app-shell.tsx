@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { logoutAction, endImpersonationAction } from "@/modules/auth/actions";
 import { Icon } from "@/components/icon";
 import { NavLinks, type NavLink } from "@/components/nav-links";
@@ -8,12 +9,14 @@ export type NavItem = NavLink;
 export function AppShell({
   roleLabel,
   fullName,
+  avatar,
   nav,
   impersonating,
   children,
 }: {
   roleLabel: string;
   fullName: string;
+  avatar?: string | null;
   nav: NavItem[];
   impersonating: boolean;
   children: React.ReactNode;
@@ -33,9 +36,20 @@ export function AppShell({
         </Link>
         <NavLinks items={nav} />
         <div className="mt-auto flex items-center gap-2.5 border-t border-line px-2 pt-3 max-[820px]:hidden">
-          <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
-            {initial}
-          </span>
+          {avatar ? (
+            <Image
+              src={avatar}
+              alt={fullName}
+              width={32}
+              height={32}
+              unoptimized
+              className="h-8 w-8 flex-none rounded-full object-cover"
+            />
+          ) : (
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
+              {initial}
+            </span>
+          )}
           <div className="min-w-0 flex-1 leading-tight">
             <div className="truncate font-semibold">{fullName}</div>
             <div className="text-xs text-fg-muted">{roleLabel}</div>
@@ -76,9 +90,20 @@ export function AppShell({
             </label>
           </form>
           <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
-              {initial}
-            </span>
+            {avatar ? (
+              <Image
+                src={avatar}
+                alt={fullName}
+                width={32}
+                height={32}
+                unoptimized
+                className="h-8 w-8 flex-none rounded-full object-cover"
+              />
+            ) : (
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
+                {initial}
+              </span>
+            )}
             <span className="font-medium max-[820px]:hidden">{fullName}</span>
           </div>
         </header>

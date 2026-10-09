@@ -424,3 +424,54 @@ BEGIN
     SELECT app.ufn_CanUserAccessContestProblem(@ContestID, @ProblemID, @UserID) AS CanAccess;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE app.usp_Contest_Delete
+    @ContestID INT,
+    @RequesterID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID)
+        THROW 50038, 'Ky thi khong ton tai.', 1;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.Contests c
+        LEFT JOIN dbo.Users u ON u.UserID = @RequesterID
+        WHERE c.ContestID = @ContestID 
+          AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
+    )
+        THROW 50033, 'Ban khong co quyen xoa ky thi nay.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.Submissions
+        SET ContestID = NULL
+        WHERE ContestID = @ContestID;
+
+        DELETE FROM dbo.Comments
+        WHERE ContestID = @ContestID;
+
+        DELETE FROM dbo.ContestProblemResults
+        WHERE ContestID = @ContestID;
+
+        DELETE FROM dbo.Contest_Problem
+        WHERE ContestID = @ContestID;
+
+        DELETE FROM dbo.Contest_User
+        WHERE ContestID = @ContestID;
+
+        DELETE FROM dbo.Contests
+        WHERE ContestID = @ContestID;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO

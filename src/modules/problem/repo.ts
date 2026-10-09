@@ -12,7 +12,7 @@ export type ProblemListRow = {
   Difficulty: Difficulty;
   Status: ProblemStatus;
   CreatorID: number;
-  CreatorFullName: string;
+  CreatorFullName?: string | null;
   AcRate: number;
   UserStatus: "done" | "tried" | "todo";
   ClassName?: string;
@@ -22,7 +22,7 @@ export type ProblemListRow = {
 export type ManageProblemRow = {
   ProblemID: number;
   CreatorID: number;
-  CreatorFullName: string;
+  CreatorFullName?: string | null;
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
@@ -80,6 +80,7 @@ export async function listForUser(input: {
 export async function listForManage(input: {
   actorId: number;
   search?: string;
+  tag?: string;
   difficulty?: Difficulty;
   status?: ProblemStatus;
   page: number;
@@ -89,6 +90,7 @@ export async function listForManage(input: {
   const { rows } = await execProc<ManageProblemRow>("usp_Problem_ListForManage", {
     ActorID: input.actorId,
     Search: input.search ?? null,
+    Tag: input.tag ?? null,
     Difficulty: input.difficulty ?? null,
     Status: input.status ?? null,
     Page: input.page,

@@ -176,3 +176,22 @@ export async function startContestNowAction(
     throw error;
   }
 }
+
+export async function deleteContestAction(
+  contestId: number
+): Promise<{ error?: string; ok?: boolean; message?: string }> {
+  const actor = await requireRole("Teacher", "Admin");
+
+  try {
+    await contestRepository.deleteContest(contestId, actor.userId);
+    revalidatePath("/teacher/contests");
+    revalidatePath("/user/contests");
+    return { ok: true, message: "Xóa kỳ thi thành công" };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+

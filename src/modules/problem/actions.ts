@@ -121,7 +121,18 @@ export async function updateProblemAction(
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Cập nhật bài tập thất bại." };
   }
-  return { ok: true };
+
+  revalidatePath("/teacher/problems");
+  revalidatePath(`/teacher/problems/${problemId}/edit`);
+  revalidatePath(`/user/problems/${problemId}`);
+  revalidatePath("/user/problems");
+
+  if (actor.role === "TA") {
+    revalidatePath("/user/problems");
+    redirect("/user/problems?view=mine");
+  } else {
+    redirect("/teacher/problems");
+  }
 }
 
 export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus, rejectionReason?: string) {

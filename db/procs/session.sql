@@ -17,7 +17,7 @@ CREATE OR ALTER PROCEDURE app.usp_Session_Validate
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT u.UserID, u.Role, u.FullName, u.Status
+    SELECT u.UserID, u.Role, u.FullName, u.Status, u.Avatar
     FROM dbo.Sessions s
     JOIN dbo.Users u ON u.UserID = s.UserID
     WHERE s.SessionID = @SessionID
@@ -36,7 +36,6 @@ BEGIN
 END
 GO
 
--- Used on account lock so an admin action ends the session immediately.
 CREATE OR ALTER PROCEDURE app.usp_Session_RevokeAllForUser
     @UserID INT
 AS

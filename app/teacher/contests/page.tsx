@@ -4,6 +4,7 @@ import { contestRepository } from "@/modules/contest/repo";
 import { classRepository } from "@/modules/class/repo";
 import { Pager } from "@/components/pager";
 import { CreateContestDialog } from "./create-contest-dialog";
+import { DeleteContestDialog } from "./delete-contest-dialog";
 
 const PAGE_SIZE = 20;
 
@@ -50,10 +51,12 @@ export default async function TeacherContestsPage({
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const statusParam = (sp.status as "Upcoming" | "Ongoing" | "Ended" | "All") || "All";
+  const selectedClassId = sp.classId ? Number(sp.classId) : undefined;
 
   const [{ items: contests, total }, { classes }] = await Promise.all([
     contestRepository.listContests({
       status: statusParam,
+      classId: selectedClassId,
       search: sp.q,
       page,
       pageSize: PAGE_SIZE,
@@ -62,7 +65,7 @@ export default async function TeacherContestsPage({
     }),
     classRepository.listClasses({
       userId: actor.userId,
-      onlyMine: true,
+      onlyMine: actor.role === "Teacher",
       page: 1,
       pageSize: 100,
     }),
@@ -128,9 +131,21 @@ export default async function TeacherContestsPage({
           })}
         </div>
 
-        <form className="flex items-center gap-2" method="get">
+        <form className="flex flex-wrap items-center gap-2" method="get">
           {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
           <input type="hidden" name="status" value={statusParam} />
+          <select
+            name="classId"
+            defaultValue={sp.classId ?? ""}
+            className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary"
+          >
+            <option value="">Lớp học (Tất cả)</option>
+            {classOptions.map((c) => (
+              <option key={c.classId} value={c.classId}>
+                {c.className}
+              </option>
+            ))}
+          </select>
           <input
             name="q"
             defaultValue={sp.q}
@@ -145,6 +160,25 @@ export default async function TeacherContestsPage({
           </button>
         </form>
       </div>
+
+      {sp.classId && (
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-fg-muted">Đang lọc theo lớp:</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary border border-primary/20">
+            {classOptions.find((c) => String(c.classId) === sp.classId)?.className || `Lớp #${sp.classId}`}
+            <Link
+              href={(() => {
+                const params = new URLSearchParams(sp as Record<string, string>);
+                params.delete("classId");
+                return `/teacher/contests?${params.toString()}`;
+              })()}
+              className="hover:opacity-75 font-bold ml-1"
+            >
+              ✕
+            </Link>
+          </span>
+        </div>
+      )}
 
       <div className="card overflow-hidden">
         <table className="w-full text-left text-sm">
@@ -194,8 +228,13 @@ export default async function TeacherContestsPage({
                     <div className="text-[11px] text-fg-subtle">đến {formatDateTime(c.endTime)}</div>
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {c.className ? (
-                      <span className="font-medium text-primary">{c.className}</span>
+                    {c.className && c.classId ? (
+                      <Link
+                        href={`/teacher/contests?classId=${c.classId}${sp.view === "mine" ? "&view=mine" : ""}${statusParam !== "All" ? `&status=${statusParam}` : ""}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {c.className}
+                      </Link>
                     ) : (
                       <span className="text-fg-muted">Công khai</span>
                     )}
@@ -205,12 +244,15 @@ export default async function TeacherContestsPage({
                     <div className="text-[11px]">{c.participantCount} thí sinh</div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/teacher/contests/${c.contestId}`}
-                      className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors"
-                    >
-                      Quản lý
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/teacher/contests/${c.contestId}`}
+                        className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors"
+                      >
+                        Quản lý
+                      </Link>
+                      <DeleteContestDialog contestId={c.contestId} contestName={c.contestName} />
+                    </div>
                   </td>
                 </tr>
               ))

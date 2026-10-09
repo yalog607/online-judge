@@ -71,12 +71,18 @@ export default async function ProblemListPage({
           name="q"
           defaultValue={sp.q}
           placeholder="Tìm kiếm tên bài tập..."
-          className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2"
+          className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+        />
+        <input
+          name="tag"
+          defaultValue={sp.tag}
+          placeholder="Chủ đề (tag)..."
+          className="min-w-[150px] rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         />
         <select
           name="difficulty"
           defaultValue={sp.difficulty ?? ""}
-          className="rounded-lg border border-line bg-muted px-3 py-2"
+          className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         >
           <option value="">Độ khó (Tất cả)</option>
           <option value="Easy">Dễ</option>
@@ -86,17 +92,36 @@ export default async function ProblemListPage({
         <select
           name="status"
           defaultValue={sp.status ?? ""}
-          className="rounded-lg border border-line bg-muted px-3 py-2"
+          className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         >
           <option value="">Trạng thái (Tất cả)</option>
           <option value="done">Đã giải</option>
           <option value="tried">Đã thử</option>
           <option value="todo">Chưa làm</option>
         </select>
-        <button type="submit" className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg">
+        <button type="submit" className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm">
           Tìm kiếm
         </button>
       </form>
+
+      {sp.tag && (
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-fg-muted">Đang lọc theo chủ đề:</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary border border-primary/20">
+            #{sp.tag}
+            <Link
+              href={(() => {
+                const params = new URLSearchParams(sp as Record<string, string>);
+                params.delete("tag");
+                return `/user/problems?${params.toString()}`;
+              })()}
+              className="hover:opacity-75 font-bold ml-1"
+            >
+              ✕
+            </Link>
+          </span>
+        </div>
+      )}
 
       <div className="card">
         <table className="w-full">
@@ -130,8 +155,24 @@ export default async function ProblemListPage({
                     </div>
                   )}
                 </td>
-                <td className="px-5 py-3">{p.CreatorFullName}</td>
-                <td className="px-5 py-3 text-fg-muted">{p.Tags}</td>
+                <td className="px-5 py-3">{p.CreatorFullName ?? "-"}</td>
+                <td className="px-5 py-3 text-fg-muted">
+                  {p.Tags ? (
+                    <div className="flex flex-wrap gap-1">
+                      {p.Tags.split(",").map((t) => t.trim()).filter(Boolean).map((t) => (
+                        <Link
+                          key={t}
+                          href={`/user/problems?tag=${encodeURIComponent(t)}${sp.view === "mine" ? "&view=mine" : ""}`}
+                          className="inline-block rounded bg-muted hover:bg-primary/10 hover:text-primary px-1.5 py-0.5 text-xs text-fg-muted transition-colors border border-line/50"
+                        >
+                          {t}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-fg-subtle text-xs">-</span>
+                  )}
+                </td>
                 <td className="px-5 py-3">
                   <DifficultyBadge value={p.Difficulty} />
                 </td>
@@ -160,7 +201,7 @@ export default async function ProblemListPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={sp.view === "mine" ? 7 : 6} className="px-5 py-12 text-center text-fg-muted">
+                <td colSpan={sp.view === "mine" ? 8 : 7} className="px-5 py-12 text-center text-fg-muted">
                   Không có bài tập nào khớp bộ lọc.
                 </td>
               </tr>
