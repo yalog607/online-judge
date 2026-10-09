@@ -78,7 +78,7 @@ BEGIN
             JOIN dbo.Contests ct ON ct.ContestID = cp.ContestID
             WHERE cp.ProblemID = @ProblemID 
               AND app.ufn_CanUserAccessContest(cp.ContestID, @UserID) = 1
-              AND app.ufn_GetContestStatus(ct.StartTime, ct.EndTime) <> 'Upcoming'
+              AND app.ufn_GetContestStatus(ct.StartTime, ct.EndTime) = 'Ongoing'
         )
             RETURN 1;
     END;

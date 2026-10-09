@@ -141,6 +141,45 @@ BEGIN
     INSERT @Results VALUES ('ufn_GetContestLeaderboard lists joined student', 0);
 END;
 
+-- Test
+UPDATE dbo.Contests 
+SET StartTime = DATEADD(HOUR, -3, SYSUTCDATETIME()), 
+    EndTime = DATEADD(HOUR, -1, SYSUTCDATETIME()) 
+WHERE ContestID = @ContestID;
+
+BEGIN TRY
+    DECLARE @OtherStudent INT;
+    SELECT TOP 1 @OtherStudent = UserID FROM dbo.Users WHERE Role = 'User' AND UserID <> @UserID;
+    IF @OtherStudent IS NULL
+    BEGIN
+        INSERT dbo.Users (Username, Password, Email, FullName, Role)
+        VALUES ('late_student', 'x', 'late_student@test.com', N'Late Student', 'User');
+        SET @OtherStudent = SCOPE_IDENTITY();
+    END;
+
+    EXEC app.usp_Contest_Join
+        @ContestID = @ContestID,
+        @UserID = @OtherStudent,
+        @Password = 'secret123';
+    INSERT @Results VALUES ('app.usp_Contest_Join blocks ended contest', 0);
+END TRY
+BEGIN CATCH
+    INSERT @Results VALUES ('app.usp_Contest_Join blocks ended contest', 1);
+END CATCH;
+
+BEGIN TRY
+    EXEC app.usp_Submission_Create
+        @UserID = @UserID,
+        @ProblemID = @ProblemID,
+        @SourceCode = 'print(1)',
+        @Language = 'python',
+        @ContestID = @ContestID;
+    INSERT @Results VALUES ('app.usp_Submission_Create blocks ended contest', 0);
+END TRY
+BEGIN CATCH
+    INSERT @Results VALUES ('app.usp_Submission_Create blocks ended contest', 1);
+END CATCH;
+
 IF @ContestID IS NOT NULL
 BEGIN
     DELETE FROM dbo.Contests WHERE ContestID = @ContestID;

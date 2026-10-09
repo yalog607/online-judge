@@ -294,22 +294,29 @@ BEGIN
     DECLARE @ExpectedPassword VARCHAR(255);
     DECLARE @ClassID INT;
     DECLARE @CreatorID INT;
+    DECLARE @Status VARCHAR(20);
 
     SELECT 
         @ExpectedPassword = [Password],
         @ClassID = ClassID,
-        @CreatorID = CreatorID
+        @CreatorID = CreatorID,
+        @Status = app.ufn_GetContestStatus(StartTime, EndTime)
     FROM dbo.Contests
     WHERE ContestID = @ContestID;
 
     IF @CreatorID IS NULL
         THROW 50040, 'Ky thi khong ton tai.', 1;
 
+<<<<<<< HEAD
     IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('Teacher', 'Admin'))
         THROW 50043, 'Giao vien hoac Admin khong the tham gia ky thi.', 1;
 
     IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         THROW 50043, 'Ban da co quyen quan ly ky thi nay.', 1;
+=======
+    IF @Status = 'Ended'
+        THROW 50043, 'Ky thi da ket thuc.', 1;
+>>>>>>> main
 
     IF EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         RETURN;

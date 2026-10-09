@@ -186,10 +186,21 @@ export default async function UserContestsPage({
                 <span className="text-xs text-fg-muted">Tạo bởi: {c.creatorName}</span>
                 {c.isJoined ? (
                   <Link
-                    href={getHref(c.contestId)}
-                    className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-fg hover:opacity-90 transition-opacity"
+                    href={`/user/contests/${c.contestId}`}
+                    className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-opacity ${
+                      c.status === "Ended"
+                        ? "border border-line bg-surface text-fg-muted hover:text-fg hover:bg-muted"
+                        : "bg-primary text-primary-fg hover:opacity-90"
+                    }`}
                   >
-                    Vào phòng thi →
+                    {c.status === "Ended" ? "Xem kết quả →" : "Vào phòng thi →"}
+                  </Link>
+                ) : c.status === "Ended" ? (
+                  <Link
+                    href={`/user/contests/${c.contestId}`}
+                    className="rounded-lg border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-fg-muted hover:text-fg hover:bg-muted transition-colors"
+                  >
+                    Xem chi tiết →
                   </Link>
                 ) : (
                   <JoinContestDialog

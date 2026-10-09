@@ -89,11 +89,12 @@ export async function createProblemAction(
   }
 
   if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
-  
+
   if (actor.role === "TA") {
     redirect(`/user/problems/${problemId}/edit`);
   } else {
-    redirect(`/teacher/problems/${problemId}/edit`);
+    revalidatePath("/teacher/problems");
+    redirect("/teacher/problems");
   }
 }
 

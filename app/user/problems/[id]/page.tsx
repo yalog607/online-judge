@@ -41,8 +41,13 @@ export default async function ProblemDetailPage({
   if (!problem) notFound();
 
   let canAccessContest = false;
+  let contestStatus: "Upcoming" | "Ongoing" | "Ended" | null = null;
   if (contestId) {
     canAccessContest = await contestRepository.checkProblemAccess(contestId, problemId, user.userId);
+    if (canAccessContest) {
+      const contest = await contestRepository.getContest(contestId, user.userId);
+      contestStatus = contest?.status ?? null;
+    }
   }
 
   const canAccessDirect = await checkProblemAccess(problemId, user.userId);
@@ -203,6 +208,10 @@ export default async function ProblemDetailPage({
         {problem.Status === "Hidden" ? (
           <div className="rounded-xl border border-bad/30 bg-bad-soft p-4 text-center text-sm font-semibold text-bad">
             Bài tập này đã bị khóa. Không thể nộp bài.
+          </div>
+        ) : contestStatus === "Ended" ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm font-semibold text-amber-500">
+            Kỳ thi này đã kết thúc. Bạn chỉ có thể xem lại đề bài, không thể nộp bài làm.
           </div>
         ) : (
           <SubmitForm

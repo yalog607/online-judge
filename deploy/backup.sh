@@ -35,6 +35,9 @@ if [ "$exists" != "1" ]; then
   exit 0
 fi
 
+# Thư mục bind mount do host tạo (root) nên user mssql chưa ghi được; cấp quyền từ trong container.
+"${COMPOSE[@]}" exec -T -u 0 db chown mssql:root /backups
+
 file="${DB_NAME}_$(date -u +%Y%m%d_%H%M%S).bak"
 path="/backups/$file"
 
