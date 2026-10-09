@@ -2,12 +2,8 @@ import "server-only";
 import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
-<<<<<<< HEAD
 export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejected";
-=======
-export type ProblemStatus = "Public" | "Private" | "Hidden";
 export type JudgeMode = "stdin" | "function";
->>>>>>> main
 
 export type ProblemListRow = {
   ProblemID: number;
@@ -47,12 +43,9 @@ export type ProblemDetail = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
-<<<<<<< HEAD
   RejectionReason: string | null;
-=======
   JudgeMode: JudgeMode;
   FunctionSpec: string | null;
->>>>>>> main
 };
 
 export type TestcasePublic = { TestCaseID: number; InputData: string; ExpectedOutput: string };
