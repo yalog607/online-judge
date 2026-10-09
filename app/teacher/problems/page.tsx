@@ -99,6 +99,7 @@ export default async function ManageProblemsPage({
           <thead>
             <tr className="border-b border-line text-left text-fg-muted">
               <th className="px-5 py-3">Tên bài</th>
+              <th className="px-5 py-3">Người tạo</th>
               <th className="px-5 py-3">Chủ đề</th>
               <th className="px-5 py-3">Độ khó</th>
               <th className="px-5 py-3">Trạng thái</th>
@@ -118,6 +119,7 @@ export default async function ManageProblemsPage({
                     </div>
                   )}
                 </td>
+                <td className="px-5 py-3 text-fg-muted">{p.CreatorFullName}</td>
                 <td className="px-5 py-3 text-fg-muted">{p.Tags}</td>
                 <td className="px-5 py-3">
                   <DifficultyBadge value={p.Difficulty} />
@@ -138,7 +140,7 @@ export default async function ManageProblemsPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-fg-muted">
+                <td colSpan={6} className="px-5 py-12 text-center text-fg-muted">
                   Chưa có bài tập nào.
                 </td>
               </tr>

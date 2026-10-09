@@ -72,6 +72,7 @@ export default async function TeacherClassesPage({
               <th className="px-4 py-3">Tên lớp</th>
               <th className="px-4 py-3">Mã mời</th>
               <th className="px-4 py-3">Sĩ số</th>
+              <th className="px-4 py-3">Trạng thái duyệt</th>
               <th className="px-4 py-3">Chế độ</th>
               <th className="px-4 py-3">Ngày tạo</th>
               <th className="px-4 py-3 text-right">Thao tác</th>
@@ -98,6 +99,22 @@ export default async function TeacherClassesPage({
                     </span>
                   </td>
                   <td className="px-4 py-3">{c.StudentCount} học sinh</td>
+                  <td className="px-4 py-3">
+                    {c.ApprovalStatus === 'Pending' ? (
+                      <span className="text-warn">Chờ duyệt</span>
+                    ) : c.ApprovalStatus === 'Rejected' ? (
+                      <div>
+                        <span className="text-bad">Từ chối</span>
+                        {c.RejectionReason && (
+                          <p className="text-xs text-fg-muted mt-1 max-w-[150px] truncate" title={c.RejectionReason}>
+                            Lý do: {c.RejectionReason}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-ok">Đã duyệt</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {c.IsPublic ? (
                       <span className="text-ok">Công khai</span>
