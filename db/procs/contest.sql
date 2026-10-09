@@ -291,16 +291,21 @@ BEGIN
     DECLARE @ExpectedPassword VARCHAR(255);
     DECLARE @ClassID INT;
     DECLARE @CreatorID INT;
+    DECLARE @Status VARCHAR(20);
 
     SELECT 
         @ExpectedPassword = [Password],
         @ClassID = ClassID,
-        @CreatorID = CreatorID
+        @CreatorID = CreatorID,
+        @Status = app.ufn_GetContestStatus(StartTime, EndTime)
     FROM dbo.Contests
     WHERE ContestID = @ContestID;
 
     IF @CreatorID IS NULL
         THROW 50040, 'Ky thi khong ton tai.', 1;
+
+    IF @Status = 'Ended'
+        THROW 50043, 'Ky thi da ket thuc.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         RETURN;

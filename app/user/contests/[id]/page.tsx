@@ -87,7 +87,7 @@ export default async function UserContestDetailPage({
             )}
           </div>
 
-          {!contest.isJoined && (
+          {!contest.isJoined && contest.status !== "Ended" && (
             <JoinContestDialog
               contestId={contestId}
               contestName={contest.contestName}
@@ -221,12 +221,21 @@ export default async function UserContestDetailPage({
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Link
-                            href={`/user/problems/${p.problemId}?contestId=${contestId}`}
-                            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg hover:opacity-90 transition-opacity"
-                          >
-                            Làm bài →
-                          </Link>
+                          {contest.status === "Ended" ? (
+                            <Link
+                              href={`/user/problems/${p.problemId}?contestId=${contestId}`}
+                              className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-fg hover:bg-muted transition-colors"
+                            >
+                              Xem đề
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/user/problems/${p.problemId}?contestId=${contestId}`}
+                              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg hover:opacity-90 transition-opacity"
+                            >
+                              Làm bài →
+                            </Link>
+                          )}
                         </td>
                       </tr>
                     ))
