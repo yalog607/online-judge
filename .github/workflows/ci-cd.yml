@@ -48,12 +48,52 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  deploy:
-    # CD chỉ chạy sau khi CI pass và chỉ khi có code mới vào main (không chạy trên PR).
+  images:
+    # Build image trên runner (có cache layer) rồi push lên GHCR để VPS chỉ cần pull.
     needs: ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      prefix: ${{ steps.meta.outputs.prefix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.prefix }}/itoj-web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: worker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.prefix }}/itoj-worker:${{ github.sha }}
+          cache-from: type=gha,scope=worker
+          cache-to: type=gha,mode=max,scope=worker
+
+  deploy:
+    # CD chỉ chạy sau khi image đã push và chỉ khi có code mới vào main (không chạy trên PR).
+    needs: images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      packages: read
     concurrency:
       group: deploy-production
       cancel-in-progress: false
@@ -62,6 +102,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
       - name: Deploy on VPS
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          IMAGE_PREFIX: ${{ needs.images.outputs.prefix }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "cd ~/online-judge && git fetch origin && git reset --hard origin/main && bash deploy/deploy.sh"
+          # Token đi qua stdin để không lộ trong danh sách tiến trình trên VPS.
+          echo "$GHCR_TOKEN" | ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}             "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}             "cd ~/online-judge && git fetch origin && git reset --hard origin/main && IMAGE_PREFIX='$IMAGE_PREFIX' IMAGE_TAG='$IMAGE_TAG' bash deploy/deploy.sh"

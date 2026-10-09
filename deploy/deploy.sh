@@ -13,7 +13,14 @@ install -d -m 0755 /var/lib/itoj/judge
 docker tag itoj-web:local itoj-web:prev 2>/dev/null || true
 docker tag itoj-worker:local itoj-worker:prev 2>/dev/null || true
 
-docker compose -f docker-compose.prod.yml build web worker
+# Image được build sẵn ở CI và push lên GHCR; VPS chỉ pull rồi gán lại tag
+# local mà docker-compose.prod.yml đang dùng.
+: "${IMAGE_PREFIX:?IMAGE_PREFIX is required}"
+: "${IMAGE_TAG:?IMAGE_TAG is required}"
+for svc in web worker; do
+  docker pull "$IMAGE_PREFIX/itoj-$svc:$IMAGE_TAG"
+  docker tag "$IMAGE_PREFIX/itoj-$svc:$IMAGE_TAG" "itoj-$svc:local"
+done
 docker compose -f docker-compose.prod.yml up -d db
 docker compose -f docker-compose.prod.yml run --rm worker npm run db:migrate
 
