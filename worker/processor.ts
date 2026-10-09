@@ -12,7 +12,9 @@ import {
 import type { JudgeJobResult } from "@/modules/judge/schema";
 import { LANGUAGES } from "./languages";
 import { InfraError, runInSandbox } from "./sandbox";
-import { outputsMatch } from "./compare";
+import { functionOutputsMatch, outputsMatch } from "./compare";
+import { buildFunctionFiles } from "@/modules/problem/harness";
+import { parseFunctionSpec } from "@/modules/problem/function-spec";
 
 const COMPILE_TIMEOUT_MS = 10000;
 const COMPILE_MEMORY_MB = 512;
@@ -48,14 +50,25 @@ async function judgeSubmission(
   try {
     if (!lang) return await finish("IE", "0/0");
 
-    await fs.writeFile(path.join(dir, lang.sourceFile), submission.SourceCode, "utf8");
+    // Function-mode problems wrap the student's code with a generated driver that reads
+    // stdin, calls the function and prints the result; stdin-mode problems run it as is.
+    const spec = submission.JudgeMode === "function" ? parseFunctionSpec(submission.FunctionSpec) : null;
+    if (submission.JudgeMode === "function" && !spec) return await finish("IE", "0/0");
+    const files = spec
+      ? buildFunctionFiles(submission.Language, spec, submission.SourceCode)
+      : { [lang.sourceFile]: submission.SourceCode };
+    if (!files) return await finish("IE", "0/0");
+    for (const [name, content] of Object.entries(files)) {
+      await fs.writeFile(path.join(dir, name), content, "utf8");
+    }
     await fs.chmod(dir, 0o777).catch(() => {});
 
-    if (lang.compile) {
+    const compileCmd = (spec && lang.functionCompile) || lang.compile;
+    if (compileCmd) {
       const compileResult = await runInSandbox({
         image: lang.image,
         hostDir: dir,
-        cmd: lang.compile,
+        cmd: compileCmd,
         stdin: "",
         timeoutMs: lang.compileTimeoutMs ?? COMPILE_TIMEOUT_MS,
         memoryMb: COMPILE_MEMORY_MB,
@@ -82,7 +95,12 @@ async function judgeSubmission(
       if (run.timedOut) verdict = "TLE";
       else if (run.oomKilled) verdict = "MLE";
       else if (run.exitCode !== 0) verdict = "RE";
-      else if (outputsMatch(run.stdout, tc.ExpectedOutput)) verdict = "AC";
+      else if (
+        spec
+          ? functionOutputsMatch(run.stdout, tc.ExpectedOutput, spec.returns)
+          : outputsMatch(run.stdout, tc.ExpectedOutput)
+      )
+        verdict = "AC";
       else verdict = "WA";
 
       if (verdict === "AC") passed++;

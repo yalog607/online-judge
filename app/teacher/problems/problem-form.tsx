@@ -4,9 +4,13 @@ import { useActionState, useState } from "react";
 import { Field, FormError, SubmitButton } from "@/components/form";
 import { MathContent } from "@/components/math-content";
 import type { FormState } from "@/modules/auth/actions";
-import type { ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
+import type { JudgeMode, ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
+import { FUNCTION_TYPES, parseFunctionSpec } from "@/modules/problem/function-spec";
 
 type Row = { key: number; input: string; expectedOutput: string; isHidden: boolean };
+type ParamRow = { key: number; name: string; type: string };
+
+const FIELD_CLASS = "rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg";
 
 function toRows(testcases: TestcaseFull[]): Row[] {
   return testcases.map((t, i) => ({
@@ -43,6 +47,19 @@ export function ProblemForm({
   const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>(
     problem?.Status ?? "Public",
   );
+
+  const initialSpec = parseFunctionSpec(problem?.FunctionSpec);
+  const [judgeMode, setJudgeMode] = useState<JudgeMode>(problem?.JudgeMode ?? "stdin");
+  const [fnName, setFnName] = useState(initialSpec?.name ?? "");
+  const [fnReturns, setFnReturns] = useState(initialSpec?.returns ?? "int");
+  const [params, setParams] = useState<ParamRow[]>(
+    initialSpec
+      ? initialSpec.params.map((p, i) => ({ key: i, ...p }))
+      : [{ key: 0, name: "", type: "int" }],
+  );
+  const [nextParamKey, setNextParamKey] = useState(params.length);
+  const updateParam = (key: number, patch: Partial<ParamRow>) =>
+    setParams((ps) => ps.map((p) => (p.key === key ? { ...p, ...patch } : p)));
 
   const updateRow = (key: number, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -91,6 +108,107 @@ export function ProblemForm({
             <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
           </select>
         </label>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+          <span>Kiểu chấm bài</span>
+          <select
+            name="judgeMode"
+            value={judgeMode}
+            onChange={(e) => setJudgeMode(e.target.value as JudgeMode)}
+            className={FIELD_CLASS}
+          >
+            <option value="stdin">Đọc stdin / in stdout (truyền thống)</option>
+            <option value="function">Viết hàm (kiểu LeetCode)</option>
+          </select>
+        </label>
+
+        {judgeMode === "function" && (
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-fg-muted">
+              Học viên chỉ viết hàm, hệ thống tự sinh phần đọc input và in kết quả. Mỗi dòng input của
+              testcase là một tham số viết dạng JSON theo đúng thứ tự (ví dụ{" "}
+              <code>[2,7,11,15]</code> rồi xuống dòng <code>9</code>); output mong đợi là một giá trị
+              JSON (ví dụ <code>[0,1]</code>). Nếu đổi chữ ký hàm hãy tải lại testcase cho phù hợp.
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+                <span>Tên hàm</span>
+                <input
+                  name="fnName"
+                  value={fnName}
+                  onChange={(e) => setFnName(e.target.value)}
+                  placeholder="twoSum"
+                  className={FIELD_CLASS}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+                <span>Kiểu trả về</span>
+                <select
+                  name="fnReturns"
+                  value={fnReturns}
+                  onChange={(e) => setFnReturns(e.target.value)}
+                  className={FIELD_CLASS}
+                >
+                  {FUNCTION_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between text-sm font-medium text-fg-muted">
+                <span>Tham số</span>
+                <button
+                  type="button"
+                  className="rounded-lg bg-muted px-3 py-1.5 text-sm font-medium hover:bg-muted/80"
+                  onClick={() => {
+                    setParams((ps) => [...ps, { key: nextParamKey, name: "", type: "int" }]);
+                    setNextParamKey((k) => k + 1);
+                  }}
+                >
+                  + Thêm tham số
+                </button>
+              </div>
+              {params.map((p) => (
+                <div key={p.key} className="flex items-center gap-2">
+                  <input
+                    name="fnParamName"
+                    value={p.name}
+                    onChange={(e) => updateParam(p.key, { name: e.target.value })}
+                    placeholder="nums"
+                    aria-label="Tên tham số"
+                    className={`${FIELD_CLASS} min-w-0 flex-1`}
+                  />
+                  <select
+                    name="fnParamType"
+                    value={p.type}
+                    onChange={(e) => updateParam(p.key, { type: e.target.value })}
+                    aria-label="Kiểu tham số"
+                    className={FIELD_CLASS}
+                  >
+                    {FUNCTION_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="text-bad hover:underline disabled:opacity-40"
+                    disabled={params.length <= 1}
+                    onClick={() => setParams((ps) => ps.filter((x) => x.key !== p.key))}
+                  >
+                    Xóa
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {classes.length > 0 && !problem && (

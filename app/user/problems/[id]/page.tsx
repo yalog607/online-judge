@@ -7,6 +7,8 @@ import { contestRepository } from "@/modules/contest/repo";
 import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
 import { MathContent } from "@/components/math-content";
+import { parseFunctionSpec } from "@/modules/problem/function-spec";
+import { starterCode } from "@/modules/problem/harness";
 import { SubmitForm } from "./submit-form";
 import { ProblemTabs } from "./problem-tabs";
 import { Comments, type CommentView } from "./comments";
@@ -46,6 +48,17 @@ export default async function ProblemDetailPage({
   const canAccessDirect = await checkProblemAccess(problemId, user.userId);
   const canAccess = canAccessDirect || canAccessContest;
   if (!canAccess) notFound();
+
+  // Function-mode problems start the editor from a generated signature stub per language.
+  const functionSpec = problem.JudgeMode === "function" ? parseFunctionSpec(problem.FunctionSpec) : null;
+  const starters = functionSpec
+    ? Object.fromEntries(
+        ["cpp", "c", "java", "python", "javascript", "go", "csharp"].map((l) => [
+          l,
+          starterCode(l, functionSpec) ?? "",
+        ]),
+      )
+    : undefined;
 
   const [examples, history, commentRows] = await Promise.all([
     listPublicTestcases(problemId),
@@ -191,7 +204,11 @@ export default async function ProblemDetailPage({
             Bài tập này đã bị khóa. Không thể nộp bài.
           </div>
         ) : (
-          <SubmitForm problemId={problem.ProblemID} contestId={canAccessContest ? contestId : undefined} />
+          <SubmitForm
+            problemId={problem.ProblemID}
+            contestId={canAccessContest ? contestId : undefined}
+            starters={starters}
+          />
         )}
       </div>
     </div>
