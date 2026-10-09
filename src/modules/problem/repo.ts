@@ -12,6 +12,7 @@ export type ProblemListRow = {
   Difficulty: Difficulty;
   Status: ProblemStatus;
   CreatorID: number;
+  CreatorFullName: string;
   AcRate: number;
   UserStatus: "done" | "tried" | "todo";
   ClassName?: string;
@@ -21,6 +22,7 @@ export type ProblemListRow = {
 export type ManageProblemRow = {
   ProblemID: number;
   CreatorID: number;
+  CreatorFullName: string;
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
@@ -34,6 +36,7 @@ export type ManageProblemRow = {
 export type ProblemDetail = {
   ProblemID: number;
   CreatorID: number;
+  CreatorFullName: string;
   Title: string;
   Statement: string;
   InputFormat: string | null;

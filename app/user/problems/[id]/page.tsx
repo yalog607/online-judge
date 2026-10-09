@@ -181,6 +181,10 @@ export default async function ProblemDetailPage({
             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
               <DifficultyBadge value={problem.Difficulty} />
               <span>
+                Người tạo: {problem.CreatorFullName}
+              </span>
+              <span className="text-line">|</span>
+              <span>
                 Giới hạn: {(problem.TimeLimit / 1000).toFixed(1)}s, {problem.MemoryLimit}MB
               </span>
               {tags.map((t) => (

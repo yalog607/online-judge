@@ -31,8 +31,13 @@ BEGIN
             SET @InviteCode = UPPER(SUBSTRING(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 1, 8));
         END;
 
+        DECLARE @UserRole VARCHAR(20);
+        SELECT @UserRole = Role FROM dbo.Users WHERE UserID = @TeacherID;
+        
+        DECLARE @InitialStatus VARCHAR(20) = CASE WHEN @UserRole = 'Admin' THEN 'Approved' ELSE 'Pending' END;
+
         INSERT dbo.Classes (TeacherID, InviteCode, ClassName, Description, IsPublic, ApprovalStatus)
-        VALUES (@TeacherID, @InviteCode, @ClassName, @Description, @IsPublic, 'Approved');
+        VALUES (@TeacherID, @InviteCode, @ClassName, @Description, @IsPublic, @InitialStatus);
 
         DECLARE @NewClassID INT = SCOPE_IDENTITY();
 
@@ -158,6 +163,7 @@ BEGIN
         c.Description,
         c.IsPublic,
         c.ApprovalStatus,
+        c.RejectionReason,
         c.CreatedAt,
         c.StudentCount,
         CASE 
@@ -201,6 +207,7 @@ BEGIN
         c.Description,
         c.IsPublic,
         c.ApprovalStatus,
+        c.RejectionReason,
         c.CreatedAt,
         c.StudentCount,
         CASE 
@@ -679,6 +686,7 @@ BEGIN
         c.Description,
         c.IsPublic,
         c.ApprovalStatus,
+        c.RejectionReason,
         c.CreatedAt,
         c.StudentCount,
         0 AS IsJoined
@@ -768,6 +776,51 @@ BEGIN
 
         THROW;
     END CATCH
+END;
+GO
+
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListClassRequests
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.ClassID,
+        c.ClassName,
+        c.TeacherID,
+        t.FullName AS TeacherName,
+        c.CreatedAt,
+        c.ApprovalStatus
+    FROM dbo.Classes c
+    JOIN dbo.Users t ON c.TeacherID = t.UserID
+    WHERE c.ApprovalStatus = 'Pending'
+    ORDER BY c.CreatedAt DESC;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ReviewClass
+    @ClassID INT,
+    @AdminID INT,
+    @IsApproved BIT,
+    @RejectionReason NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
+        THROW 50020, 'Nguoi dung khong co quyen admin.', 1;
+
+    DECLARE @Status VARCHAR(20) = CASE WHEN @IsApproved = 1 THEN 'Approved' ELSE 'Rejected' END;
+
+    UPDATE dbo.Classes
+    SET ApprovalStatus = @Status,
+        RejectionReason = CASE WHEN @IsApproved = 0 THEN @RejectionReason ELSE NULL END
+    WHERE ClassID = @ClassID AND ApprovalStatus = 'Pending';
+
+    IF @@ROWCOUNT = 0
+        THROW 50040, 'Khong tim thay yeu cau hoac da duoc xu ly.', 1;
 END;
 GO
 
