@@ -5,6 +5,7 @@ import { getSubmission } from "@/modules/submission/repo";
 import { VerdictBadge } from "@/components/badge";
 import { SubmissionLive } from "@/components/submission-live";
 import { DomainError } from "@/db/exec";
+import { RejudgeButton } from "./rejudge-button";
 
 export default async function SubmissionDetailPage({
   params,
@@ -36,7 +37,12 @@ export default async function SubmissionDetailPage({
           >
             ← {detail.ProblemTitle}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Bài nộp #{detail.SubmissionID}</h1>
+          <div className="mt-1 flex items-center gap-3">
+            <h1 className="text-2xl font-semibold">Bài nộp #{detail.SubmissionID}</h1>
+            {["Teacher", "Admin", "TA"].includes(user.role) && (
+              <RejudgeButton submissionId={detail.SubmissionID} />
+            )}
+          </div>
         </div>
         <VerdictBadge value={detail.Result} />
       </div>

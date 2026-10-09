@@ -41,7 +41,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 
         FROM dbo.Users 
-        WHERE UserID = @UserID AND Role = 'Admin'
+        WHERE UserID = @UserID AND Role IN ('Admin', 'Teacher', 'TA')
     )
         RETURN 1;
 

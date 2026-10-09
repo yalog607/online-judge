@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
-import { leaveClassAction } from "@/modules/class/actions";
+import { leaveClassAction, joinPublicClassAction } from "@/modules/class/actions";
 import { DifficultyBadge, UserStatusBadge } from "@/components/badge";
 import { LeaveButton } from "./leave-button";
+import { JoinPublicButton } from "./join-public-button";
+import { TAClassView } from "./ta-class-view";
 
 function getFormatTag(fileName: string, url: string) {
   const extFromFileName = fileName.includes(".") ? fileName.split(".").pop() : "";
@@ -16,23 +18,32 @@ function getFormatTag(fileName: string, url: string) {
 
 export default async function UserClassDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ tab?: string }>;
 }) {
-  const user = await requireRole("User");
+  const user = await requireRole("User", "TA");
   const { id } = await params;
+  const sParams = await searchParams;
+  const activeTab = sParams?.tab || "overview";
   const classId = parseInt(id, 10);
   if (isNaN(classId)) notFound();
 
-  const [classDetail, problems, documents] = await Promise.all([
-    classRepository.getClassDetail(classId, user.userId),
+  const classDetail = await classRepository.getClassDetail(classId, user.userId);
+  if (!classDetail) notFound();
+
+  if (classDetail.IsTA) {
+    return <TAClassView classId={classId} userId={user.userId} activeTab={activeTab} />;
+  }
+
+  const [problems, documents] = await Promise.all([
     classRepository.getClassProblems(classId, user.userId),
     documentRepository.listDocuments(classId, user.userId).catch(() => []),
   ]);
 
-  if (!classDetail) notFound();
-
   const leaveActionWithId = leaveClassAction.bind(null, classId);
+  const joinPublicActionWithId = joinPublicClassAction.bind(null, classId);
 
   return (
     <div className="flex flex-col gap-6 pt-8">
@@ -50,11 +61,15 @@ export default async function UserClassDetailPage({
           </p>
         </div>
 
-        {classDetail.IsJoined && (
+        {classDetail.IsJoined ? (
           <form action={leaveActionWithId}>
             <LeaveButton />
           </form>
-        )}
+        ) : classDetail.IsPublic ? (
+          <form action={joinPublicActionWithId}>
+            <JoinPublicButton />
+          </form>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -82,13 +97,18 @@ export default async function UserClassDetailPage({
           <p className="mt-2 text-lg font-bold text-fg">{classDetail.StudentCount} học sinh</p>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Tài liệu học tập
-          </span>
-          <p className="mt-2 text-lg font-bold text-fg">{documents.length} tài liệu</p>
-        </div>
+        {Boolean(classDetail.IsJoined) && (
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+              Tài liệu học tập
+            </span>
+            <p className="mt-2 text-lg font-bold text-fg">{documents.length} tài liệu</p>
+          </div>
+        )}
       </div>
+
+      {Boolean(classDetail.IsJoined) && (
+        <>
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -224,6 +244,8 @@ export default async function UserClassDetailPage({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

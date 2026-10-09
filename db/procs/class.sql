@@ -164,15 +164,19 @@ BEGIN
             WHEN @UserID IS NOT NULL AND app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 THEN 1 
             ELSE 0 
         END AS IsJoined,
+        CASE 
+            WHEN @UserID IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID) THEN 1 
+            ELSE 0 
+        END AS IsTA,
         COUNT(*) OVER() AS TotalCount
     FROM app.uvw_ClassOverview c
     WHERE 
         (@Search IS NULL OR c.ClassName LIKE '%' + @Search + '%' OR c.TeacherName LIKE '%' + @Search + '%')
         AND (c.ApprovalStatus = 'Approved' OR c.TeacherID = @UserID)
         AND (
-            (@OnlyMine = 1 AND (c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1))
+            (@OnlyMine = 1 AND (c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)))
             OR
-            (@OnlyMine = 0 AND (c.IsPublic = 1 OR c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1))
+            (@OnlyMine = 0 AND (c.IsPublic = 1 OR c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)))
         )
     ORDER BY c.CreatedAt DESC
     OFFSET @Offset ROWS
@@ -202,7 +206,11 @@ BEGIN
         CASE 
             WHEN @UserID IS NOT NULL AND app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 THEN 1 
             ELSE 0 
-        END AS IsJoined
+        END AS IsJoined,
+        CASE 
+            WHEN @UserID IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID) THEN 1 
+            ELSE 0 
+        END AS IsTA
     FROM app.uvw_ClassOverview c
     WHERE c.ClassID = @ClassID;
 END;
@@ -231,6 +239,7 @@ BEGIN
 
     IF @TeacherID <> @ActorID 
        AND app.ufn_IsStudentInClass(@ClassID, @ActorID) = 0
+       AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @ActorID)
        AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
     BEGIN
         THROW 50026, 'Ban khong co quyen xem danh sach hoc sinh lop nay.', 1;
@@ -243,7 +252,8 @@ BEGIN
         FullName,
         Email,
         JoinDate,
-        ProgressPercent
+        ProgressPercent,
+        IsTA
     FROM app.ufn_GetClassStudentList(@ClassID)
     ORDER BY JoinDate DESC;
 END;
@@ -273,7 +283,12 @@ BEGIN
         END AS UserStatus
     FROM dbo.Class_Problem cp
     JOIN dbo.Problems p ON p.ProblemID = cp.ProblemID
-    WHERE cp.ClassID = @ClassID
+    WHERE cp.ClassID = @ClassID AND (
+        p.Status IN ('Public', 'Private') OR 
+        EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID AND TeacherID = @UserID) OR 
+        EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin') OR 
+        EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID)
+    )
     ORDER BY cp.AssignedDate DESC;
 END;
 GO
@@ -294,7 +309,11 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+            WHERE c.ClassID = @ClassID AND (
+                c.TeacherID = @TeacherID OR 
+                u.Role = 'Admin' OR
+                EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
+            )
         )
         BEGIN
             THROW 50027, 'Ban khong co quyen them hoc sinh vao lop nay.', 1;
@@ -347,7 +366,11 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+            WHERE c.ClassID = @ClassID AND (
+                c.TeacherID = @TeacherID OR 
+                u.Role = 'Admin' OR
+                EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
+            )
         )
         BEGIN
             THROW 50027, 'Ban khong co quyen xoa hoc sinh khoi lop nay.', 1;
@@ -392,7 +415,11 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+            WHERE c.ClassID = @ClassID AND (
+                c.TeacherID = @TeacherID OR 
+                u.Role = 'Admin' OR
+                EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
+            )
         )
         BEGIN
             THROW 50035, 'Ban khong co quyen cap nhat thong tin lop hoc nay.', 1;
@@ -441,7 +468,11 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+        WHERE c.ClassID = @ClassID AND (
+            c.TeacherID = @TeacherID OR 
+            u.Role = 'Admin' OR
+            EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
+        )
     )
         THROW 50027, 'Ban khong co quyen giao bai tap cho lop hoc nay.', 1;
 
@@ -491,7 +522,11 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+        WHERE c.ClassID = @ClassID AND (
+            c.TeacherID = @TeacherID OR 
+            u.Role = 'Admin' OR
+            EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
+        )
     )
         THROW 50027, 'Ban khong co quyen go bai tap khoi lop hoc nay.', 1;
 
@@ -507,6 +542,232 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         THROW;
     END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_RequestUpgradeToTA
+    @ClassID INT,
+    @UserID INT,
+    @TeacherID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+    )
+        THROW 50027, 'Ban khong co quyen gui yeu cau nang cap cho lop nay.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
+        THROW 50030, 'Nguoi nay khong co trong lop hoc.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF NOT EXISTS (SELECT 1 FROM dbo.TA_Requests WHERE ClassID = @ClassID AND UserID = @UserID AND Status = 'Pending')
+        BEGIN
+            INSERT dbo.TA_Requests (ClassID, UserID, RequestedBy)
+            VALUES (@ClassID, @UserID, @TeacherID);
+        END
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ApproveTA
+    @RequestID INT,
+    @AdminID INT,
+    @IsApproved BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
+        THROW 50031, 'Ban khong co quyen phe duyet.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        DECLARE @ClassID INT, @UserID INT;
+        SELECT @ClassID = ClassID, @UserID = UserID FROM dbo.TA_Requests WHERE RequestID = @RequestID AND Status = 'Pending';
+        
+        IF @ClassID IS NOT NULL
+        BEGIN
+            IF @IsApproved = 1
+            BEGIN
+                UPDATE dbo.TA_Requests SET Status = 'Approved' WHERE RequestID = @RequestID;
+                IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID)
+                    INSERT dbo.Class_TA (ClassID, UserID_TA) VALUES (@ClassID, @UserID);
+                
+                -- Upgrade role if they are currently just a 'User'
+                UPDATE dbo.Users SET Role = 'TA' WHERE UserID = @UserID AND Role = 'User';
+            END
+            ELSE
+            BEGIN
+                UPDATE dbo.TA_Requests SET Status = 'Rejected' WHERE RequestID = @RequestID;
+            END
+        END
+        
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_DowngradeFromTA
+    @ClassID INT,
+    @UserID INT,
+    @TeacherID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+    )
+        THROW 50027, 'Ban khong co quyen go bo TA khoi lop nay.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        DELETE FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID;
+        
+        -- If user is no longer a TA in any class, and they are a TA, downgrade them to User
+        IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE UserID_TA = @UserID)
+           AND EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'TA')
+        BEGIN
+            UPDATE dbo.Users SET Role = 'User' WHERE UserID = @UserID;
+        END
+        
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_GetForTA
+    @TAUserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.ClassID,
+        c.TeacherID,
+        c.TeacherName,
+        c.TeacherEmail,
+        c.InviteCode,
+        c.ClassName,
+        c.Description,
+        c.IsPublic,
+        c.ApprovalStatus,
+        c.CreatedAt,
+        c.StudentCount,
+        0 AS IsJoined
+    FROM app.uvw_ClassOverview c
+    JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID
+    WHERE ta.UserID_TA = @TAUserID;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListTARequests
+    @AdminID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
+        THROW 50031, 'Ban khong co quyen truy cap.', 1;
+
+    SELECT 
+        r.RequestID,
+        r.ClassID,
+        c.ClassName,
+        r.UserID AS StudentID,
+        u.FullName AS StudentName,
+        r.RequestedBy AS TeacherID,
+        t.FullName AS TeacherName,
+        r.RequestDate,
+        r.Status
+    FROM dbo.TA_Requests r
+    JOIN dbo.Classes c ON r.ClassID = c.ClassID
+    JOIN dbo.Users u ON r.UserID = u.UserID
+    JOIN dbo.Users t ON r.RequestedBy = t.UserID
+    ORDER BY CASE WHEN r.Status = 'Pending' THEN 0 ELSE 1 END, r.RequestDate DESC;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_JoinPublic
+    @UserID INT,
+    @ClassID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @ApprovalStatus VARCHAR(20);
+        DECLARE @IsPublic BIT;
+
+        SELECT 
+            @ApprovalStatus = ApprovalStatus,
+            @IsPublic = IsPublic
+        FROM dbo.Classes
+        WHERE ClassID = @ClassID;
+
+        IF @ApprovalStatus IS NULL
+        BEGIN
+            THROW 50021, 'Lop hoc khong ton tai.', 1;
+        END;
+
+        IF @ApprovalStatus <> 'Approved'
+        BEGIN
+            THROW 50022, 'Lop hoc chua duoc phe duyet.', 1;
+        END;
+
+        IF @IsPublic = 0
+        BEGIN
+            THROW 50024, 'Day khong phai la lop hoc cong khai.', 1;
+        END;
+
+        IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
+        BEGIN
+            THROW 50023, 'Ban da tham gia lop hoc nay roi.', 1;
+        END;
+
+        INSERT dbo.Class_Student (ClassID, UserID, JoinDate, ProgressPercent)
+        VALUES (@ClassID, @UserID, SYSUTCDATETIME(), 0.0);
+
+        COMMIT TRANSACTION;
+
+        SELECT @ClassID AS ClassID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH
 END;
 GO
 

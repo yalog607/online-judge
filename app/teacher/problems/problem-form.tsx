@@ -22,11 +22,15 @@ export function ProblemForm({
   problem,
   testcases,
   classes = [],
+  isTA = false,
+  disabled = false,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   problem?: ProblemDetail;
   testcases?: TestcaseFull[];
   classes?: Array<{ ClassID: number; ClassName: string }>;
+  isTA?: boolean;
+  disabled?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {});
   const [rows, setRows] = useState<Row[]>(
@@ -49,6 +53,7 @@ export function ProblemForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <fieldset disabled={disabled} className="flex flex-col gap-6 group">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field id="title" label="Tên bài tập" defaultValue={problem?.Title} required />
         <Field id="tags" label="Thẻ (phân cách bằng dấu phẩy)" defaultValue={problem?.Tags ?? ""} />
@@ -78,19 +83,23 @@ export function ProblemForm({
             <option value="Hard">Khó</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-          <span>Trạng thái bài tập</span>
-          <select
-            name="status"
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as ProblemStatus)}
-            className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
-          >
-            <option value="Public">Công khai (Public - Mọi người có thể làm)</option>
-            <option value="Private">Riêng tư (Private - Dành cho lớp học &amp; kỳ thi)</option>
-            <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
-          </select>
-        </label>
+        {isTA ? (
+          <input type="hidden" name="status" value="Pending" />
+        ) : (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+            <span>Trạng thái bài tập</span>
+            <select
+              name="status"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as ProblemStatus)}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+            >
+              <option value="Public">Công khai (Public - Mọi người có thể làm)</option>
+              <option value="Private">Riêng tư (Private - Dành cho lớp học &amp; kỳ thi)</option>
+              <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
+            </select>
+          </label>
+        )}
       </div>
 
       {classes.length > 0 && !problem && (
@@ -103,12 +112,14 @@ export function ProblemForm({
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-              <span>Lớp học</span>
+              <span>Lớp học {isTA && <span className="text-bad">*</span>}</span>
               <select
                 name="classId"
+                required={isTA}
                 className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
               >
-                <option value="">-- Không giao cho lớp học --</option>
+                {!isTA && <option value="">-- Không giao cho lớp học --</option>}
+                {isTA && <option value="" disabled selected>-- Chọn lớp học --</option>}
                 {classes.map((c) => (
                   <option key={c.ClassID} value={c.ClassID}>
                     {c.ClassName}
@@ -307,7 +318,8 @@ export function ProblemForm({
         <p className="rounded-lg bg-ok-soft px-3 py-2 text-sm text-ok">Đã lưu bài tập.</p>
       )}
       <FormError message={state.error} />
-      <SubmitButton className="self-start">Lưu bài tập</SubmitButton>
+      {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+      </fieldset>
     </form>
   );
 }

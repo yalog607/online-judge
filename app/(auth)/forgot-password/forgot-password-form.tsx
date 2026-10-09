@@ -17,7 +17,7 @@ export function ForgotPasswordForm() {
         <div className="flex-1">
           <Field id="otp" label="Mã OTP" required inputMode="numeric" maxLength={6} />
         </div>
-        <SubmitButton formAction={otpAction} className="whitespace-nowrap bg-muted text-fg">
+        <SubmitButton formAction={otpAction} formNoValidate className="whitespace-nowrap bg-muted text-fg">
           Gửi mã
         </SubmitButton>
       </div>

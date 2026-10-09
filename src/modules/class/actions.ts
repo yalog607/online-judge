@@ -67,6 +67,13 @@ export async function joinClassAction(
   }
 }
 
+export async function joinPublicClassAction(classId: number): Promise<void> {
+  const user = await requireUser();
+  await classRepository.joinPublicClass(user.userId, classId);
+  revalidatePath(`/user/classes/${classId}`);
+  redirect(`/user/classes/${classId}`);
+}
+
 export async function leaveClassAction(classId: number): Promise<void> {
   const user = await requireUser();
   await classRepository.leaveClass(user.userId, classId);
@@ -178,6 +185,42 @@ export async function removeClassProblemAction(
     await classRepository.removeProblem(classId, actor.userId, problemId);
     revalidatePath(`/teacher/classes/${classId}`);
     revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function requestTAUpgradeAction(
+  classId: number,
+  studentId: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const actor = await requireRole("Teacher", "Admin");
+
+  try {
+    await classRepository.requestUpgradeToTA(classId, actor.userId, studentId);
+    revalidatePath(`/teacher/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function approveTARequestAction(
+  requestId: number,
+  isApproved: boolean
+): Promise<{ ok?: boolean; error?: string }> {
+  const actor = await requireRole("Admin");
+
+  try {
+    await classRepository.approveTARequest(actor.userId, requestId, isApproved);
+    revalidatePath("/admin/approvals");
     return { ok: true };
   } catch (error) {
     if (error instanceof DomainError) {

@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
 
-export type Role = "User" | "Teacher" | "Admin";
+export type Role = "User" | "Teacher" | "Admin" | "TA";
 
 export type SessionPayload = {
   sessionId: string;

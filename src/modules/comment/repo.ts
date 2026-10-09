@@ -11,6 +11,7 @@ export type CommentRow = {
   CreatedAt: string;
   LikeCount: number;
   LikedByMe: boolean;
+  AuthorRole: string;
 };
 
 export async function listComments(problemId: number, userId: number) {

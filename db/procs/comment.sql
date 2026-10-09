@@ -15,7 +15,17 @@ BEGIN
         (SELECT COUNT(*) FROM dbo.ProblemCommentLikes l WHERE l.CommentID = c.CommentID) AS LikeCount,
         CAST(CASE WHEN EXISTS (
             SELECT 1 FROM dbo.ProblemCommentLikes l WHERE l.CommentID = c.CommentID AND l.UserID = @UserID
-        ) THEN 1 ELSE 0 END AS BIT) AS LikedByMe
+        ) THEN 1 ELSE 0 END AS BIT) AS LikedByMe,
+        CASE 
+            WHEN u.Role = 'Admin' THEN 'Admin'
+            WHEN u.Role = 'Teacher' THEN 'Teacher'
+            WHEN u.Role = 'TA' AND EXISTS (
+                SELECT 1 FROM dbo.Class_TA cta 
+                JOIN dbo.Class_Problem cp ON cp.ClassID = cta.ClassID
+                WHERE cp.ProblemID = @ProblemID AND cta.UserID_TA = c.UserID
+            ) THEN 'TA'
+            ELSE 'User'
+        END AS AuthorRole
     FROM dbo.ProblemComments c
     JOIN dbo.Users u ON u.UserID = c.UserID
     WHERE c.ProblemID = @ProblemID
@@ -36,8 +46,32 @@ BEGIN
     IF LEN(RTRIM(LTRIM(ISNULL(@Content, N'')))) = 0
         THROW 50070, 'Noi dung binh luan khong duoc de trong.', 1;
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID AND Status = 'Public')
-        THROW 50071, 'Bai tap khong ton tai.', 1;
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.Problems p
+        LEFT JOIN dbo.Users u ON u.UserID = @UserID
+        WHERE p.ProblemID = @ProblemID 
+          AND (
+            p.Status = 'Public' 
+            OR p.CreatorID = @UserID 
+            OR u.Role = 'Admin'
+            OR EXISTS (
+                SELECT 1 FROM dbo.Class_TA cta 
+                JOIN dbo.Class_Problem cp ON cp.ClassID = cta.ClassID
+                WHERE cp.ProblemID = @ProblemID AND cta.UserID_TA = @UserID
+            )
+            OR EXISTS (
+                SELECT 1 FROM dbo.Classes c
+                JOIN dbo.Class_Problem cp ON cp.ClassID = c.ClassID
+                WHERE cp.ProblemID = @ProblemID AND c.TeacherID = @UserID
+            )
+            OR EXISTS (
+                SELECT 1 FROM dbo.Class_Student cs
+                JOIN dbo.Class_Problem cp ON cp.ClassID = cs.ClassID
+                WHERE cp.ProblemID = @ProblemID AND cs.UserID = @UserID
+            )
+          )
+    )
+        THROW 50071, 'Bai tap khong ton tai hoac ban khong co quyen binh luan.', 1;
 
     IF @ParentID IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM dbo.ProblemComments
@@ -85,7 +119,7 @@ BEGIN
 
     IF @Owner IS NULL
         THROW 50073, 'Binh luan khong ton tai.', 1;
-    IF @Owner <> @UserID AND ISNULL(@Role, 'User') NOT IN ('Teacher', 'Admin')
+    IF @Owner <> @UserID AND ISNULL(@Role, 'User') NOT IN ('Teacher', 'Admin', 'TA')
         THROW 50074, 'Khong co quyen xoa binh luan nay.', 1;
 
     BEGIN TRANSACTION;

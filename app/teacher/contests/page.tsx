@@ -57,6 +57,8 @@ export default async function TeacherContestsPage({
       search: sp.q,
       page,
       pageSize: PAGE_SIZE,
+      userId: actor.userId,
+      onlyMine: sp.view === "mine",
     }),
     classRepository.listClasses({
       userId: actor.userId,
@@ -90,6 +92,21 @@ export default async function TeacherContestsPage({
         <CreateContestDialog classes={classOptions} />
       </div>
 
+      <div className="flex gap-4 border-b border-line pb-2">
+        <Link 
+          href={`/teacher/contests?status=${statusParam}`} 
+          className={`font-medium pb-2 -mb-[9px] ${sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Tất cả
+        </Link>
+        <Link 
+          href={`/teacher/contests?view=mine&status=${statusParam}`} 
+          className={`font-medium pb-2 -mb-[9px] ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Kỳ thi của tôi
+        </Link>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-surface p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
@@ -112,6 +129,7 @@ export default async function TeacherContestsPage({
         </div>
 
         <form className="flex items-center gap-2" method="get">
+          {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
           <input type="hidden" name="status" value={statusParam} />
           <input
             name="q"

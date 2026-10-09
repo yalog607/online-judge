@@ -1,7 +1,7 @@
 CREATE OR ALTER VIEW dbo.vw_ContestStandings AS
 SELECT 
     c.ContestID,
-    c.Title,
+    c.ContestName AS Title,
     u.Username,
     cu.TotalScore,
     cu.PenaltyTime

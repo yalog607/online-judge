@@ -8,7 +8,7 @@ export default async function UserClassesPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const user = await requireRole("User");
+  const user = await requireRole("User", "TA");
   const sp = await searchParams;
 
   const { classes } = await classRepository.listClasses({
@@ -18,8 +18,13 @@ export default async function UserClassesPage({
     pageSize: 50,
   });
 
-  const myClasses = classes.filter((c) => c.IsJoined);
-  const otherClasses = classes.filter((c) => !c.IsJoined);
+  const taClasses = classes.filter((c) => c.IsTA);
+  const myClasses = classes.filter((c) => c.IsJoined && !c.IsTA);
+  const otherClasses = classes.filter((c) => !c.IsJoined && !c.IsTA);
+
+  const getHref = (classId: number) => {
+    return `/user/classes/${classId}`;
+  };
 
   return (
     <div className="flex flex-col gap-8 pt-8">
@@ -54,7 +59,7 @@ export default async function UserClassesPage({
                 <div>
                   <span className="text-xs font-medium text-primary">Đang tham gia</span>
                   <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={`/user/classes/${c.ClassID}`} className="hover:underline">
+                    <Link href={getHref(c.ClassID)} className="hover:underline">
                       {c.ClassName}
                     </Link>
                   </h3>
@@ -66,7 +71,7 @@ export default async function UserClassesPage({
                 <div className="mt-6 flex items-center justify-between border-t border-line pt-3 text-xs text-fg-muted">
                   <span>GV: {c.TeacherName}</span>
                   <Link
-                    href={`/user/classes/${c.ClassID}`}
+                    href={getHref(c.ClassID)}
                     className="font-medium text-fg hover:underline"
                   >
                     Vào lớp →
@@ -77,6 +82,42 @@ export default async function UserClassesPage({
           </div>
         )}
       </div>
+
+      {taClasses.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Lớp học bạn phụ trách (Trợ giảng)</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {taClasses.map((c) => (
+              <div
+                key={c.ClassID}
+                className="flex flex-col justify-between rounded-xl border border-primary/30 bg-primary/5 p-5 hover:border-primary/50 transition-colors"
+              >
+                <div>
+                  <span className="text-xs font-medium text-primary uppercase tracking-wider">Trợ giảng</span>
+                  <h3 className="mt-1 text-lg font-semibold text-fg">
+                    <Link href={getHref(c.ClassID)} className="hover:underline">
+                      {c.ClassName}
+                    </Link>
+                  </h3>
+                  <div className="mt-2 flex flex-col gap-1 text-sm text-fg-muted">
+                    <span>Giảng viên: {c.TeacherName}</span>
+                    <span>Sĩ số: {c.StudentCount}</span>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Link
+                    href={getHref(c.ClassID)}
+                    className="inline-block w-full text-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg hover:bg-primary/90 transition-colors"
+                  >
+                    Quản lý lớp →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {otherClasses.length > 0 && (
         <div className="flex flex-col gap-4">
@@ -91,7 +132,11 @@ export default async function UserClassesPage({
                   <span className="text-xs font-medium text-fg-muted">
                     {c.IsPublic ? "Lớp học công khai" : "Lớp học riêng tư"}
                   </span>
-                  <h3 className="mt-1 text-lg font-semibold text-fg">{c.ClassName}</h3>
+                  <h3 className="mt-1 text-lg font-semibold text-fg">
+                    <Link href={`/user/classes/${c.ClassID}`} className="hover:underline">
+                      {c.ClassName}
+                    </Link>
+                  </h3>
                   <p className="mt-1 text-sm text-fg-muted line-clamp-2">
                     {c.Description || "Không có mô tả."}
                   </p>
@@ -99,7 +144,12 @@ export default async function UserClassesPage({
 
                 <div className="mt-6 flex items-center justify-between border-t border-line pt-3 text-xs text-fg-muted">
                   <span>GV: {c.TeacherName}</span>
-                  <span className="font-medium text-fg-muted">{c.StudentCount} học sinh</span>
+                  <Link
+                    href={`/user/classes/${c.ClassID}`}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Xem chi tiết →
+                  </Link>
                 </div>
               </div>
             ))}

@@ -36,7 +36,10 @@ export const verifySession = cache(async (): Promise<CurrentUser | null> => {
 });
 
 export function roleHome(role: Role) {
-  return role === "Admin" ? "/admin" : role === "Teacher" ? "/teacher" : "/user";
+  if (role === "Admin") return "/admin";
+  if (role === "Teacher") return "/teacher";
+  if (role === "TA") return "/user";
+  return "/user";
 }
 
 export async function redirectIfSignedIn() {

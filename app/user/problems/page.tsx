@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { listForUser } from "@/modules/problem/repo";
-import { DifficultyBadge, UserStatusBadge } from "@/components/badge";
+import { DifficultyBadge, UserStatusBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
 
 const PAGE_SIZE = 20;
@@ -23,6 +23,7 @@ export default async function ProblemListPage({
     userStatus: sp.status as never,
     page,
     pageSize: PAGE_SIZE,
+    ownerOnly: sp.view === "mine",
   });
 
   const buildHref = (p: number) => {
@@ -32,12 +33,40 @@ export default async function ProblemListPage({
 
   return (
     <div className="flex flex-col gap-5 pt-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Danh sách bài tập</h1>
-        <p className="mt-1 text-fg-muted">Chọn bài để luyện tập, lọc theo chủ đề và độ khó.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Danh sách bài tập</h1>
+          <p className="mt-1 text-fg-muted">Chọn bài để luyện tập, lọc theo chủ đề và độ khó.</p>
+        </div>
+        {(user.role === "TA" || user.role === "Teacher" || user.role === "Admin") && (
+          <Link
+            href="/user/problems/new"
+            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:bg-primary/90"
+          >
+            + Tạo bài tập
+          </Link>
+        )}
       </div>
 
+      {(user.role === "TA" || user.role === "Teacher" || user.role === "Admin") && (
+        <div className="flex gap-4 border-b border-line pb-2">
+          <Link 
+            href="/user/problems" 
+            className={`font-medium pb-2 -mb-[9px] ${sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+          >
+            Tất cả
+          </Link>
+          <Link 
+            href="/user/problems?view=mine" 
+            className={`font-medium pb-2 -mb-[9px] ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+          >
+            Bài tập của tôi
+          </Link>
+        </div>
+      )}
+
       <form className="flex flex-wrap gap-3 rounded-xl bg-surface p-3" method="get">
+        {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
         <input
           name="q"
           defaultValue={sp.q}
@@ -79,6 +108,7 @@ export default async function ProblemListPage({
               <th className="px-5 py-3">Độ khó</th>
               <th className="px-5 py-3">Tỉ lệ AC</th>
               <th className="px-5 py-3">Trạng thái</th>
+              {sp.view === "mine" && <th className="px-5 py-3 text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody>
@@ -92,6 +122,16 @@ export default async function ProblemListPage({
                   >
                     {p.Title}
                   </Link>
+                  {p.ClassName && (
+                    <div className="mt-1 text-xs text-fg-muted font-normal">
+                      Lớp: {p.ClassName}
+                    </div>
+                  )}
+                  {p.Status !== "Public" && (
+                    <span className="ml-2 inline-block">
+                      <ProblemStatusBadge value={p.Status} />
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-3 text-fg-muted">{p.Tags}</td>
                 <td className="px-5 py-3">
@@ -101,11 +141,21 @@ export default async function ProblemListPage({
                 <td className="px-5 py-3">
                   <UserStatusBadge value={p.UserStatus} />
                 </td>
+                {sp.view === "mine" && (
+                  <td className="px-5 py-3 text-right">
+                    <Link
+                      href={`/user/problems/${p.ProblemID}/edit`}
+                      className="text-primary hover:underline text-sm font-medium"
+                    >
+                      Chi tiết
+                    </Link>
+                  </td>
+                )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-fg-muted">
+                <td colSpan={sp.view === "mine" ? 7 : 6} className="px-5 py-12 text-center text-fg-muted">
                   Không có bài tập nào khớp bộ lọc.
                 </td>
               </tr>

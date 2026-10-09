@@ -38,7 +38,7 @@ export async function createProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -51,7 +51,12 @@ export async function createProblemAction(
 
   const testcases = await collectTestcases(formData);
   if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
-  redirect(`/teacher/problems/${problemId}/edit`);
+  
+  if (actor.role === "TA") {
+    redirect(`/user/problems/${problemId}/edit`);
+  } else {
+    redirect(`/teacher/problems/${problemId}/edit`);
+  }
 }
 
 export async function updateProblemAction(
@@ -59,7 +64,7 @@ export async function updateProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -73,17 +78,18 @@ export async function updateProblemAction(
   return { ok: true };
 }
 
-export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus) {
-  const actor = await requireRole("Teacher", "Admin");
-  await repo.setProblemStatus(problemId, actor.userId, status);
+export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus, rejectionReason?: string) {
+  const actor = await requireRole("Teacher", "TA", "Admin");
+  await repo.setProblemStatus(problemId, actor.userId, status, rejectionReason);
   revalidatePath("/teacher/problems");
   revalidatePath(`/teacher/problems/${problemId}/edit`);
+  revalidatePath(`/user/problems/${problemId}/edit`);
   revalidatePath(`/user/problems/${problemId}`);
   revalidatePath("/user/problems");
 }
 
 export async function deleteProblemAction(problemId: number) {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   await repo.deleteProblem(problemId, actor.userId);
   revalidatePath("/teacher/problems");
   revalidatePath("/user/problems");

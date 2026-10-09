@@ -37,6 +37,12 @@ BEGIN
         IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 0
             THROW 50025, 'Ban khong co quyen tham gia ky thi nay.', 1;
 
+        IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('Teacher', 'Admin'))
+            THROW 50027, 'Giao vien hoac Admin khong the tham gia hay nop bai trong ky thi.', 1;
+
+        IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
+            THROW 50027, 'Ban dang co quyen quan ly ky thi nay nen khong the nop bai nhu thi sinh.', 1;
+
         IF NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         BEGIN
             INSERT dbo.Contest_User (ContestID, UserID, TotalScore, PenaltyTime)
@@ -106,5 +112,33 @@ BEGIN
     JOIN dbo.Testcases t ON t.TestCaseID = sr.TestCaseID
     WHERE sr.SubmissionID = @SubmissionID
     ORDER BY t.OrderIndex;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Judge_RequestRejudge
+    @SubmissionID INT,
+    @ActorID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Check permissions
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin', 'TA'))
+        THROW 50050, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+
+    -- Check if submission exists
+    IF NOT EXISTS (SELECT 1 FROM dbo.Submissions WHERE SubmissionID = @SubmissionID)
+        THROW 50051, 'Bai nop khong ton tai.', 1;
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.Submissions
+    SET Result = 'Pending', ClaimedBy = NULL, ClaimedAt = NULL, JudgedAt = NULL,
+        Runtime = NULL, Memory = NULL, PassedCases = NULL
+    WHERE SubmissionID = @SubmissionID;
+
+    DELETE FROM dbo.SubmissionResults WHERE SubmissionID = @SubmissionID;
+
+    COMMIT TRANSACTION;
 END
 GO
