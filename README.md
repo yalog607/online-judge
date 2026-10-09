@@ -122,7 +122,20 @@ Testcase từ ZIP mặc định là testcase ẩn. Khi cập nhật, procedure t
 | Ảnh đại diện | Cloudinary; SQL Server giữ URL |
 | Dữ liệu SQL Server khi chạy Docker | Docker volume `db-data` |
 | Source và file biên dịch khi chấm | Thư mục tạm, xóa sau mỗi lượt chấm |
-| Bản sao lưu production | Thư mục `backups/` được mount vào container DB |
+| Bản sao lưu production | Thư mục `backups/` được mount vào container DB (xem mục Sao lưu và khôi phục) |
+
+## Sao lưu và khôi phục (production)
+
+Chạy trên VPS, trong thư mục `~/online-judge`:
+
+```bash
+bash deploy/backup.sh                       # tạo backups/<DB>_<UTC>.bak, verify, giữ 14 bản mới (KEEP=n để đổi)
+bash deploy/restore.sh                      # liệt kê các bản backup
+bash deploy/restore.sh itoj_X.bak           # restore vào DB tạm itoj_restore_test để kiểm tra
+bash deploy/restore.sh itoj_X.bak --target itoj   # GHI ĐÈ DB thật (hỏi xác nhận, tự backup trước, dừng/bật lại web+worker)
+```
+
+`deploy/deploy.sh` tự chạy `backup.sh` trước bước migrate; backup lỗi thì deploy dừng. Lần đầu cần tạo thư mục: `mkdir -p backups && sudo chown 10001:0 backups` (SQL Server chạy bằng uid 10001). Bản backup nằm cùng VPS nên nên sao chép định kỳ sang nơi khác.
 
 ## Chạy dự án trên máy mới
 
