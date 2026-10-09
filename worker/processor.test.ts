@@ -24,6 +24,8 @@ const submission = {
   Language: "python",
   TimeLimit: 1000,
   MemoryLimit: 128,
+  JudgeMode: "stdin",
+  FunctionSpec: null,
 };
 const run = (over: Record<string, unknown> = {}) => ({
   stdout: "1\n",
@@ -82,6 +84,50 @@ describe("judgeJob", () => {
     sandbox.runInSandbox.mockRejectedValue(new InfraError("no docker"));
     const out = await judgeJob({ ...job, attempt: 3 }, "w1");
     expect(out.result).toBe("IE");
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "IE" }));
+  });
+});
+
+describe("function mode", () => {
+  const fnSubmission = {
+    ...submission,
+    JudgeMode: "function",
+    FunctionSpec: JSON.stringify({
+      name: "twoSum",
+      params: [
+        { name: "nums", type: "int[]" },
+        { name: "target", type: "int" },
+      ],
+      returns: "int[]",
+    }),
+  };
+
+  beforeEach(() => {
+    repo.claimSubmission.mockResolvedValue(fnSubmission);
+    repo.listTestcases.mockResolvedValue([
+      { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]" },
+    ]);
+  });
+
+  it("accepts a result printed after the marker and ignores user output", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: "debug\n\n@@ITOJ_RESULT@@\n[0,1]\n" }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "AC" }));
+  });
+
+  it("gives WA for a wrong result and for a missing marker", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: "\n@@ITOJ_RESULT@@\n[1,0]\n" }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenLastCalledWith(expect.objectContaining({ result: "WA" }));
+
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: "[0,1]\n" }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenLastCalledWith(expect.objectContaining({ result: "WA" }));
+  });
+
+  it("stores IE (not RE) when the problem has no valid signature", async () => {
+    repo.claimSubmission.mockResolvedValue({ ...fnSubmission, FunctionSpec: null });
+    await judgeJob(job, "w1");
     expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "IE" }));
   });
 });

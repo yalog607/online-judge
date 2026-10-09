@@ -10,7 +10,9 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Create
     @Difficulty VARCHAR(20),
     @Status VARCHAR(20) = 'Public',
     @ClassID INT = NULL,
-    @DueDate DATETIME2(0) = NULL
+    @DueDate DATETIME2(0) = NULL,
+    @JudgeMode VARCHAR(20) = 'stdin',
+    @FunctionSpec NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -19,11 +21,14 @@ BEGIN
     IF @Status IS NULL OR @Status NOT IN ('Public', 'Private', 'Hidden')
         SET @Status = 'Public';
 
+    IF @JudgeMode IS NULL OR @JudgeMode NOT IN ('stdin', 'function')
+        SET @JudgeMode = 'stdin';
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status)
-        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status);
+        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, JudgeMode, FunctionSpec)
+        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status, @JudgeMode, @FunctionSpec);
 
         DECLARE @NewProblemID INT = SCOPE_IDENTITY();
 
@@ -61,7 +66,9 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Update
     @MemoryLimit INT,
     @Tags NVARCHAR(200),
     @Difficulty VARCHAR(20),
-    @Status VARCHAR(20) = NULL
+    @Status VARCHAR(20) = NULL,
+    @JudgeMode VARCHAR(20) = NULL,
+    @FunctionSpec NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -81,7 +88,9 @@ BEGIN
         SET Title = @Title, Statement = @Statement, InputFormat = @InputFormat,
             OutputFormat = @OutputFormat, TimeLimit = @TimeLimit, MemoryLimit = @MemoryLimit,
             Tags = @Tags, Difficulty = @Difficulty,
-            Status = COALESCE(@Status, Status)
+            Status = COALESCE(@Status, Status),
+            JudgeMode = COALESCE(@JudgeMode, JudgeMode),
+            FunctionSpec = CASE WHEN COALESCE(@JudgeMode, JudgeMode) = 'function' THEN COALESCE(@FunctionSpec, FunctionSpec) ELSE NULL END
         WHERE ProblemID = @ProblemID;
 
         COMMIT TRANSACTION;
@@ -138,7 +147,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT ProblemID, CreatorID, Title, Statement, InputFormat, OutputFormat,
-           TimeLimit, MemoryLimit, Tags, Difficulty, Status
+           TimeLimit, MemoryLimit, Tags, Difficulty, Status, JudgeMode, FunctionSpec
     FROM dbo.Problems WHERE ProblemID = @ProblemID;
 END
 GO

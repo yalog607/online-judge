@@ -3,6 +3,8 @@ export type LanguageConfig = {
   sourceFile: string;
   compile?: string[];
   compileTimeoutMs?: number;
+  // Function-mode submissions ship the generated driver as a second source file.
+  functionCompile?: string[];
   run: string[];
 };
 
@@ -50,6 +52,11 @@ export const LANGUAGES: Record<string, LanguageConfig> = {
       "cp -r /opt/gocache /sandbox/.gocache && GOCACHE=/sandbox/.gocache go build -o main main.go",
     ],
     compileTimeoutMs: 30000,
+    functionCompile: [
+      "sh",
+      "-c",
+      "cp -r /opt/gocache /sandbox/.gocache && GOCACHE=/sandbox/.gocache go build -o main main.go driver.go",
+    ],
     run: ["./main"],
   },
 };

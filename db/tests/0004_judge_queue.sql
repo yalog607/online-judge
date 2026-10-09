@@ -1,6 +1,6 @@
 DECLARE @Results TABLE (Assertion NVARCHAR(200), Passed BIT);
 DECLARE @UserID INT, @ProblemID INT, @SubID INT, @Rows INT;
-DECLARE @Claimed TABLE (SubmissionID INT, ProblemID INT, SourceCode NVARCHAR(MAX), Language VARCHAR(20), TimeLimit INT, MemoryLimit INT);
+DECLARE @Claimed TABLE (SubmissionID INT, ProblemID INT, SourceCode NVARCHAR(MAX), Language VARCHAR(20), TimeLimit INT, MemoryLimit INT, JudgeMode VARCHAR(20), FunctionSpec NVARCHAR(MAX));
 
 BEGIN TRANSACTION;
 

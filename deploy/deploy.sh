@@ -21,7 +21,9 @@ for svc in web worker; do
   docker pull "$IMAGE_PREFIX/itoj-$svc:$IMAGE_TAG"
   docker tag "$IMAGE_PREFIX/itoj-$svc:$IMAGE_TAG" "itoj-$svc:local"
 done
-docker compose -f docker-compose.prod.yml up -d db
+docker compose -f docker-compose.prod.yml up -d --wait db
+# Backup trước khi migrate; lỗi backup thì set -e dừng deploy.
+bash deploy/backup.sh
 docker compose -f docker-compose.prod.yml run --rm worker npm run db:migrate
 
 # caddy is not started here: the VPS's own native Caddy reverse-proxies to
