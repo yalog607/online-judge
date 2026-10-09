@@ -11,16 +11,19 @@ vi.mock("@/modules/auth/actions", () => ({
   resetPasswordAction: vi.fn(),
 }));
 
-describe("OTP request forms", () => {
-  it("allow requesting a registration OTP before the OTP field is completed", () => {
-    const html = renderToStaticMarkup(createElement(RegisterForm));
+// Nút OTP là type="button" (không submit form) nên không reset các ô đã nhập,
+// không bị validate trường OTP và không chiếm phím Enter.
+function expectOtpButtonOutsideSubmit(html: string, label: string) {
+  expect(html).toMatch(new RegExp(`<button type="button"[^>]*>${label}</button>`));
+  expect(html.match(/type="submit"/g)).toHaveLength(1);
+}
 
-    expect(html).toContain('formNoValidate=""');
+describe("OTP request forms", () => {
+  it("registration OTP button does not submit the form", () => {
+    expectOtpButtonOutsideSubmit(renderToStaticMarkup(createElement(RegisterForm)), "Nhận mã OTP");
   });
 
-  it("allow requesting a reset OTP before the OTP field is completed", () => {
-    const html = renderToStaticMarkup(createElement(ForgotPasswordForm));
-
-    expect(html).toContain('formNoValidate=""');
+  it("reset OTP button does not submit the form", () => {
+    expectOtpButtonOutsideSubmit(renderToStaticMarkup(createElement(ForgotPasswordForm)), "Gửi mã");
   });
 });
