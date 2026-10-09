@@ -198,6 +198,7 @@ BEGIN
     WITH Base AS (
         SELECT
             p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.CreatorID,
+            u.FullName AS CreatorFullName,
             ROUND(COALESCE(r.AcRate, 0), 0) AS AcRate,
             CASE
                 WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.ProblemID = p.ProblemID AND s.UserID = @UserID AND s.Result = 'AC') THEN 'done'
@@ -206,6 +207,7 @@ BEGIN
             END AS UserStatus,
             c.ClassName
         FROM dbo.Problems p
+        LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID
         LEFT JOIN dbo.vw_ProblemAcRate r ON r.ProblemID = p.ProblemID
         LEFT JOIN dbo.Class_Problem cp ON cp.ProblemID = p.ProblemID
         LEFT JOIN dbo.Classes c ON c.ClassID = cp.ClassID
@@ -242,9 +244,11 @@ BEGIN
 
     SELECT 
         p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.CreatedAt, p.CreatorID,
+        u.FullName AS CreatorFullName,
         c.ClassID, c.ClassName,
         COUNT(*) OVER () AS TotalCount
     FROM dbo.Problems p
+    LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID
     LEFT JOIN dbo.Class_Problem cp ON cp.ProblemID = p.ProblemID
     LEFT JOIN dbo.Classes c ON c.ClassID = cp.ClassID
     WHERE (

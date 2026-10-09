@@ -129,6 +129,7 @@ export default async function ProblemListPage({
             <tr className="border-b border-line text-left text-sm text-fg-muted">
               <th className="px-5 py-3">#</th>
               <th className="px-5 py-3">Tên bài</th>
+              <th className="px-5 py-3">Tác giả</th>
               <th className="px-5 py-3">Chủ đề</th>
               <th className="px-5 py-3">Độ khó</th>
               <th className="px-5 py-3">Tỉ lệ AC</th>
@@ -158,6 +159,7 @@ export default async function ProblemListPage({
                     </span>
                   )}
                 </td>
+                <td className="px-5 py-3">{p.CreatorFullName ?? "-"}</td>
                 <td className="px-5 py-3 text-fg-muted">
                   {p.Tags ? (
                     <div className="flex flex-wrap gap-1">
@@ -196,7 +198,7 @@ export default async function ProblemListPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={sp.view === "mine" ? 7 : 6} className="px-5 py-12 text-center text-fg-muted">
+                <td colSpan={sp.view === "mine" ? 8 : 7} className="px-5 py-12 text-center text-fg-muted">
                   Không có bài tập nào khớp bộ lọc.
                 </td>
               </tr>

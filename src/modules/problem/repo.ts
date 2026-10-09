@@ -12,6 +12,7 @@ export type ProblemListRow = {
   Difficulty: Difficulty;
   Status: ProblemStatus;
   CreatorID: number;
+  CreatorFullName?: string | null;
   AcRate: number;
   UserStatus: "done" | "tried" | "todo";
   ClassName?: string;
@@ -21,6 +22,7 @@ export type ProblemListRow = {
 export type ManageProblemRow = {
   ProblemID: number;
   CreatorID: number;
+  CreatorFullName?: string | null;
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
