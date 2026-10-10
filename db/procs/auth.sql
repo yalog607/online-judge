@@ -166,6 +166,19 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50030, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+
+    IF @Status NOT IN ('Active', 'Locked')
+        THROW 50031, 'Trang thai nguoi dung khong hop le.', 1;
+
+    IF @ActorID = @UserID AND @Status = 'Locked'
+        THROW 50032, 'Khong the tu khoa tai khoan cua chinh minh.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID)
+        THROW 50033, 'Nguoi dung khong ton tai.', 1;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
@@ -184,6 +197,83 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         THROW;
     END CATCH
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_SetUserRole
+    @ActorID INT,
+    @UserID INT,
+    @Role VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50030, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+
+    IF @Role NOT IN ('User', 'TA', 'Teacher')
+        THROW 50035, 'Vai tro khong hop le.', 1;
+
+    IF @ActorID = @UserID
+        THROW 50034, 'Khong the tu thay doi vai tro cua chinh minh.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID)
+        THROW 50033, 'Nguoi dung khong ton tai.', 1;
+
+    IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+        THROW 50036, 'Khong the thay doi vai tro cua quan tri vien.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.Users SET Role = @Role WHERE UserID = @UserID;
+
+        INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID, Detail)
+        VALUES (@ActorID, 'SetUserRole', 'User', @UserID, @Role);
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListUsers
+    @ActorID INT,
+    @Search NVARCHAR(100) = NULL,
+    @Role VARCHAR(20) = NULL,
+    @Status VARCHAR(20) = NULL,
+    @Page INT = 1,
+    @PageSize INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50030, 'Ban khong co quyen truy cap.', 1;
+
+    IF @Page < 1 SET @Page = 1;
+    IF @PageSize < 1 SET @PageSize = 20;
+
+    SELECT
+        u.UserID,
+        u.Username,
+        u.Email,
+        u.FullName,
+        u.Role,
+        u.Status,
+        u.Avatar,
+        u.CreatedAt,
+        COUNT(*) OVER () AS TotalCount
+    FROM dbo.Users u
+    WHERE (@Search IS NULL OR u.Username LIKE '%' + @Search + '%' OR u.Email LIKE '%' + @Search + '%' OR u.FullName LIKE '%' + @Search + '%')
+      AND (@Role IS NULL OR u.Role = @Role)
+      AND (@Status IS NULL OR u.Status = @Status)
+    ORDER BY u.UserID DESC
+    OFFSET (@Page - 1) * @PageSize ROWS FETCH NEXT @PageSize ROWS ONLY;
 END
 GO
 

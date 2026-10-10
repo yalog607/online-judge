@@ -30,17 +30,26 @@ async function runScript(pool: sql.ConnectionPool, file: string) {
   }
 }
 
-async function connect(database: string) {
+async function connect(database: string, retries = 10, delayMs = 2000): Promise<sql.ConnectionPool> {
   const e = env();
-  return new sql.ConnectionPool({
-    server: e.DB_HOST,
-    port: e.DB_PORT,
-    database,
-    user: "sa",
-    password: e.DB_SA_PASSWORD,
-    options: { encrypt: true, trustServerCertificate: true },
-    requestTimeout: 120000,
-  }).connect();
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await new sql.ConnectionPool({
+        server: e.DB_HOST,
+        port: e.DB_PORT,
+        database,
+        user: "sa",
+        password: e.DB_SA_PASSWORD,
+        options: { encrypt: true, trustServerCertificate: true },
+        requestTimeout: 120000,
+      }).connect();
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.log(`Waiting for SQL Server to be ready (attempt ${attempt}/${retries})...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error("Failed to connect to database");
 }
 
 async function ensureDatabase() {

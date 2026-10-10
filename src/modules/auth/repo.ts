@@ -119,6 +119,14 @@ export async function setUserStatus(actorId: number, userId: number, status: "Ac
   await execProc("usp_Admin_SetUserStatus", { ActorID: actorId, UserID: userId, Status: status });
 }
 
+export async function setUserRole(
+  actorId: number,
+  userId: number,
+  role: "User" | "TA" | "Teacher",
+) {
+  await execProc("usp_Admin_SetUserRole", { ActorID: actorId, UserID: userId, Role: role });
+}
+
 export async function validateImpersonate(actorId: number, targetUserId: number) {
   const { rows } = await execProc<{ Allowed: boolean }>("usp_Admin_ValidateImpersonate", {
     ActorID: actorId,
@@ -140,5 +148,37 @@ export async function registerDirect(input: {
     FullName: input.fullName,
   });
   return rows[0].UserID;
+}
+
+export type AdminUserItem = {
+  UserID: number;
+  Username: string;
+  Email: string;
+  FullName: string;
+  Role: Role;
+  Status: "Active" | "Locked";
+  Avatar: string | null;
+  CreatedAt: string;
+  TotalCount: number;
+};
+
+export async function listUsersForAdmin(params: {
+  actorId: number;
+  search?: string;
+  role?: Role;
+  status?: "Active" | "Locked";
+  page?: number;
+  pageSize?: number;
+}): Promise<{ items: AdminUserItem[]; total: number }> {
+  const { rows } = await execProc<AdminUserItem>("usp_Admin_ListUsers", {
+    ActorID: params.actorId,
+    Search: params.search || null,
+    Role: params.role || null,
+    Status: params.status || null,
+    Page: params.page ?? 1,
+    PageSize: params.pageSize ?? 20,
+  });
+  const total = rows[0]?.TotalCount ?? 0;
+  return { items: rows, total };
 }
 

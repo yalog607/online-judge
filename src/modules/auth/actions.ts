@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSession, destroySession, readSession, SESSION_TTL_MS } from "@/lib/session";
-import { requireUser, roleHome } from "@/lib/dal";
+import { requireRole, requireUser, roleHome } from "@/lib/dal";
 import {
   changePasswordSchema,
   loginSchema,
@@ -11,6 +11,8 @@ import {
   requestRegisterOtpSchema,
   requestResetOtpSchema,
   resetPasswordSchema,
+  setUserRoleSchema,
+  setUserStatusSchema,
   updateProfileSchema,
 } from "./schema";
 import * as service from "./service";
@@ -159,3 +161,47 @@ export async function endImpersonationAction() {
   await startSession(actor.UserID);
   redirect(roleHome(actor.Role));
 }
+
+export async function setUserStatusAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireRole("Admin");
+  const parsed = setUserStatusSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  if (admin.userId === parsed.data.userId && parsed.data.status === "Locked") {
+    return { error: "Không thể tự khóa tài khoản của chính mình." };
+  }
+
+  try {
+    await service.setUserStatus(admin.userId, parsed.data.userId, parsed.data.status);
+    revalidatePath("/admin/users");
+    return { ok: true };
+  } catch (e) {
+    return { error: e instanceof AuthError ? e.message : "Thao tác thất bại." };
+  }
+}
+
+export async function setUserRoleAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireRole("Admin");
+  const parsed = setUserRoleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  if (admin.userId === parsed.data.userId) {
+    return { error: "Không thể tự thay đổi vai trò của chính mình." };
+  }
+
+  try {
+    await service.setUserRole(admin.userId, parsed.data.userId, parsed.data.role);
+    revalidatePath("/admin/users");
+    return { ok: true };
+  } catch (e) {
+    return { error: e instanceof AuthError ? e.message : "Thao tác thất bại." };
+  }
+}
+
+

@@ -103,4 +103,53 @@ export async function changePassword(userId: number, oldPassword: string, newPas
   await repo.changePassword(userId, await bcrypt.hash(newPassword, 10));
 }
 
+export async function listUsersForAdmin(params: {
+  actorId: number;
+  search?: string;
+  role?: import("@/lib/session").Role;
+  status?: "Active" | "Locked";
+  page?: number;
+  pageSize?: number;
+}) {
+  try {
+    return await repo.listUsersForAdmin(params);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
+export async function setUserStatus(
+  actorId: number,
+  userId: number,
+  status: "Active" | "Locked",
+) {
+  if (actorId === userId && status === "Locked") {
+    throw new AuthError("Không thể tự khóa tài khoản của chính mình.");
+  }
+  try {
+    await repo.setUserStatus(actorId, userId, status);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
+export async function setUserRole(
+  actorId: number,
+  userId: number,
+  role: "User" | "TA" | "Teacher",
+) {
+  if (actorId === userId) {
+    throw new AuthError("Không thể tự thay đổi vai trò của chính mình.");
+  }
+  try {
+    await repo.setUserRole(actorId, userId, role);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
 export { repo };
+
