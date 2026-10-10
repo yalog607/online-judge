@@ -6,14 +6,13 @@ import { documentRepository } from "@/modules/document/repo";
 import { listForManage as listProblemsForManage } from "@/modules/problem/repo";
 import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
 import { AddStudentForm } from "./add-student-form";
-import { RemoveStudentButton } from "./remove-student-button";
 import { DocumentUploadForm } from "./document-upload-form";
 import { TeacherDocumentList } from "./document-list";
 import { EditClassDialog } from "./edit-class-dialog";
 import { AssignProblemDialog } from "./assign-problem-dialog";
 import { RemoveClassProblemButton } from "./remove-class-problem-button";
-import { RequestTAUpgradeButton } from "./request-ta-button";
 import { ApproveProblemButton } from "./approve-problem-button";
+import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
 
 export default async function TeacherClassDetailPage({
   params,
@@ -258,73 +257,7 @@ export default async function TeacherClassDetailPage({
         <AddStudentForm classId={classId} />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
-        <div className="card overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line bg-muted font-medium text-fg-muted">
-              <tr>
-                <th className="px-4 py-3">STT</th>
-                <th className="px-4 py-3">Họ và tên</th>
-                <th className="px-4 py-3">Tên đăng nhập</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Ngày tham gia</th>
-                <th className="px-4 py-3 text-center">Tiến độ</th>
-                <th className="px-4 py-3 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {students.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-fg-muted">
-                    Chưa có học sinh nào tham gia lớp học này.
-                  </td>
-                </tr>
-              ) : (
-                students.map((s, idx) => (
-                  <tr key={s.UserID} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
-                    <td className="px-4 py-3 font-medium text-fg">
-                      <div className="flex items-center gap-2">
-                        {s.FullName}
-                        {Boolean(s.IsTA) && (
-                          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                            Trợ giảng
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-fg-muted">{s.Username}</td>
-                    <td className="px-4 py-3 text-fg-muted">{s.Email}</td>
-                    <td className="px-4 py-3 text-fg-muted">
-                      {new Date(s.JoinDate).toLocaleDateString("vi-VN")}
-                    </td>
-                    <td className="px-4 py-3 text-center font-medium text-ok">
-                      {s.ProgressPercent}%
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <RemoveStudentButton
-                        classId={classId}
-                        studentId={s.UserID}
-                        studentName={s.FullName}
-                      />
-                      {!s.IsTA && s.IsTAPending && (
-                        <span className="text-warn text-sm ml-3 font-medium">Chờ duyệt TA</span>
-                      )}
-                      {!s.IsTA && !s.IsTAPending && (
-                        <RequestTAUpgradeButton
-                          classId={classId}
-                          studentId={s.UserID}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <TeacherClassStudentsManager classId={classId} students={students} />
         </div>
       )}
 

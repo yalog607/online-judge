@@ -277,35 +277,55 @@ BEGIN
 END
 GO
 
--- Admin co the mo phong bat ky User nao; Teacher chi mo phong hoc vien dang trong lop minh day.
 CREATE OR ALTER PROCEDURE app.usp_Admin_ValidateImpersonate
     @ActorID INT,
     @TargetUserID INT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @ActorRole VARCHAR(20) = (SELECT Role FROM dbo.Users WHERE UserID = @ActorID);
-    DECLARE @TargetRole VARCHAR(20) = (SELECT Role FROM dbo.Users WHERE UserID = @TargetUserID);
-    DECLARE @Allowed BIT = 0;
+    SET XACT_ABORT ON;
 
-    IF @TargetRole = 'User'
-    BEGIN
-        IF @ActorRole = 'Admin'
-            SET @Allowed = 1;
-        ELSE IF @ActorRole = 'Teacher' AND EXISTS (
-            SELECT 1 FROM dbo.Class_Student cs
-            JOIN dbo.Classes c ON c.ClassID = cs.ClassID
-            WHERE c.TeacherID = @ActorID AND cs.UserID = @TargetUserID
-        )
-            SET @Allowed = 1;
-    END
+    DECLARE @Allowed BIT = app.ufn_CanImpersonateUser(@ActorID, @TargetUserID);
 
     IF @Allowed = 1
-        INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID)
-        VALUES (@ActorID, 'ImpersonateStart', 'User', @TargetUserID);
+    BEGIN
+        BEGIN TRY
+            BEGIN TRANSACTION;
+
+            INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID)
+            VALUES (@ActorID, 'ImpersonateStart', 'User', @TargetUserID);
+
+            COMMIT TRANSACTION;
+        END TRY
+        BEGIN CATCH
+            IF @@TRANCOUNT > 0
+                ROLLBACK TRANSACTION;
+            THROW;
+        END CATCH
+    END;
 
     SELECT @Allowed AS Allowed;
-END
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Teacher_ListImpersonatableStudents
+    @TeacherID INT,
+    @ClassID INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT 
+        UserID,
+        Username,
+        FullName,
+        Email,
+        Role,
+        Avatar,
+        ClassID,
+        ClassName
+    FROM app.ufn_GetImpersonatableStudentsForTeacher(@TeacherID, @ClassID)
+    ORDER BY ClassName, FullName;
+END;
 GO
 
 CREATE OR ALTER PROCEDURE app.usp_Auth_RegisterDirect

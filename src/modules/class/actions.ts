@@ -74,11 +74,20 @@ export async function joinPublicClassAction(classId: number): Promise<void> {
   redirect(`/user/classes/${classId}`);
 }
 
-export async function leaveClassAction(classId: number): Promise<void> {
+export async function leaveClassAction(
+  classId: number
+): Promise<{ error?: string; ok?: boolean }> {
   const user = await requireUser();
-  await classRepository.leaveClass(user.userId, classId);
-  revalidatePath("/user/classes");
-  redirect("/user/classes");
+  try {
+    await classRepository.leaveClass(user.userId, classId);
+    revalidatePath("/user/classes");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
 }
 
 export async function addStudentAction(

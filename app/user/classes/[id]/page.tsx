@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
-import { leaveClassAction, joinPublicClassAction } from "@/modules/class/actions";
+import { joinPublicClassAction } from "@/modules/class/actions";
 import { DifficultyBadge, UserStatusBadge } from "@/components/badge";
-import { LeaveButton } from "./leave-button";
+import LeaveClassDialog from "./leave-dialog";
 import { JoinPublicButton } from "./join-public-button";
 import { TAClassView } from "./ta-class-view";
 
@@ -42,7 +42,6 @@ export default async function UserClassDetailPage({
     documentRepository.listDocuments(classId, user.userId).catch(() => []),
   ]);
 
-  const leaveActionWithId = leaveClassAction.bind(null, classId);
   const joinPublicActionWithId = joinPublicClassAction.bind(null, classId);
 
   return (
@@ -62,9 +61,7 @@ export default async function UserClassDetailPage({
         </div>
 
         {classDetail.IsJoined ? (
-          <form action={leaveActionWithId}>
-            <LeaveButton />
-          </form>
+          <LeaveClassDialog classId={classId} className={classDetail.ClassName} />
         ) : classDetail.IsPublic ? (
           <form action={joinPublicActionWithId}>
             <JoinPublicButton />
