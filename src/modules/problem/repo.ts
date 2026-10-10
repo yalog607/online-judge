@@ -60,6 +60,7 @@ export async function listForUser(input: {
   tag?: string;
   difficulty?: Difficulty;
   userStatus?: "done" | "tried" | "todo";
+  problemStatus?: ProblemStatus;
   page: number;
   pageSize: number;
   ownerOnly?: boolean;
@@ -70,6 +71,7 @@ export async function listForUser(input: {
     Tag: input.tag ?? null,
     Difficulty: input.difficulty ?? null,
     UserStatus: input.userStatus ?? null,
+    ProblemStatus: input.problemStatus ?? null,
     Page: input.page,
     PageSize: input.pageSize,
     OwnerOnly: input.ownerOnly ? 1 : 0,

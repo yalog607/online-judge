@@ -308,7 +308,10 @@ export default async function TeacherClassDetailPage({
                         studentId={s.UserID}
                         studentName={s.FullName}
                       />
-                      {!s.IsTA && (
+                      {!s.IsTA && s.IsTAPending && (
+                        <span className="text-warn text-sm ml-3 font-medium">Chờ duyệt TA</span>
+                      )}
+                      {!s.IsTA && !s.IsTAPending && (
                         <RequestTAUpgradeButton
                           classId={classId}
                           studentId={s.UserID}

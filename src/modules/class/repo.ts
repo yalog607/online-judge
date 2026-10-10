@@ -29,6 +29,7 @@ export interface StudentItem {
   JoinDate: string;
   ProgressPercent: number;
   IsTA?: boolean;
+  IsTAPending?: boolean;
 }
 
 export interface ClassProblemItem {
@@ -99,7 +100,7 @@ export interface IClassRepository {
 
   listTARequests(adminId: number): Promise<any[]>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void>;
+  approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
 
   getClassesForTA(taUserId: number): Promise<ClassItem[]>;
 
@@ -267,11 +268,12 @@ export class ClassRepository implements IClassRepository {
     return rows;
   }
 
-  async approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void> {
+  async approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void> {
     await execProc("usp_Admin_ApproveTA", {
       AdminID: adminId,
       RequestID: requestId,
       IsApproved: isApproved,
+      RejectionReason: rejectionReason ?? null,
     });
   }
 

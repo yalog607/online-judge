@@ -103,14 +103,7 @@ export default async function TeacherClassesPage({
                     {c.ApprovalStatus === 'Pending' ? (
                       <span className="text-warn">Chờ duyệt</span>
                     ) : c.ApprovalStatus === 'Rejected' ? (
-                      <div>
-                        <span className="text-bad">Từ chối</span>
-                        {c.RejectionReason && (
-                          <p className="text-xs text-fg-muted mt-1 max-w-[150px] truncate" title={c.RejectionReason}>
-                            Lý do: {c.RejectionReason}
-                          </p>
-                        )}
-                      </div>
+                      <span className="text-bad">Từ chối</span>
                     ) : (
                       <span className="text-ok">Đã duyệt</span>
                     )}

@@ -191,6 +191,7 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_ListForUser
     @Tag NVARCHAR(50) = NULL,
     @Difficulty VARCHAR(20) = NULL,
     @UserStatus VARCHAR(10) = NULL,
+    @ProblemStatus VARCHAR(20) = NULL,
     @Page INT = 1,
     @PageSize INT = 20,
     @OwnerOnly BIT = 0
@@ -221,6 +222,7 @@ BEGIN
           AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
           AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
           AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
+          AND (@ProblemStatus IS NULL OR p.Status = @ProblemStatus)
     )
     SELECT *, COUNT(*) OVER () AS TotalCount
     FROM Base

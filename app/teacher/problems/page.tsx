@@ -20,8 +20,8 @@ export default async function ManageProblemsPage({
     actorId: actor.userId,
     search: sp.q || undefined,
     tag: sp.tag || undefined,
-    difficulty: sp.difficulty as never,
-    status: sp.status as never,
+    difficulty: (sp.difficulty || undefined) as never,
+    status: (sp.status || undefined) as never,
     page,
     pageSize: PAGE_SIZE,
     ownerOnly: sp.view === "mine",
@@ -70,45 +70,51 @@ export default async function ManageProblemsPage({
         )}
       </div>
 
-      <form className="flex flex-wrap gap-3 card p-3" method="get">
+      <form key={new URLSearchParams(sp as Record<string, string>).toString()} className="flex gap-2.5 card p-2.5 overflow-x-auto items-center scrollbar-hide" method="get">
         {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
         <input
           name="q"
           defaultValue={sp.q}
           placeholder="Tìm kiếm tên bài tập..."
-          className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+          className="min-w-[140px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         />
         <input
           name="tag"
           defaultValue={sp.tag}
           placeholder="Chủ đề (tag)..."
-          className="min-w-[150px] rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+          className="min-w-[110px] w-[110px] rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         />
         <select
           name="difficulty"
           defaultValue={sp.difficulty ?? ""}
           className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         >
-          <option value="">Độ khó (Tất cả)</option>
-          <option value="Easy">Dễ</option>
-          <option value="Medium">Trung bình</option>
-          <option value="Hard">Khó</option>
+          <option value="">Độ khó: Tất cả</option>
+          <option value="Easy">Độ khó: Dễ</option>
+          <option value="Medium">Độ khó: Trung bình</option>
+          <option value="Hard">Độ khó: Khó</option>
         </select>
         <select
           name="status"
           defaultValue={sp.status ?? ""}
           className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
         >
-          <option value="">Trạng thái (Tất cả)</option>
-          <option value="Public">Công khai</option>
-          <option value="Private">Riêng tư</option>
-          <option value="Hidden">Đã khóa</option>
-          <option value="Pending">Chờ duyệt</option>
-          <option value="Rejected">Đã từ chối</option>
+          <option value="">Trạng thái bài: Tất cả</option>
+          <option value="Public">Trạng thái bài: Công khai</option>
+          <option value="Private">Trạng thái bài: Riêng tư</option>
+          <option value="Hidden">Trạng thái bài: Đã khóa</option>
+          <option value="Pending">Trạng thái bài: Chờ duyệt</option>
+          <option value="Rejected">Trạng thái bài: Đã từ chối</option>
         </select>
-        <button type="submit" className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm hover:opacity-90 transition-opacity">
+        <button type="submit" className="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm hover:opacity-90 transition-opacity">
           Tìm kiếm
         </button>
+        <Link
+          href={`/teacher/problems${sp.view === "mine" ? "?view=mine" : ""}`}
+          className="shrink-0 rounded-lg border border-line bg-muted px-4 py-2 font-medium text-fg text-sm hover:bg-muted/80 transition-colors"
+        >
+          Xóa lọc
+        </Link>
       </form>
 
       {sp.tag && (
@@ -134,7 +140,7 @@ export default async function ManageProblemsPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-fg-muted bg-muted font-medium">
-              <th className="px-5 py-3">#</th>
+              <th className="px-5 py-3">STT</th>
               <th className="px-5 py-3">Tên bài</th>
               <th className="px-5 py-3">Người tạo</th>
               <th className="px-5 py-3">Chủ đề</th>
@@ -144,13 +150,16 @@ export default async function ManageProblemsPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {rows.map((p) => (
+            {rows.map((p, i) => (
               <tr key={p.ProblemID} className="hover:bg-muted/40 transition-colors">
-                <td className="px-5 py-3 text-fg-muted">{p.ProblemID}</td>
+                <td className="px-5 py-3 text-fg-muted">{(page - 1) * PAGE_SIZE + i + 1}</td>
                 <td className="px-5 py-3 font-medium">
-                  <Link href={`/teacher/problems/${p.ProblemID}`} className="hover:underline" title="Xem đề bài">
-                    {p.Title}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/teacher/problems/${p.ProblemID}`} className="hover:underline" title="Xem đề bài">
+                      {p.Title}
+                    </Link>
+                    <span className="text-[10px] text-fg-muted font-normal px-1.5 py-0.5 bg-muted rounded border border-line/50">#{p.ProblemID}</span>
+                  </div>
                   {p.ClassName && (
                     <div className="mt-1 text-xs text-fg-muted font-normal">
                       Lớp: {p.ClassName}

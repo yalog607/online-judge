@@ -214,12 +214,13 @@ export async function requestTAUpgradeAction(
 
 export async function approveTARequestAction(
   requestId: number,
-  isApproved: boolean
+  isApproved: boolean,
+  rejectionReason?: string
 ): Promise<{ ok?: boolean; error?: string }> {
   const actor = await requireRole("Admin");
 
   try {
-    await classRepository.approveTARequest(actor.userId, requestId, isApproved);
+    await classRepository.approveTARequest(actor.userId, requestId, isApproved, rejectionReason);
     revalidatePath("/admin/approvals");
     return { ok: true };
   } catch (error) {
