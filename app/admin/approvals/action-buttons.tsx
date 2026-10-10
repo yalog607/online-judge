@@ -14,8 +14,11 @@ export function ApprovalButtons({ requestId }: { requestId: number }) {
   };
 
   const handleReject = () => {
+    const reason = window.prompt("Vui lòng nhập lý do từ chối yêu cầu trợ giảng này:");
+    if (reason === null) return; // User cancelled
+    
     startTransition(async () => {
-      const res = await approveTARequestAction(requestId, false);
+      const res = await approveTARequestAction(requestId, false, reason);
       if (res?.error) alert(res.error);
     });
   };

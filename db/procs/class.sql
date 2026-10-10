@@ -260,7 +260,8 @@ BEGIN
         Email,
         JoinDate,
         ProgressPercent,
-        IsTA
+        IsTA,
+        IsTAPending
     FROM app.ufn_GetClassStudentList(@ClassID)
     ORDER BY JoinDate DESC;
 END;
@@ -591,7 +592,8 @@ GO
 CREATE OR ALTER PROCEDURE app.usp_Admin_ApproveTA
     @RequestID INT,
     @AdminID INT,
-    @IsApproved BIT
+    @IsApproved BIT,
+    @RejectionReason NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -619,7 +621,9 @@ BEGIN
             END
             ELSE
             BEGIN
-                UPDATE dbo.TA_Requests SET Status = 'Rejected' WHERE RequestID = @RequestID;
+                UPDATE dbo.TA_Requests 
+                SET Status = 'Rejected', RejectionReason = @RejectionReason 
+                WHERE RequestID = @RequestID;
             END
         END
         
@@ -714,7 +718,8 @@ BEGIN
         r.RequestedBy AS TeacherID,
         t.FullName AS TeacherName,
         r.RequestDate,
-        r.Status
+        r.Status,
+        r.RejectionReason
     FROM dbo.TA_Requests r
     JOIN dbo.Classes c ON r.ClassID = c.ClassID
     JOIN dbo.Users u ON r.UserID = u.UserID
@@ -791,11 +796,11 @@ BEGIN
         c.TeacherID,
         t.FullName AS TeacherName,
         c.CreatedAt,
-        c.ApprovalStatus
+        c.ApprovalStatus,
+        c.RejectionReason
     FROM dbo.Classes c
     JOIN dbo.Users t ON c.TeacherID = t.UserID
-    WHERE c.ApprovalStatus = 'Pending'
-    ORDER BY c.CreatedAt DESC;
+    ORDER BY CASE WHEN c.ApprovalStatus = 'Pending' THEN 0 ELSE 1 END, c.CreatedAt DESC;
 END;
 GO
 
