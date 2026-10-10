@@ -153,6 +153,10 @@ BEGIN
     IF @PageSize < 1 SET @PageSize = 20;
     DECLARE @Offset INT = (@Page - 1) * @PageSize;
 
+    DECLARE @IsAdmin BIT = 0;
+    IF @UserID IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+        SET @IsAdmin = 1;
+
     SELECT 
         c.ClassID,
         c.TeacherID,
@@ -178,8 +182,10 @@ BEGIN
     FROM app.uvw_ClassOverview c
     WHERE 
         (@Search IS NULL OR c.ClassName LIKE '%' + @Search + '%' OR c.TeacherName LIKE '%' + @Search + '%')
-        AND (c.ApprovalStatus = 'Approved' OR c.TeacherID = @UserID)
+        AND (@IsAdmin = 1 OR c.ApprovalStatus = 'Approved' OR c.TeacherID = @UserID)
         AND (
+            @IsAdmin = 1
+            OR
             (@OnlyMine = 1 AND (c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)))
             OR
             (@OnlyMine = 0 AND (c.IsPublic = 1 OR c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)))

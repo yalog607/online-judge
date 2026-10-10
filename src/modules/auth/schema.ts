@@ -57,3 +57,22 @@ export const changePasswordSchema = z
     message: "Mật khẩu xác nhận không khớp",
     path: ["confirmPassword"],
   });
+
+export const adminListUsersQuerySchema = z.object({
+  q: z.string().trim().optional(),
+  role: z.enum(["User", "Teacher", "Admin", "TA"]).optional(),
+  status: z.enum(["Active", "Locked"]).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().default(20),
+});
+
+export const setUserStatusSchema = z.object({
+  userId: z.coerce.number().int().positive("ID người dùng không hợp lệ"),
+  status: z.enum(["Active", "Locked"], { message: "Trạng thái không hợp lệ" }),
+});
+
+export const setUserRoleSchema = z.object({
+  userId: z.coerce.number().int().positive("ID người dùng không hợp lệ"),
+  role: z.enum(["User", "TA", "Teacher"], { message: "Vai trò không hợp lệ" }),
+});
+

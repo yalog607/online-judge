@@ -10,7 +10,9 @@ export default async function ProfileLayout({ children }: { children: React.Reac
     roleLabel = "Quản trị";
     nav = [
       { href: "/admin", label: "Tổng quan", icon: "home" },
-      { href: "/admin/approvals", label: "Duyệt Yêu Cầu TA", icon: "shield" },
+      { href: "/admin/users", label: "Người dùng", icon: "users" },
+      { href: "/admin/approvals", label: "Duyệt Yêu Cầu", icon: "shield" },
+      { href: "/admin/reports", label: "Báo cáo thống kê", icon: "chart" },
       { href: "/profile", label: "Hồ sơ", icon: "user" },
     ];
   } else if (user.role === "Teacher") {
