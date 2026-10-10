@@ -142,10 +142,12 @@ export async function impersonateAction(targetUserId: number) {
   const actor = await requireUser();
   const allowed = await validateImpersonate(actor.userId, targetUserId);
   if (!allowed) throw new Error("Không có quyền mô phỏng người dùng này.");
+  const targetUser = await getUserById(targetUserId);
+  if (!targetUser) throw new Error("Người dùng mục tiêu không tồn tại.");
   const oldSession = await readSession();
   if (oldSession) await revokeDbSession(oldSession.sessionId);
   await startSession(targetUserId, actor.userId);
-  redirect("/user");
+  redirect(roleHome(targetUser.Role));
 }
 
 export async function endImpersonationAction() {
