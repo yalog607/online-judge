@@ -98,8 +98,8 @@ describe("events", () => {
   });
 
   it("folds contest joins into one aggregated notification for the owner", async () => {
-    repo.contestInfo.mockResolvedValue({ CreatorID: 2, ContestName: "K1" });
-    await events.notifyContestJoined(1, 9, "Học viên");
+    repo.contestInfo.mockResolvedValue({ CreatorID: 2, ContestName: "K1", ParticipantCount: 42 });
+    await events.notifyContestJoined(1, 9,"Học viên");
     expect(notify).not.toHaveBeenCalled();
     expect(notifyAggregate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -107,6 +107,7 @@ describe("events", () => {
         type: "contest_joined",
         link: "/teacher/contests/1",
         titleTemplate: expect.stringContaining("{n}"),
+        count: 42,
         body: expect.stringContaining("Học viên"),
       }),
     );

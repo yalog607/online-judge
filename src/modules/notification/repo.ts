@@ -38,6 +38,7 @@ export async function aggregateNotification(input: {
   titleTemplate: string;
   body?: string;
   link: string;
+  count?: number;
 }): Promise<{ id: number; userId: number; createdAt: string; title: string; updated: boolean } | null> {
   const { rows } = await execProc<{
     NotificationID: number | string;
@@ -51,6 +52,7 @@ export async function aggregateNotification(input: {
     TitleTemplate: input.titleTemplate,
     Body: input.body ?? null,
     Link: input.link,
+    Count: input.count ?? null,
   });
   const r = rows[0];
   if (!r) return null;
@@ -137,7 +139,7 @@ export async function classStudentIds(classId: number): Promise<number[]> {
 }
 
 export async function contestInfo(contestId: number) {
-  const { rows } = await execProc<{ CreatorID: number; ContestName: string }>(
+  const { rows } = await execProc<{ CreatorID: number; ContestName: string; ParticipantCount: number }>(
     "usp_Notification_ContestInfo",
     { ContestID: contestId },
   );

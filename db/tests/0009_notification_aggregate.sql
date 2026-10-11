@@ -41,6 +41,16 @@ INSERT @Results VALUES ('After reading, counting restarts in a new notification'
     CASE WHEN (SELECT Title FROM @Out) = N'1 nguoi da tham gia'
           AND (SELECT COUNT(*) FROM dbo.Notifications WHERE UserID = @A AND Link = '/teacher/contests/1') = 2 THEN 1 ELSE 0 END);
 
+DECLARE @Total TABLE (NotificationID BIGINT, UserID INT, CreatedAt DATETIME2, Title NVARCHAR(200), Updated BIT);
+INSERT @Total EXEC app.usp_Notification_Aggregate
+    @UserID = @A, @Type = 'contest_total', @TitleTemplate = N'Da co {n} nguoi', @Link = '/teacher/contests/9', @Count = 40;
+DELETE @Total;
+INSERT @Total EXEC app.usp_Notification_Aggregate
+    @UserID = @A, @Type = 'contest_total', @TitleTemplate = N'Da co {n} nguoi', @Link = '/teacher/contests/9', @Count = 41;
+INSERT @Results VALUES ('Explicit count is used as the total, not incremented',
+    CASE WHEN (SELECT Title FROM @Total) = N'Da co 41 nguoi'
+          AND (SELECT COUNT(*) FROM dbo.Notifications WHERE UserID = @A AND Type = 'contest_total') = 1 THEN 1 ELSE 0 END);
+
 BEGIN TRY
     EXEC app.usp_Notification_Aggregate @UserID = @A, @Type = 'x', @TitleTemplate = N'khong co so', @Link = '/ok';
     INSERT @Results VALUES ('Template without placeholder is rejected', 0);

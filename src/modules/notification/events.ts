@@ -139,13 +139,14 @@ export function notifyContestJoined(contestId: number, userId: number, userName:
   return safely(async () => {
     const contest = await repo.contestInfo(contestId);
     if (!contest || contest.CreatorID === userId) return;
-    // Many joiners fold into one running notification ("N người đã tham gia kỳ thi ...").
+    // Many joiners fold into one unread notification showing the TOTAL so far ("Đã có N người ...").
     await notifyAggregate({
       userId: contest.CreatorID,
       type: "contest_joined",
-      titleTemplate: `{n} người đã tham gia kỳ thi "${clip(contest.ContestName, 120)}"`,
+      titleTemplate: `Đã có {n} người tham gia kỳ thi "${clip(contest.ContestName, 120)}"`,
       body: clip(`Mới nhất: ${userName}`, 500),
       link: `/teacher/contests/${contestId}`,
+      count: contest.ParticipantCount > 0 ? contest.ParticipantCount : undefined,
     });
   });
 }

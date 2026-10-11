@@ -44,6 +44,10 @@ describe("aggregateInputSchema", () => {
   it("accepts a template with the {n} placeholder", () => {
     expect(aggregateInputSchema.safeParse(ok).success).toBe(true);
   });
+  it("accepts an explicit total count but rejects a non-positive one", () => {
+    expect(aggregateInputSchema.safeParse({ ...ok, count: 42 }).success).toBe(true);
+    expect(aggregateInputSchema.safeParse({ ...ok, count: 0 }).success).toBe(false);
+  });
   it("requires the placeholder, a safe link and a bounded template", () => {
     expect(aggregateInputSchema.safeParse({ ...ok, titleTemplate: "không có số" }).success).toBe(false);
     expect(aggregateInputSchema.safeParse({ ...ok, link: "//evil.com" }).success).toBe(false);

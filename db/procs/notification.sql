@@ -158,7 +158,9 @@ CREATE OR ALTER PROCEDURE app.usp_Notification_ContestInfo
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT CreatorID, ContestName FROM dbo.Contests WHERE ContestID = @ContestID;
+    SELECT CreatorID, ContestName,
+           (SELECT COUNT(*) FROM dbo.Contest_User cu WHERE cu.ContestID = @ContestID) AS ParticipantCount
+    FROM dbo.Contests WHERE ContestID = @ContestID;
 END
 GO
 
@@ -179,7 +181,9 @@ CREATE OR ALTER PROCEDURE app.usp_Notification_Aggregate
     @Type          VARCHAR(40),
     @TitleTemplate NVARCHAR(200),
     @Body          NVARCHAR(500) = NULL,
-    @Link          NVARCHAR(300)
+    @Link          NVARCHAR(300),
+    -- Optional authoritative total (e.g. participants so far). Without it {n} is a running count.
+    @Count         INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -200,8 +204,8 @@ BEGIN
 
     -- SERIALIZABLE range lock: two concurrent joins must not both create the first row.
     UPDATE TOP (1) dbo.Notifications WITH (UPDLOCK, SERIALIZABLE)
-    SET GroupCount = GroupCount + 1,
-        Title = REPLACE(@TitleTemplate, N'{n}', CAST(GroupCount + 1 AS NVARCHAR(10))),
+    SET GroupCount = ISNULL(@Count, GroupCount + 1),
+        Title = REPLACE(@TitleTemplate, N'{n}', CAST(ISNULL(@Count, GroupCount + 1) AS NVARCHAR(10))),
         Body = @Body,
         CreatedAt = SYSUTCDATETIME()
     OUTPUT inserted.NotificationID, inserted.UserID, inserted.CreatedAt, inserted.Title, CAST(1 AS BIT) AS Updated
@@ -210,7 +214,8 @@ BEGIN
     IF @@ROWCOUNT = 0
         INSERT dbo.Notifications (UserID, Type, Title, Body, Link, GroupCount)
         OUTPUT inserted.NotificationID, inserted.UserID, inserted.CreatedAt, inserted.Title, CAST(0 AS BIT) AS Updated
-        VALUES (@UserID, @Type, REPLACE(@TitleTemplate, N'{n}', N'1'), @Body, @Link, 1);
+        VALUES (@UserID, @Type, REPLACE(@TitleTemplate, N'{n}', CAST(ISNULL(@Count, 1) AS NVARCHAR(10))),
+                @Body, @Link, ISNULL(@Count, 1));
 
     COMMIT TRANSACTION;
 END

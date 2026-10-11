@@ -42,6 +42,8 @@ export const aggregateInputSchema = z.object({
     .refine((t) => t.includes("{n}"), "Mẫu tiêu đề phải chứa {n}"),
   body: z.string().trim().max(500).optional(),
   link: z.string().max(300).refine(isSafeLink, "Đường dẫn không hợp lệ"),
+  // Authoritative total for {n}; omit to count the aggregated events themselves.
+  count: z.number().int().positive().optional(),
 });
 
 export type AggregateInput = z.input<typeof aggregateInputSchema>;

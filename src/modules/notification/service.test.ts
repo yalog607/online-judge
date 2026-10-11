@@ -95,6 +95,13 @@ describe("notifyAggregate", () => {
     );
   });
 
+  it("forwards an explicit total count to the repository", async () => {
+    aggregateNotification.mockResolvedValue({ id: 5, userId: 7, createdAt: "x", title: "t", updated: false });
+    publishToUser.mockResolvedValue(undefined);
+    await notifyAggregate({ ...agg, count: 42 });
+    expect(aggregateNotification).toHaveBeenCalledWith(expect.objectContaining({ count: 42 }));
+  });
+
   it("does nothing when the recipient does not exist", async () => {
     aggregateNotification.mockResolvedValue(null);
     await notifyAggregate(agg);
