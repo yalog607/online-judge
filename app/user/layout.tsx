@@ -6,6 +6,7 @@ const NAV: NavItem[] = [
   { href: "/user/problems", label: "Bài tập", icon: "code" },
   { href: "/user/classes", label: "Lớp học", icon: "users" },
   { href: "/user/contests", label: "Kỳ thi", icon: "trophy" },
+  { href: "/user/notifications", label: "Thông báo", icon: "bell" },
   { href: "/profile", label: "Hồ sơ", icon: "user" },
 ];
 
@@ -24,6 +25,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       fullName={user.fullName}
       nav={nav}
       impersonating={Boolean(user.actorId)}
+      notificationsHref="/user/notifications"
     >
       {children}
     </AppShell>

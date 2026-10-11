@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logoutAction, endImpersonationAction } from "@/modules/auth/actions";
 import { Icon } from "@/components/icon";
 import { NavLinks, type NavLink } from "@/components/nav-links";
+import { NotificationCenter } from "@/components/notification-center";
 
 export type NavItem = NavLink;
 
@@ -10,12 +11,14 @@ export function AppShell({
   fullName,
   nav,
   impersonating,
+  notificationsHref,
   children,
 }: {
   roleLabel: string;
   fullName: string;
   nav: NavItem[];
   impersonating: boolean;
+  notificationsHref: string;
   children: React.ReactNode;
 }) {
   const initial = fullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase() ?? "?";
@@ -76,6 +79,7 @@ export function AppShell({
             </label>
           </form>
           <div className="flex items-center gap-2.5">
+            <NotificationCenter href={notificationsHref} />
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
               {initial}
             </span>
