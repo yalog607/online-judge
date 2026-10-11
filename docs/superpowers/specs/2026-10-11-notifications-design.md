@@ -28,7 +28,7 @@ Tiêu chí thành công: 2 session (người gửi sự kiện / người nhận
 |---|---|---|
 | NotificationID | BIGINT IDENTITY PK | |
 | UserID | INT NOT NULL FK → Users | người nhận |
-| Type | VARCHAR(40) NOT NULL | `judge_result`, `problem_approved`, `problem_rejected`, `class_student_added`, `class_student_removed`, `class_document_added`, `comment_reply`, `comment_like`, `contest_joined`, `contest_ended` |
+| Type | VARCHAR(40) NOT NULL | `judge_result`, `problem_approved`, `problem_rejected`, `class_student_added`, `class_student_removed`, `class_document_added`, `comment_reply`, `comment_like`, `contest_joined`, `contest_started` |
 | Title | NVARCHAR(200) NOT NULL | |
 | Body | NVARCHAR(500) NULL | |
 | Link | NVARCHAR(300) NULL | đường dẫn nội bộ (bắt đầu `/`) |
@@ -88,7 +88,7 @@ Client dự phòng: `EventSource` lỗi → polling `unreadCount` mỗi 15s (ser
 | Duyệt/từ chối bài tập | `setProblemStatus` caller trong `src/modules/problem/…` | `CreatorID` bài (kèm lý do từ chối) | trang bài/quản lý của teacher |
 | Lớp học | `class/actions.ts`: thêm/xóa học viên, thêm tài liệu | học viên liên quan / cả lớp | `/user/classes/<id>` |
 | Bình luận | `comment/actions.ts`: reply, like | tác giả comment gốc (≠ người thao tác) | trang bài toán |
-| Contest | `contest`: tham gia, kết thúc | người tham gia / ban tổ chức | `/user/contests/<id>` |
+| Contest | `contest`: tham gia → ban tổ chức; bắt đầu ngay (`startContestNowAction`) → người đã tham gia | ban tổ chức / người tham gia | `/teacher/contests/<id>`, `/user/contests/<id>` |
 
 Thông báo chấm bài chỉ gồm verdict/điểm, **không** chứa input/expected của testcase ẩn.
 Đường dẫn chính xác cho từng link được xác nhận khi viết plan (đọc route hiện có).
@@ -109,5 +109,5 @@ Thông báo chấm bài chỉ gồm verdict/điểm, **không** chứa input/exp
 
 ## 10. Ngoài phạm vi (YAGNI)
 
-Email/push trình duyệt, tuỳ chọn bật/tắt theo loại, xóa hàng loạt, nhóm/gộp thông báo, lưu lịch sử vô hạn (dọn thông báo cũ có thể làm sau).
+Thông báo khi contest kết thúc theo thời gian (cần tác vụ định kỳ), email/push trình duyệt, tuỳ chọn bật/tắt theo loại, xóa hàng loạt, nhóm/gộp thông báo, lưu lịch sử vô hạn (dọn thông báo cũ có thể làm sau).
 
