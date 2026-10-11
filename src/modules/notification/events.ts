@@ -11,6 +11,9 @@ const VERDICT_LABEL: Record<string, string> = {
   IE: "Lỗi hệ thống chấm (IE)",
 };
 
+// Source names/reasons can be longer than a notification field; clip so the message is not dropped.
+const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+
 // Looking up recipients must never break the caller either.
 async function safely(fn: () => Promise<void>) {
   try {
@@ -27,7 +30,7 @@ export function buildJudgeResult(
   passedCases: string,
 ) {
   return {
-    title: `Kết quả chấm bài "${problemTitle}"`,
+    title: clip(`Kết quả chấm bài "${clip(problemTitle, 150)}"`, 200),
     body: `${VERDICT_LABEL[result] ?? result} — đúng ${passedCases} testcase`,
     link: `/submissions/${submissionId}`,
   };
@@ -55,8 +58,11 @@ export function notifyProblemStatus(problemId: number, status: string, actorId: 
     await notify({
       userIds: [info.CreatorID],
       type: rejected ? "problem_rejected" : "problem_approved",
-      title: rejected ? `Bài tập "${info.Title}" bị từ chối` : `Bài tập "${info.Title}" đã được duyệt`,
-      body: rejected && info.RejectionReason ? `Lý do: ${info.RejectionReason}` : undefined,
+      title: clip(
+        rejected ? `Bài tập "${clip(info.Title, 150)}" bị từ chối` : `Bài tập "${clip(info.Title, 150)}" đã được duyệt`,
+        200,
+      ),
+      body: rejected && info.RejectionReason ? clip(`Lý do: ${info.RejectionReason}`, 500) : undefined,
       link: `/user/problems/${problemId}`,
     });
   });
@@ -69,7 +75,7 @@ export function notifyStudentAdded(classId: number, studentId: number) {
     await notify({
       userIds: [studentId],
       type: "class_student_added",
-      title: `Bạn đã được thêm vào lớp "${cls.ClassName}"`,
+      title: clip(`Bạn đã được thêm vào lớp "${clip(cls.ClassName, 150)}"`, 200),
       link: `/user/classes/${classId}`,
     });
   });
@@ -82,7 +88,7 @@ export function notifyStudentRemoved(classId: number, studentId: number) {
     await notify({
       userIds: [studentId],
       type: "class_student_removed",
-      title: `Bạn đã bị xóa khỏi lớp "${cls.ClassName}"`,
+      title: clip(`Bạn đã bị xóa khỏi lớp "${clip(cls.ClassName, 150)}"`, 200),
       link: "/user/classes",
     });
   });
@@ -95,8 +101,8 @@ export function notifyClassDocument(classId: number, fileName: string, actorId: 
     await notify({
       userIds: students.filter((id) => id !== actorId),
       type: "class_document_added",
-      title: `Tài liệu mới trong lớp "${cls.ClassName}"`,
-      body: fileName,
+      title: clip(`Tài liệu mới trong lớp "${clip(cls.ClassName, 150)}"`, 200),
+      body: clip(fileName, 500),
       link: `/user/classes/${classId}`,
     });
   });
@@ -109,7 +115,7 @@ export function notifyCommentReply(parentCommentId: number, actorId: number, act
     await notify({
       userIds: [parent.AuthorID],
       type: "comment_reply",
-      title: `${actorName} đã trả lời bình luận của bạn`,
+      title: clip(`${clip(actorName, 100)} đã trả lời bình luận của bạn`, 200),
       link: `/user/problems/${parent.ProblemID}`,
     });
   });
@@ -123,7 +129,7 @@ export function notifyCommentLike(commentId: number, actorId: number, actorName:
     await notify({
       userIds: [comment.AuthorID],
       type: "comment_like",
-      title: `${actorName} đã thích bình luận của bạn`,
+      title: clip(`${clip(actorName, 100)} đã thích bình luận của bạn`, 200),
       link: `/user/problems/${comment.ProblemID}`,
     });
   });
@@ -136,7 +142,7 @@ export function notifyContestJoined(contestId: number, userId: number, userName:
     await notify({
       userIds: [contest.CreatorID],
       type: "contest_joined",
-      title: `${userName} đã tham gia kỳ thi "${contest.ContestName}"`,
+      title: clip(`${clip(userName, 80)} đã tham gia kỳ thi "${clip(contest.ContestName, 100)}"`, 200),
       link: `/teacher/contests/${contestId}`,
     });
   });
@@ -152,7 +158,7 @@ export function notifyContestStarted(contestId: number, actorId: number) {
     await notify({
       userIds: participants.filter((id) => id !== actorId),
       type: "contest_started",
-      title: `Kỳ thi "${contest.ContestName}" đã bắt đầu`,
+      title: clip(`Kỳ thi "${clip(contest.ContestName, 150)}" đã bắt đầu`, 200),
       link: `/user/contests/${contestId}`,
     });
   });

@@ -54,4 +54,13 @@ describe("notify", () => {
     await notify({ ...input, link: "https://evil.com" });
     expect(createNotifications).not.toHaveBeenCalled();
   });
+
+  it("sends more than 500 recipients in chunks instead of dropping them", async () => {
+    createNotifications.mockResolvedValue([]);
+    const userIds = Array.from({ length: 1200 }, (_, i) => i + 1);
+    await notify({ ...input, userIds });
+    expect(createNotifications).toHaveBeenCalledTimes(3);
+    const sent = createNotifications.mock.calls.flatMap((c) => c[0].userIds);
+    expect(sent).toHaveLength(1200);
+  });
 });

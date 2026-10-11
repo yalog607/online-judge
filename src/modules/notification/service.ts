@@ -3,6 +3,7 @@ import * as repo from "./repo";
 import { publishToUser } from "./pubsub";
 
 const PUBLISH_TIMEOUT_MS = 1500;
+const MAX_RECIPIENTS = 500;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -24,6 +25,14 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 // logged and swallowed: a notification problem must never fail the business operation.
 export async function notify(input: NotifyInput): Promise<void> {
   if (input.userIds.length === 0) return;
+  // The schema caps one batch; larger audiences (a whole class) are sent in chunks.
+  const unique = [...new Set(input.userIds)];
+  for (let i = 0; i < unique.length; i += MAX_RECIPIENTS) {
+    await notifyBatch({ ...input, userIds: unique.slice(i, i + MAX_RECIPIENTS) });
+  }
+}
+
+async function notifyBatch(input: NotifyInput): Promise<void> {
   try {
     const data = notifyInputSchema.parse(input);
     const created = await repo.createNotifications(data);

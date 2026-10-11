@@ -34,7 +34,8 @@ BEGIN
     WHERE NOT EXISTS (
         SELECT 1 FROM dbo.Notifications n
         WHERE n.UserID = u.UserID AND n.IsRead = 0 AND n.Type = @Type
-          AND n.Title = @Title AND ISNULL(n.Link, N'') = ISNULL(@Link, N'')
+          AND n.Title = @Title AND ISNULL(n.Body, N'') = ISNULL(@Body, N'')
+          AND ISNULL(n.Link, N'') = ISNULL(@Link, N'')
     );
 END
 GO

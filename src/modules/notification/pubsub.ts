@@ -40,7 +40,12 @@ export async function subscribeToUser(
       /* ignore malformed payloads */
     }
   });
-  await sub.subscribe(channel);
+  try {
+    await sub.subscribe(channel);
+  } catch (e) {
+    sub.disconnect();
+    throw e;
+  }
   return () => {
     sub.disconnect();
   };

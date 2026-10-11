@@ -47,6 +47,12 @@ INSERT @Created EXEC app.usp_Notification_Create
 INSERT @Results VALUES ('Same notification is created again once the old one is read',
     CASE WHEN (SELECT COUNT(*) FROM @Created WHERE UserID = @A) = 1 THEN 1 ELSE 0 END);
 
+DELETE @Created;
+INSERT @Created EXEC app.usp_Notification_Create
+    @UserIDs = @Ids, @Type = 'judge_result', @Title = N'Ket qua', @Body = N'WA', @Link = '/submissions/1';
+INSERT @Results VALUES ('Same title and link with a different body is a new notification',
+    CASE WHEN (SELECT COUNT(*) FROM @Created WHERE UserID = @B) = 1 THEN 1 ELSE 0 END);
+
 EXEC app.usp_Notification_MarkAllRead @UserID = @A;
 SELECT @Cnt = COUNT(*) FROM dbo.Notifications WHERE UserID = @A AND IsRead = 0;
 INSERT @Results VALUES ('Mark all read leaves none unread', CASE WHEN @Cnt = 0 THEN 1 ELSE 0 END);

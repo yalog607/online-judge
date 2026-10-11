@@ -115,4 +115,12 @@ describe("events", () => {
       expect.objectContaining({ userIds: [5, 6], type: "contest_started", link: "/user/contests/1" }),
     );
   });
+
+  it("clips long titles and rejection reasons so the notification is not dropped", async () => {
+    repo.problemInfo.mockResolvedValue({ CreatorID: 3, Title: "T".repeat(200), RejectionReason: "r".repeat(2000) });
+    await events.notifyProblemStatus(1, "Rejected", 2);
+    const arg = notify.mock.calls[0][0];
+    expect(arg.title.length).toBeLessThanOrEqual(200);
+    expect(arg.body.length).toBeLessThanOrEqual(500);
+  });
 });

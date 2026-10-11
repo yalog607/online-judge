@@ -42,6 +42,11 @@ export async function GET(request: Request) {
       try {
         // Subscribe first, then read the count, so a notification landing in between is not missed.
         unsubscribe = await subscribeToUser(user.userId, send);
+        if (closed) {
+          // The client left while the subscription was being set up.
+          unsubscribe();
+          return;
+        }
         send({ kind: "ready", unread: await unreadCountFor(user.userId) });
       } catch (e) {
         console.error("notification stream failed", e);

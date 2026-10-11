@@ -22,7 +22,10 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
   const [open, setOpen] = useState(false);
   const [recent, setRecent] = useState<NotificationItem[] | null>(null);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
-  const onNotificationsPage = pathname.endsWith("/notifications");
+  const onNotificationsPageRef = useRef(false);
+  useEffect(() => {
+    onNotificationsPageRef.current = pathname.endsWith("/notifications");
+  }, [pathname]);
 
   const dismiss = useCallback((id: number) => {
     const timer = timers.current.get(id);
@@ -63,7 +66,7 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
           item.id,
           setTimeout(() => dismiss(item.id), TOAST_MS),
         );
-        if (onNotificationsPage) router.refresh();
+        if (onNotificationsPageRef.current) router.refresh();
       };
       // Stream dropped (deploy, network, Redis): sync the count now and try again later.
       source.onerror = () => {
@@ -85,10 +88,17 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
       source?.close();
       if (retry) clearTimeout(retry);
+    };
+  }, [dismiss, router]);
+
+  // Toast auto-dismiss timers outlive stream reconnects; only unmount clears them.
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
       pending.forEach(clearTimeout);
       pending.clear();
     };
-  }, [dismiss, router, onNotificationsPage]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
