@@ -189,11 +189,20 @@ npm run worker:start # Chạy Judge Worker trực tiếp
 
 Judge Worker và web cùng cần Redis (`REDIS_URL`, `JUDGE_CONCURRENCY` trong `.env`). Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
 
+## Thiết kế giao diện
+
+Giao diện của ITOJ lấy từ artifact thiết kế: https://claude.ai/artifact/YXSCQak2cxUESw416gBd1Y
+
+- Khi thêm hoặc sửa màn hình, bám theo bố cục, màu sắc (token `--bg`, `--card`, `--line`, `--pri`...), nút, card, bảng và badge của artifact.
+- Dùng lại token trong `app/globals.css` và component trong `src/components/`; không đưa thêm thư viện UI hoặc bảng màu khác.
+- Hỗ trợ giao diện sáng/tối và màn hình hẹp (≤ 820px).
+
 ## Quy tắc khi đóng góp
 
 - Đọc `AGENTS.md` trước khi sửa code bằng AI.
 - Giữ đúng ranh giới `action/service/repository/stored procedure`.
 - Không truy vấn trực tiếp bảng SQL từ TypeScript.
 - Không để lộ testcase ẩn, mật khẩu hoặc secret.
+- Giao diện phải lấy từ artifact thiết kế (xem mục "Thiết kế giao diện").
 - Không xóa Docker volume, restore DB hoặc seed lại môi trường dùng chung khi chưa được xác nhận.
 - Chạy lint, typecheck và test phù hợp trước khi bàn giao thay đổi.

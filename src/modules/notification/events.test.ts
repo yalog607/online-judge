@@ -22,10 +22,11 @@ beforeEach(() => {
 });
 
 describe("buildJudgeResult", () => {
-  it("shows verdict and passed count only", () => {
+  it("puts submission id and verdict in the title and the count in the body only", () => {
     const m = events.buildJudgeResult("Tổng hai số", 7, "WA", "3/10");
-    expect(m.title).toContain("Tổng hai số");
-    expect(m.body).toContain("WA");
+    expect(m.title).toContain("#7");
+    expect(m.title).toContain("WA");
+    expect(m.body).toContain("Tổng hai số");
     expect(m.body).toContain("3/10");
     expect(m.link).toBe("/submissions/7");
   });

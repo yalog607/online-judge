@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { listForUser } from "@/modules/notification/service";
-import { MarkAllReadButton, MarkReadButton } from "@/components/notification-read-buttons";
+import { MarkAllReadButton } from "@/components/notification-read-buttons";
+import { NotificationRow } from "@/components/notification-row";
 import { Pager } from "@/components/pager";
 
 const PAGE_SIZE = 20;
@@ -26,18 +26,10 @@ export async function NotificationList({
   const buildHref = (p: number) => `${basePath}?${onlyUnread ? "unread=1&" : ""}page=${p}`;
 
   return (
-    <div className="flex flex-col gap-4 pt-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Thông báo</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href={onlyUnread ? basePath : `${basePath}?unread=1`}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            {onlyUnread ? "Hiện tất cả" : "Chỉ chưa đọc"}
-          </Link>
-          <MarkAllReadButton />
-        </div>
+    <div className="flex flex-col gap-5 pt-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="text-[28px] font-bold tracking-[-0.03em]">Thông báo</h1>
+        <MarkAllReadButton />
       </div>
 
       {items.length === 0 ? (
@@ -45,24 +37,8 @@ export async function NotificationList({
       ) : (
         <ul className="card divide-y divide-line overflow-hidden">
           {items.map((item) => (
-            <li
-              key={item.id}
-              className={`flex items-start gap-3 px-4 py-3 ${item.isRead ? "" : "bg-primary-soft/40"}`}
-            >
-              <div className="min-w-0 flex-1">
-                {item.link ? (
-                  <Link href={item.link} className={`hover:underline ${item.isRead ? "" : "font-semibold"}`}>
-                    {item.title}
-                  </Link>
-                ) : (
-                  <span className={item.isRead ? "" : "font-semibold"}>{item.title}</span>
-                )}
-                {item.body && <p className="text-sm text-fg-muted">{item.body}</p>}
-                <time className="text-xs text-fg-muted" dateTime={item.createdAt}>
-                  {new Date(item.createdAt).toLocaleString("vi-VN")}
-                </time>
-              </div>
-              {!item.isRead && <MarkReadButton id={item.id} />}
+            <li key={item.id}>
+              <NotificationRow item={item} />
             </li>
           ))}
         </ul>

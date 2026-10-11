@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { listRecentAction, markReadAction } from "@/modules/notification/actions";
+import { markReadAction } from "@/modules/notification/actions";
 import { NOTIFICATIONS_CHANGED_EVENT } from "@/components/notification-read-buttons";
 import type { NotificationItem, StreamMessage } from "@/modules/notification/types";
 
@@ -12,15 +12,27 @@ const TOAST_MS = 6000;
 const MAX_TOASTS = 3;
 const RETRY_MS = 15000;
 
-// Mounted once per page. Subscribes to the SSE stream, shows toast popups and (when
-// `showBell`) the bell with the unread badge and a dropdown of the latest items.
-export function NotificationCenter({ href, showBell = true }: { href: string; showBell?: boolean }) {
+const UnreadContext = createContext(0);
+
+// Unread count kept live by the provider; the sidebar badge and the header bell both read it.
+export function useUnreadCount() {
+  return useContext(UnreadContext);
+}
+
+// Mounted once per page. Holds the SSE subscription, the unread count and the toast popups.
+export function NotificationProvider({
+  href,
+  initialUnread = 0,
+  children,
+}: {
+  href: string;
+  initialUnread?: number;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread] = useState(initialUnread);
   const [toasts, setToasts] = useState<NotificationItem[]>([]);
-  const [open, setOpen] = useState(false);
-  const [recent, setRecent] = useState<NotificationItem[] | null>(null);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
   const onNotificationsPageRef = useRef(false);
   useEffect(() => {
@@ -61,7 +73,6 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
         const item = msg.item;
         // An aggregated notification that changed in place was already counted as unread.
         if (!msg.updated) setUnread((n) => n + 1);
-        setRecent(null);
         setToasts((list) => [...list.filter((t) => t.id !== item.id), item].slice(-MAX_TOASTS));
         const previous = pending.get(item.id);
         if (previous) clearTimeout(previous);
@@ -81,10 +92,8 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
     };
 
     connect();
-    const onChanged = () => {
-      void refreshCount();
-      setRecent(null);
-    };
+    // Marking read elsewhere (notifications page) asks the count to resync.
+    const onChanged = () => void refreshCount();
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
     return () => {
       disposed = true;
@@ -103,92 +112,18 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
     };
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    if (recent === null) {
-      listRecentAction()
-        .then((items) => !cancelled && setRecent(items))
-        .catch(() => !cancelled && setRecent([]));
-    }
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, recent]);
-
-  const openItem = (item: NotificationItem) => {
+  const openToast = (item: NotificationItem) => {
     dismiss(item.id);
-    setOpen(false);
     if (!item.isRead) {
       setUnread((n) => Math.max(0, n - 1));
-      setRecent(null);
       void markReadAction(item.id);
     }
     router.push(item.link ?? href);
   };
 
   return (
-    <>
-      {showBell && (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"}
-            aria-expanded={open}
-            className="relative grid h-9 w-9 place-items-center rounded-lg text-fg-muted hover:bg-muted hover:text-fg"
-          >
-            <Icon name="bell" />
-            {unread > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-bad px-1 text-[11px] font-semibold leading-[18px] text-white">
-                {unread > 99 ? "99+" : unread}
-              </span>
-            )}
-          </button>
-          {open && (
-            <>
-              <button
-                type="button"
-                aria-label="Đóng"
-                className="fixed inset-0 z-20 cursor-default"
-                onClick={() => setOpen(false)}
-              />
-              <div className="absolute right-0 z-30 mt-2 w-80 overflow-hidden rounded-xl border border-line bg-surface shadow-card max-[820px]:fixed max-[820px]:inset-x-3 max-[820px]:top-16 max-[820px]:w-auto">
-                <div className="border-b border-line px-4 py-2.5 font-semibold">Thông báo</div>
-                <ul className="max-h-96 overflow-y-auto">
-                  {recent === null && <li className="px-4 py-6 text-center text-fg-muted">Đang tải...</li>}
-                  {recent?.length === 0 && (
-                    <li className="px-4 py-6 text-center text-fg-muted">Chưa có thông báo.</li>
-                  )}
-                  {recent?.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => openItem(item)}
-                        className="flex w-full flex-col gap-0.5 border-b border-line px-4 py-3 text-left last:border-b-0 hover:bg-muted"
-                      >
-                        <span className={item.isRead ? "" : "font-semibold"}>{item.title}</span>
-                        {item.body && <span className="line-clamp-2 text-sm text-fg-muted">{item.body}</span>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className="block border-t border-line px-4 py-2.5 text-center font-medium text-primary hover:bg-muted"
-                >
-                  Xem tất cả
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
+    <UnreadContext.Provider value={unread}>
+      {children}
       <div
         role="status"
         aria-live="polite"
@@ -199,7 +134,7 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
             key={item.id}
             className="pointer-events-auto flex items-start gap-2 rounded-xl border border-line bg-surface p-3 shadow-card"
           >
-            <button type="button" onClick={() => openItem(item)} className="min-w-0 flex-1 text-left">
+            <button type="button" onClick={() => openToast(item)} className="min-w-0 flex-1 text-left">
               <span className="block font-semibold">{item.title}</span>
               {item.body && <span className="line-clamp-2 block text-sm text-fg-muted">{item.body}</span>}
             </button>
@@ -214,6 +149,23 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
           </div>
         ))}
       </div>
-    </>
+    </UnreadContext.Provider>
+  );
+}
+
+// Header bell: a bordered square button linking to the notifications page, red dot when unread.
+export function NotificationBell({ href }: { href: string }) {
+  const unread = useUnreadCount();
+  return (
+    <Link
+      href={href}
+      aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"}
+      className="relative grid h-[38px] w-[38px] place-items-center rounded-[9px] border border-line bg-surface text-fg hover:bg-muted"
+    >
+      <Icon name="bell" />
+      {unread > 0 && (
+        <span className="absolute right-[9px] top-2 h-2 w-2 rounded-full border-2 border-surface bg-bad" />
+      )}
+    </Link>
   );
 }

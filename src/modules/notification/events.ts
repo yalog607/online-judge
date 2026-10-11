@@ -30,8 +30,8 @@ export function buildJudgeResult(
   passedCases: string,
 ) {
   return {
-    title: clip(`Kết quả chấm bài "${clip(problemTitle, 150)}"`, 200),
-    body: `${VERDICT_LABEL[result] ?? result} — đúng ${passedCases} testcase`,
+    title: `Bài nộp #${submissionId} đã được chấm: ${VERDICT_LABEL[result] ?? result}`,
+    body: clip(`Bài "${clip(problemTitle, 150)}" · đúng ${passedCases} testcase`, 500),
     link: `/submissions/${submissionId}`,
   };
 }
