@@ -276,7 +276,7 @@ export function AdminUsersManager({
                 setModalError(null);
                 setIsImpersonateModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -323,7 +323,7 @@ export function AdminUsersManager({
                     onClick={() => setSelectedUserId(u.UserID)}
                     className={`cursor-pointer transition-colors ${
                       isSelected
-                        ? "bg-blue-500/10 dark:bg-blue-950/30"
+                        ? "bg-primary/10"
                         : "hover:bg-muted/40"
                     }`}
                   >
@@ -332,12 +332,12 @@ export function AdminUsersManager({
                         <span
                           className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors ${
                             isSelected
-                              ? "border-blue-600 bg-surface"
+                              ? "border-primary bg-surface"
                               : "border-line hover:border-fg-muted"
                           }`}
                         >
                           {isSelected && (
-                            <span className="h-2 w-2 rounded-full bg-blue-600" />
+                            <span className="h-2 w-2 rounded-full bg-primary" />
                           )}
                         </span>
                       </div>
@@ -449,7 +449,7 @@ export function AdminUsersManager({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <div className="flex items-center gap-2 text-blue-600 font-semibold">
+              <div className="flex items-center gap-2 text-primary font-semibold">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -488,7 +488,7 @@ export function AdminUsersManager({
                 <span className="font-mono text-xs text-fg-muted">(@{selectedUser.Username})</span> với vai trò{" "}
                 <strong className="text-fg font-semibold">{selectedUser.Role}</strong>.
               </p>
-              <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-600 dark:text-blue-300">
+              <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
                 Lưu ý: Mọi thao tác thực hiện trong phiên mô phỏng sẽ mang danh nghĩa của tài khoản này và được lưu vào nhật ký kiểm toán. Bạn có thể quay lại phiên Admin bất kỳ lúc nào qua thanh cảnh báo ở đầu trang.
               </div>
             </div>
@@ -506,7 +506,7 @@ export function AdminUsersManager({
                 type="button"
                 onClick={handleImpersonate}
                 disabled={isPending}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
               >
                 {isPending ? "Đang xử lý..." : "Bắt đầu mô phỏng"}
               </button>
