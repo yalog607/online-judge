@@ -120,6 +120,24 @@ UPDATE dbo.Problems SET Status = 'Private' WHERE ProblemID = @PrivateProblemID;
 INSERT @Results VALUES ('Admin-created contest can share an authorized private problem with participants',
     CASE WHEN app.ufn_CanUserAccessContestProblem(@ContestID, @PrivateProblemID, @StudentID) = 1 THEN 1 ELSE 0 END);
 
+EXEC app.usp_Contest_UpdateProblemScore @ContestID, @PublicProblemID, @OwnerID, 150;
+INSERT @Results VALUES ('Owner can update problem max score during contest',
+    CASE WHEN EXISTS (SELECT 1 FROM dbo.Contest_Problem WHERE ContestID = @ContestID AND ProblemID = @PublicProblemID AND MaxScore = 150) THEN 1 ELSE 0 END);
+
+INSERT dbo.ContestProblemResults (ContestID, UserID, ProblemID, WrongCount, Solved, SolveMinute)
+VALUES (@ContestID, @StudentID, @PublicProblemID, 1, 1, 15);
+
+EXEC app.usp_Contest_UpdateProblemScore @ContestID, @PublicProblemID, @OwnerID, 200;
+INSERT @Results VALUES ('Updating problem score recalculates participants total score',
+    CASE WHEN EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @StudentID AND TotalScore = 200) THEN 1 ELSE 0 END);
+
+EXEC app.usp_Contest_RemoveProblem @ContestID, @PublicProblemID, @OwnerID;
+INSERT @Results VALUES ('Removing problem recalculates participants total score and penalty',
+    CASE WHEN EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @StudentID AND TotalScore = 0 AND PenaltyTime = 0)
+          AND NOT EXISTS (SELECT 1 FROM dbo.Contest_Problem WHERE ContestID = @ContestID AND ProblemID = @PublicProblemID)
+          AND NOT EXISTS (SELECT 1 FROM dbo.ContestProblemResults WHERE ContestID = @ContestID AND ProblemID = @PublicProblemID)
+         THEN 1 ELSE 0 END);
+
 EXEC app.usp_Contest_Delete @ContestID, @OwnerID;
 DELETE dbo.Problems WHERE ProblemID IN (@PublicProblemID, @PrivateProblemID, @OtherPrivateID, @PendingProblemID);
 DELETE dbo.Users WHERE UserID IN (@OwnerID, @OtherTeacherID, @StudentID);

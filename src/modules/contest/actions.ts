@@ -9,6 +9,7 @@ import {
   createContestSchema,
   updateContestSchema,
   addContestProblemSchema,
+  updateContestProblemScoreSchema,
   joinContestSchema,
 } from "./schema";
 
@@ -118,6 +119,29 @@ export async function removeContestProblemAction(
 
   try {
     await contestRepository.removeProblem(contestId, problemId, actor.userId);
+    revalidatePath(`/teacher/contests/${contestId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function updateContestProblemScoreAction(
+  contestId: number,
+  problemId: number,
+  maxScore: number
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher", "Admin");
+  const parsed = updateContestProblemScoreSchema.safeParse({ problemId, maxScore });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  try {
+    await contestRepository.updateProblemScore(contestId, problemId, actor.userId, parsed.data.maxScore);
     revalidatePath(`/teacher/contests/${contestId}`);
     return { ok: true };
   } catch (error) {

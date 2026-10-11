@@ -4,6 +4,7 @@ import { listForManage, listForUser } from "@/modules/problem/repo";
 import { DifficultyBadge, UserStatusBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
 import { RowActions } from "../../teacher/problems/row-actions";
+import { NotificationBanner } from "@/components/notification-banner";
 
 const PAGE_SIZE = 20;
 
@@ -53,8 +54,23 @@ export default async function ProblemListPage({
     return `/user/problems?${params.toString()}`;
   };
 
+  const successMessage =
+    sp.success === "created"
+      ? sp.name
+        ? isStaff
+          ? `Đã tạo bài tập "${sp.name}" thành công! Bài tập đang chờ giảng viên duyệt.`
+          : `Đã tạo bài tập "${sp.name}" thành công!`
+        : "Đã tạo bài tập mới thành công!"
+      : sp.success === "updated"
+        ? sp.name
+          ? `Đã cập nhật bài tập "${sp.name}" thành công!`
+          : "Đã cập nhật bài tập thành công!"
+        : undefined;
+
   return (
     <div className="flex flex-col gap-5 pt-8">
+      {successMessage && <NotificationBanner message={successMessage} />}
+
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{isApprovalView ? "Bài tập chờ duyệt" : "Danh sách bài tập"}</h1>

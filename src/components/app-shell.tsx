@@ -87,18 +87,7 @@ export function AppShell({
             </form>
           </div>
         )}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-bg/85 px-8 py-3 backdrop-blur max-[820px]:static max-[820px]:px-4">
-          <form action="/user/problems" method="get" role="search" className="w-full max-w-[420px]">
-            <label className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 text-fg-muted focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary-soft">
-              <Icon name="search" size={16} />
-              <input
-                name="q"
-                aria-label="Tìm bài tập"
-                placeholder="Tìm bài tập..."
-                className="w-full bg-transparent py-2 text-fg outline-none"
-              />
-            </label>
-          </form>
+        <header className="sticky top-0 z-10 flex items-center justify-end gap-4 border-b border-line bg-bg/85 px-8 py-3 backdrop-blur max-[820px]:static max-[820px]:px-4">
           <div className="flex items-center gap-2.5">
             {avatar ? (
               <Image

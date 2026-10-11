@@ -34,6 +34,11 @@ export const addContestProblemSchema = z.object({
   orderIndex: z.coerce.number().int().min(0).default(0),
 });
 
+export const updateContestProblemScoreSchema = z.object({
+  problemId: z.coerce.number().int().positive(),
+  maxScore: z.coerce.number().int().min(1, "Điểm tối đa phải lớn hơn 0"),
+});
+
 export const joinContestSchema = z.object({
   password: z.string().trim().optional().nullable(),
 });
@@ -52,6 +57,7 @@ export const contestFilterSchema = z.object({
 export type CreateContestInput = z.infer<typeof createContestSchema>;
 export type UpdateContestInput = z.infer<typeof updateContestSchema>;
 export type AddContestProblemInput = z.infer<typeof addContestProblemSchema>;
+export type UpdateContestProblemScoreInput = z.infer<typeof updateContestProblemScoreSchema>;
 export type JoinContestInput = z.infer<typeof joinContestSchema>;
 export type ContestFilterInput = z.infer<typeof contestFilterSchema>;
 

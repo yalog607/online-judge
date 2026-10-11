@@ -338,7 +338,6 @@ export async function ContestParticipantPage({
                                 </span>
                               )}
                             </span>
-                            <span className="text-xs text-fg-muted">@{row.username}</span>
                           </div>
                         </div>
                       </td>

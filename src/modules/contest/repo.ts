@@ -81,6 +81,7 @@ export interface IContestRepository {
   getContest(contestId: number, requesterId?: number): Promise<ContestOverview | null>;
   listContests(filter: ContestFilterInput): Promise<{ items: ContestOverview[]; total: number }>;
   addProblem(contestId: number, requesterId: number, input: AddContestProblemInput): Promise<void>;
+  updateProblemScore(contestId: number, problemId: number, requesterId: number, maxScore: number): Promise<void>;
   removeProblem(contestId: number, problemId: number, requesterId: number): Promise<void>;
   listProblems(contestId: number, requesterId: number): Promise<ContestProblem[]>;
   joinContest(contestId: number, userId: number, password?: string | null): Promise<void>;
@@ -161,6 +162,20 @@ export class ContestRepository implements IContestRepository {
       RequesterID: requesterId,
       MaxScore: input.maxScore,
       OrderIndex: input.orderIndex,
+    });
+  }
+
+  async updateProblemScore(
+    contestId: number,
+    problemId: number,
+    requesterId: number,
+    maxScore: number
+  ): Promise<void> {
+    await execProc("usp_Contest_UpdateProblemScore", {
+      ContestID: contestId,
+      ProblemID: problemId,
+      RequesterID: requesterId,
+      MaxScore: maxScore,
     });
   }
 
