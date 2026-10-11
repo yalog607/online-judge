@@ -28,7 +28,7 @@ Tiêu chí thành công: 2 session (người gửi sự kiện / người nhận
 |---|---|---|
 | NotificationID | BIGINT IDENTITY PK | |
 | UserID | INT NOT NULL FK → Users | người nhận |
-| Type | VARCHAR(40) NOT NULL | `judge_result`, `problem_approved`, `problem_rejected`, `class_student_added`, `class_student_removed`, `class_document_added`, `comment_reply`, `comment_like`, `contest_joined`, `contest_started` |
+| Type | VARCHAR(40) NOT NULL | `judge_result`, `problem_approved`, `problem_rejected`, `class_student_added`, `class_student_removed`, `class_document_added`, `comment_reply`, `comment_like`, `contest_joined` (gộp: "N người đã tham gia"), `contest_started` |
 | Title | NVARCHAR(200) NOT NULL | |
 | Body | NVARCHAR(500) NULL | |
 | Link | NVARCHAR(300) NULL | đường dẫn nội bộ (bắt đầu `/`) |

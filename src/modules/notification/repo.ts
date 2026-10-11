@@ -32,6 +32,37 @@ export async function createNotifications(input: {
   return rows.map((r) => ({ id: Number(r.NotificationID), userId: r.UserID, createdAt: iso(r.CreatedAt) }));
 }
 
+export async function aggregateNotification(input: {
+  userId: number;
+  type: string;
+  titleTemplate: string;
+  body?: string;
+  link: string;
+}): Promise<{ id: number; userId: number; createdAt: string; title: string; updated: boolean } | null> {
+  const { rows } = await execProc<{
+    NotificationID: number | string;
+    UserID: number;
+    CreatedAt: Date | string;
+    Title: string;
+    Updated: boolean;
+  }>("usp_Notification_Aggregate", {
+    UserID: input.userId,
+    Type: input.type,
+    TitleTemplate: input.titleTemplate,
+    Body: input.body ?? null,
+    Link: input.link,
+  });
+  const r = rows[0];
+  if (!r) return null;
+  return {
+    id: Number(r.NotificationID),
+    userId: r.UserID,
+    createdAt: iso(r.CreatedAt),
+    title: r.Title,
+    updated: Boolean(r.Updated),
+  };
+}
+
 export async function listNotifications(
   userId: number,
   opts: { onlyUnread?: boolean; offset?: number; limit?: number } = {},

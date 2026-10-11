@@ -170,3 +170,48 @@ BEGIN
     SELECT UserID FROM dbo.Contest_User WHERE ContestID = @ContestID;
 END
 GO
+
+-- Folds repeated events into ONE unread notification per (user, type, link): the title template's
+-- {n} placeholder is replaced with the running count. Once the user has read it, counting restarts
+-- in a new notification. Returns the affected row; Updated = 1 when an existing row was bumped.
+CREATE OR ALTER PROCEDURE app.usp_Notification_Aggregate
+    @UserID        INT,
+    @Type          VARCHAR(40),
+    @TitleTemplate NVARCHAR(200),
+    @Body          NVARCHAR(500) = NULL,
+    @Link          NVARCHAR(300)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @TitleTemplate IS NULL OR CHARINDEX(N'{n}', @TitleTemplate) = 0
+        THROW 50180, 'Mau tieu de thong bao phai chua {n}.', 1;
+    IF LEN(REPLACE(@TitleTemplate, N'{n}', N'2147483647')) > 200
+        THROW 50180, 'Tieu de thong bao qua dai.', 1;
+
+    IF @Link IS NULL OR @Link NOT LIKE N'/%' OR @Link LIKE N'//%' OR @Link LIKE N'%://%'
+       OR @Link LIKE N'%\%' OR @Link LIKE N'%[<>"]%'
+        THROW 50180, 'Duong dan thong bao khong hop le.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID) RETURN;
+
+    BEGIN TRANSACTION;
+
+    -- SERIALIZABLE range lock: two concurrent joins must not both create the first row.
+    UPDATE TOP (1) dbo.Notifications WITH (UPDLOCK, SERIALIZABLE)
+    SET GroupCount = GroupCount + 1,
+        Title = REPLACE(@TitleTemplate, N'{n}', CAST(GroupCount + 1 AS NVARCHAR(10))),
+        Body = @Body,
+        CreatedAt = SYSUTCDATETIME()
+    OUTPUT inserted.NotificationID, inserted.UserID, inserted.CreatedAt, inserted.Title, CAST(1 AS BIT) AS Updated
+    WHERE UserID = @UserID AND Type = @Type AND IsRead = 0 AND Link = @Link;
+
+    IF @@ROWCOUNT = 0
+        INSERT dbo.Notifications (UserID, Type, Title, Body, Link, GroupCount)
+        OUTPUT inserted.NotificationID, inserted.UserID, inserted.CreatedAt, inserted.Title, CAST(0 AS BIT) AS Updated
+        VALUES (@UserID, @Type, REPLACE(@TitleTemplate, N'{n}', N'1'), @Body, @Link, 1);
+
+    COMMIT TRANSACTION;
+END
+GO

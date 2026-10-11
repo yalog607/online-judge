@@ -1,4 +1,4 @@
-import { notifyInputSchema, type NotifyInput } from "./schema";
+import { aggregateInputSchema, notifyInputSchema, type AggregateInput, type NotifyInput } from "./schema";
 import * as repo from "./repo";
 import { publishToUser } from "./pubsub";
 
@@ -59,6 +59,34 @@ async function notifyBatch(input: NotifyInput): Promise<void> {
     if (failed > 0) console.error(`notify: ${failed} realtime publish(es) failed`);
   } catch (e) {
     console.error("notify failed", e);
+  }
+}
+
+// Folds repeated events into one running notification (see usp_Notification_Aggregate). Like
+// notify(), it never throws: a notification problem must not fail the business operation.
+export async function notifyAggregate(input: AggregateInput): Promise<void> {
+  try {
+    const data = aggregateInputSchema.parse(input);
+    const row = await repo.aggregateNotification(data);
+    if (!row) return;
+    await withTimeout(
+      publishToUser(row.userId, {
+        kind: "notification",
+        updated: row.updated,
+        item: {
+          id: row.id,
+          type: data.type,
+          title: row.title,
+          body: data.body ?? null,
+          link: data.link,
+          createdAt: row.createdAt,
+          isRead: false,
+        },
+      }),
+      PUBLISH_TIMEOUT_MS,
+    ).catch((e) => console.error("notifyAggregate: realtime publish failed", e));
+  } catch (e) {
+    console.error("notifyAggregate failed", e);
   }
 }
 

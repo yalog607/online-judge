@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSafeLink, notifyInputSchema } from "./schema";
+import { aggregateInputSchema, isSafeLink, notifyInputSchema } from "./schema";
 
 const base = { userIds: [1], type: "judge_result", title: "Kết quả" } as const;
 
@@ -31,5 +31,23 @@ describe("notifyInputSchema", () => {
   it("dedupes recipient ids", () => {
     const r = notifyInputSchema.parse({ ...base, userIds: [2, 2, 3] });
     expect(r.userIds).toEqual([2, 3]);
+  });
+});
+
+describe("aggregateInputSchema", () => {
+  const ok = {
+    userId: 1,
+    type: "contest_joined",
+    titleTemplate: "{n} người đã tham gia",
+    link: "/teacher/contests/1",
+  };
+  it("accepts a template with the {n} placeholder", () => {
+    expect(aggregateInputSchema.safeParse(ok).success).toBe(true);
+  });
+  it("requires the placeholder, a safe link and a bounded template", () => {
+    expect(aggregateInputSchema.safeParse({ ...ok, titleTemplate: "không có số" }).success).toBe(false);
+    expect(aggregateInputSchema.safeParse({ ...ok, link: "//evil.com" }).success).toBe(false);
+    expect(aggregateInputSchema.safeParse({ ...ok, link: undefined }).success).toBe(false);
+    expect(aggregateInputSchema.safeParse({ ...ok, titleTemplate: "{n}" + "x".repeat(200) }).success).toBe(false);
   });
 });

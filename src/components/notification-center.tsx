@@ -59,9 +59,12 @@ export function NotificationCenter({ href, showBell = true }: { href: string; sh
           return;
         }
         const item = msg.item;
-        setUnread((n) => n + 1);
+        // An aggregated notification that changed in place was already counted as unread.
+        if (!msg.updated) setUnread((n) => n + 1);
         setRecent(null);
         setToasts((list) => [...list.filter((t) => t.id !== item.id), item].slice(-MAX_TOASTS));
+        const previous = pending.get(item.id);
+        if (previous) clearTimeout(previous);
         pending.set(
           item.id,
           setTimeout(() => dismiss(item.id), TOAST_MS),

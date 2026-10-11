@@ -1,5 +1,5 @@
 import * as repo from "./repo";
-import { notify } from "./service";
+import { notify, notifyAggregate } from "./service";
 
 const VERDICT_LABEL: Record<string, string> = {
   AC: "Chấp nhận (AC)",
@@ -139,10 +139,12 @@ export function notifyContestJoined(contestId: number, userId: number, userName:
   return safely(async () => {
     const contest = await repo.contestInfo(contestId);
     if (!contest || contest.CreatorID === userId) return;
-    await notify({
-      userIds: [contest.CreatorID],
+    // Many joiners fold into one running notification ("N người đã tham gia kỳ thi ...").
+    await notifyAggregate({
+      userId: contest.CreatorID,
       type: "contest_joined",
-      title: clip(`${clip(userName, 80)} đã tham gia kỳ thi "${clip(contest.ContestName, 100)}"`, 200),
+      titleTemplate: `{n} người đã tham gia kỳ thi "${clip(contest.ContestName, 120)}"`,
+      body: clip(`Mới nhất: ${userName}`, 500),
       link: `/teacher/contests/${contestId}`,
     });
   });

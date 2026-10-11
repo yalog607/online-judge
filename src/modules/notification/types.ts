@@ -10,4 +10,5 @@ export type NotificationItem = {
 
 export type StreamMessage =
   | { kind: "ready"; unread: number }
-  | { kind: "notification"; item: NotificationItem };
+  // `updated`: an existing unread notification changed in place (aggregated), so it is not a new unread.
+  | { kind: "notification"; item: NotificationItem; updated?: boolean };

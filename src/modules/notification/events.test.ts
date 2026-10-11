@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const notify = vi.fn();
+const notifyAggregate = vi.fn();
 const repo = {
   submissionInfo: vi.fn(),
   problemInfo: vi.fn(),
@@ -10,7 +11,7 @@ const repo = {
   contestInfo: vi.fn(),
   contestParticipantIds: vi.fn(),
 };
-vi.mock("./service", () => ({ notify }));
+vi.mock("./service", () => ({ notify, notifyAggregate }));
 vi.mock("./repo", () => repo);
 
 const events = await import("./events");
@@ -96,15 +97,22 @@ describe("events", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it("notifies the contest owner on join but not when the owner joins", async () => {
+  it("folds contest joins into one aggregated notification for the owner", async () => {
     repo.contestInfo.mockResolvedValue({ CreatorID: 2, ContestName: "K1" });
     await events.notifyContestJoined(1, 9, "Học viên");
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ userIds: [2], type: "contest_joined", link: "/teacher/contests/1" }),
-    );
-    notify.mockClear();
-    await events.notifyContestJoined(1, 2, "Chủ kỳ thi");
     expect(notify).not.toHaveBeenCalled();
+    expect(notifyAggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 2,
+        type: "contest_joined",
+        link: "/teacher/contests/1",
+        titleTemplate: expect.stringContaining("{n}"),
+        body: expect.stringContaining("Học viên"),
+      }),
+    );
+    notifyAggregate.mockClear();
+    await events.notifyContestJoined(1, 2, "Chủ kỳ thi");
+    expect(notifyAggregate).not.toHaveBeenCalled();
   });
 
   it("notifies participants when a contest starts", async () => {

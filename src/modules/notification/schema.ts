@@ -30,5 +30,20 @@ export const notifyInputSchema = z.object({
   link: z.string().max(300).refine(isSafeLink, "Đường dẫn không hợp lệ").optional(),
 });
 
+// One running notification per (user, type, link); "{n}" in the title is the running count.
+export const aggregateInputSchema = z.object({
+  userId: z.number().int().positive(),
+  type: z.enum(NOTIFICATION_TYPES),
+  titleTemplate: z
+    .string()
+    .trim()
+    .min(1)
+    .max(190)
+    .refine((t) => t.includes("{n}"), "Mẫu tiêu đề phải chứa {n}"),
+  body: z.string().trim().max(500).optional(),
+  link: z.string().max(300).refine(isSafeLink, "Đường dẫn không hợp lệ"),
+});
+
+export type AggregateInput = z.input<typeof aggregateInputSchema>;
 export type NotifyInput = z.input<typeof notifyInputSchema>;
 export type NotifyParsed = z.output<typeof notifyInputSchema>;
