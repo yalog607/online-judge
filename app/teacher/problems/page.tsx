@@ -5,6 +5,8 @@ import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
 import { RowActions } from "./row-actions";
 
+import { NotificationBanner } from "@/components/notification-banner";
+
 const PAGE_SIZE = 20;
 
 export default async function ManageProblemsPage({
@@ -15,6 +17,17 @@ export default async function ManageProblemsPage({
   const actor = await requireRole("Teacher", "Admin");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
+
+  const successMessage =
+    sp.success === "created"
+      ? sp.name
+        ? `Đã tạo bài tập "${sp.name}" thành công!`
+        : "Đã tạo bài tập mới thành công!"
+      : sp.success === "updated"
+        ? sp.name
+          ? `Đã cập nhật bài tập "${sp.name}" thành công!`
+          : "Đã cập nhật bài tập thành công!"
+        : undefined;
 
   const { rows, total } = await listForManage({
     actorId: actor.userId,
@@ -50,6 +63,8 @@ export default async function ManageProblemsPage({
 
   return (
     <div className="flex flex-col gap-5 pt-8">
+      {successMessage && <NotificationBanner message={successMessage} />}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Danh sách bài tập</h1>

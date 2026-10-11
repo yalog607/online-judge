@@ -91,11 +91,13 @@ export async function createProblemAction(
 
   if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
 
+  const titleParam = encodeURIComponent(parsed.data.title);
   if (actor.role === "TA") {
-    redirect(`/user/problems/${problemId}/edit`);
+    revalidatePath("/user/problems");
+    redirect(`/user/problems?success=created&name=${titleParam}`);
   } else {
     revalidatePath("/teacher/problems");
-    redirect("/teacher/problems");
+    redirect(`/teacher/problems?success=created&name=${titleParam}`);
   }
 }
 
@@ -153,11 +155,12 @@ export async function updateProblemAction(
   revalidatePath(`/user/problems/${problemId}`);
   revalidatePath("/user/problems");
 
+  const titleParam = encodeURIComponent(parsed.data.title);
   if (actor.role === "TA") {
     revalidatePath("/user/problems");
-    redirect("/user/problems?view=mine");
+    redirect(`/user/problems?view=mine&success=updated&name=${titleParam}`);
   } else {
-    redirect("/teacher/problems");
+    redirect(`/teacher/problems?success=updated&name=${titleParam}`);
   }
 }
 
