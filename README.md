@@ -86,6 +86,14 @@ deploy/                 Cấu hình triển khai và Caddy
 8. Thư mục tạm được xóa sau khi chấm.
 9. Kết quả job trả về qua queue events; trang bài nộp nhận qua SSE (`/api/submissions/[id]/events`) nên cập nhật ngay, và tự chuyển sang polling nếu SSE lỗi.
 
+### Thông báo
+
+1. Mã nghiệp vụ gọi `notify(...)` (hoặc một helper trong `src/modules/notification/events.ts`); thông báo được lưu vào `dbo.Notifications` qua `app.usp_Notification_Create`. SQL Server là nguồn sự thật.
+2. Sau khi lưu, thông báo được publish lên Redis kênh `notif:user:<userId>`; lỗi Redis không làm hỏng thao tác gốc.
+3. Trình duyệt giữ một kết nối SSE `/api/notifications/stream` (component `NotificationCenter`) để hiện popup và cập nhật chuông ngay; nếu SSE lỗi sẽ tự nối lại và đồng bộ số chưa đọc qua `/api/notifications/unread`.
+4. Danh sách đầy đủ ở `/user/notifications`, `/teacher/notifications`, `/admin/notifications`.
+5. Thêm sự kiện mới: thêm loại vào `NOTIFICATION_TYPES` (`schema.ts`), viết helper trong `events.ts` và gọi nó sau thao tác thành công.
+
 ## Testcase và file ZIP
 
 Giáo viên có thể nhập testcase thủ công hoặc tải lên một file `.zip`. ZIP cần chứa các cặp file có cùng tên cơ sở:
