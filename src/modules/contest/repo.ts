@@ -81,12 +81,14 @@ export interface IContestRepository {
   getContest(contestId: number, requesterId?: number): Promise<ContestOverview | null>;
   listContests(filter: ContestFilterInput): Promise<{ items: ContestOverview[]; total: number }>;
   addProblem(contestId: number, requesterId: number, input: AddContestProblemInput): Promise<void>;
+  updateProblemScore(contestId: number, problemId: number, requesterId: number, maxScore: number): Promise<void>;
   removeProblem(contestId: number, problemId: number, requesterId: number): Promise<void>;
   listProblems(contestId: number, requesterId: number): Promise<ContestProblem[]>;
   joinContest(contestId: number, userId: number, password?: string | null): Promise<void>;
-  getLeaderboard(contestId: number): Promise<ContestLeaderboardEntry[]>;
+  getLeaderboard(contestId: number, requesterId: number): Promise<ContestLeaderboardEntry[]>;
   startContestNow(contestId: number, requesterId: number, durationMinutes: number): Promise<void>;
   checkProblemAccess(contestId: number, problemId: number, userId: number): Promise<boolean>;
+  deleteContest(contestId: number, requesterId: number): Promise<void>;
 }
 
 export class ContestRepository implements IContestRepository {
@@ -140,6 +142,7 @@ export class ContestRepository implements IContestRepository {
       PageSize: filter.pageSize,
       UserID: filter.userId ?? null,
       OnlyMine: filter.onlyMine ? 1 : 0,
+      ...(filter.onlyJoined ? { OnlyJoined: 1 } : {}),
     });
     const total = rows[0]?.TotalCount ?? 0;
     return {
@@ -159,6 +162,20 @@ export class ContestRepository implements IContestRepository {
       RequesterID: requesterId,
       MaxScore: input.maxScore,
       OrderIndex: input.orderIndex,
+    });
+  }
+
+  async updateProblemScore(
+    contestId: number,
+    problemId: number,
+    requesterId: number,
+    maxScore: number
+  ): Promise<void> {
+    await execProc("usp_Contest_UpdateProblemScore", {
+      ContestID: contestId,
+      ProblemID: problemId,
+      RequesterID: requesterId,
+      MaxScore: maxScore,
     });
   }
 
@@ -205,9 +222,10 @@ export class ContestRepository implements IContestRepository {
     });
   }
 
-  async getLeaderboard(contestId: number): Promise<ContestLeaderboardEntry[]> {
+  async getLeaderboard(contestId: number, requesterId: number): Promise<ContestLeaderboardEntry[]> {
     const { rows } = await execProc<ContestLeaderboardDbRow>("usp_Contest_GetLeaderboard", {
       ContestID: contestId,
+      RequesterID: requesterId,
     });
     return rows.map((r) => ({
       rank: r.Rank,
@@ -244,6 +262,13 @@ export class ContestRepository implements IContestRepository {
       UserID: userId,
     });
     return Boolean(rows[0]?.CanAccess);
+  }
+
+  async deleteContest(contestId: number, requesterId: number): Promise<void> {
+    await execProc("usp_Contest_Delete", {
+      ContestID: contestId,
+      RequesterID: requesterId,
+    });
   }
 }
 

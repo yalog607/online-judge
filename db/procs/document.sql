@@ -16,8 +16,9 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @UserID
-            WHERE c.ClassID = @ClassID 
-              AND (c.TeacherID = @UserID OR u.Role = 'Admin')
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0
+              AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+                   OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
             THROW 50030, 'Nguoi dung khong co quyen tai tai lieu len lop hoc.', 1;
@@ -74,8 +75,9 @@ BEGIN
             FROM dbo.Documents d
             JOIN dbo.Classes c ON d.ClassID = c.ClassID
             JOIN dbo.Users u ON u.UserID = @UserID
-            WHERE d.DocumentID = @DocumentID 
-              AND (c.TeacherID = @UserID OR u.Role = 'Admin')
+        WHERE d.DocumentID = @DocumentID AND c.IsCancelled = 0
+              AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+                   OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
             THROW 50032, 'Nguoi dung khong co quyen xoa tai lieu nay.', 1;

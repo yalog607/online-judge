@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { approveTARequestAction } from "@/modules/class/actions";
+import { approveTARequestAction, approveClassRequestAction } from "@/modules/class/actions";
 
 export function ApprovalButtons({ requestId }: { requestId: number }) {
   const [pending, startTransition] = useTransition();
@@ -14,8 +14,11 @@ export function ApprovalButtons({ requestId }: { requestId: number }) {
   };
 
   const handleReject = () => {
+    const reason = window.prompt("Vui lòng nhập lý do từ chối yêu cầu trợ giảng này:");
+    if (reason === null) return; // User cancelled
+    
     startTransition(async () => {
-      const res = await approveTARequestAction(requestId, false);
+      const res = await approveTARequestAction(requestId, false, reason);
       if (res?.error) alert(res.error);
     });
   };
@@ -40,20 +43,23 @@ export function ApprovalButtons({ requestId }: { requestId: number }) {
   );
 }
 
-import { setProblemStatusAction } from "@/modules/problem/actions";
-
-export function ProblemApprovalButtons({ problemId }: { problemId: number }) {
+export function ClassApprovalButtons({ classId }: { classId: number }) {
   const [pending, startTransition] = useTransition();
 
   const handleApprove = () => {
     startTransition(async () => {
-      await setProblemStatusAction(problemId, "Public");
+      const res = await approveClassRequestAction(classId, true);
+      if (res?.error) alert(res.error);
     });
   };
 
   const handleReject = () => {
+    const reason = window.prompt("Vui lòng nhập lý do từ chối lớp học này:");
+    if (reason === null) return; // User cancelled
+    
     startTransition(async () => {
-      await setProblemStatusAction(problemId, "Private"); // Or just leave it Pending, but let's say "Private" to reject
+      const res = await approveClassRequestAction(classId, false, reason);
+      if (res?.error) alert(res.error);
     });
   };
 
@@ -70,7 +76,6 @@ export function ProblemApprovalButtons({ problemId }: { problemId: number }) {
         disabled={pending}
         onClick={handleReject}
         className="text-bad hover:underline disabled:opacity-50"
-        title="Chuyển về Private"
       >
         Từ chối
       </button>

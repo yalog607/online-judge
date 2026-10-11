@@ -31,8 +31,13 @@ BEGIN
             SET @InviteCode = UPPER(SUBSTRING(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 1, 8));
         END;
 
+        DECLARE @UserRole VARCHAR(20);
+        SELECT @UserRole = Role FROM dbo.Users WHERE UserID = @TeacherID;
+        
+        DECLARE @InitialStatus VARCHAR(20) = CASE WHEN @UserRole = 'Admin' THEN 'Approved' ELSE 'Pending' END;
+
         INSERT dbo.Classes (TeacherID, InviteCode, ClassName, Description, IsPublic, ApprovalStatus)
-        VALUES (@TeacherID, @InviteCode, @ClassName, @Description, @IsPublic, 'Approved');
+        VALUES (@TeacherID, @InviteCode, @ClassName, @Description, @IsPublic, @InitialStatus);
 
         DECLARE @NewClassID INT = SCOPE_IDENTITY();
 
@@ -64,10 +69,12 @@ BEGIN
 
         DECLARE @ClassID INT;
         DECLARE @ApprovalStatus VARCHAR(20);
+        DECLARE @IsCancelled BIT;
 
         SELECT 
             @ClassID = ClassID,
-            @ApprovalStatus = ApprovalStatus
+            @ApprovalStatus = ApprovalStatus,
+            @IsCancelled = IsCancelled
         FROM dbo.Classes
         WHERE InviteCode = @InviteCode;
 
@@ -80,6 +87,9 @@ BEGIN
         BEGIN
             THROW 50022, 'Lop hoc chua duoc phe duyet.', 1;
         END;
+
+        IF @IsCancelled = 1
+            THROW 50041, 'Lop hoc da duoc huy.', 1;
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
         BEGIN
@@ -148,6 +158,10 @@ BEGIN
     IF @PageSize < 1 SET @PageSize = 20;
     DECLARE @Offset INT = (@Page - 1) * @PageSize;
 
+    DECLARE @IsAdmin BIT = 0;
+    IF @UserID IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+        SET @IsAdmin = 1;
+
     SELECT 
         c.ClassID,
         c.TeacherID,
@@ -158,6 +172,8 @@ BEGIN
         c.Description,
         c.IsPublic,
         c.ApprovalStatus,
+        c.IsCancelled,
+        c.RejectionReason,
         c.CreatedAt,
         c.StudentCount,
         CASE 
@@ -172,8 +188,15 @@ BEGIN
     FROM app.uvw_ClassOverview c
     WHERE 
         (@Search IS NULL OR c.ClassName LIKE '%' + @Search + '%' OR c.TeacherName LIKE '%' + @Search + '%')
-        AND (c.ApprovalStatus = 'Approved' OR c.TeacherID = @UserID)
+        AND (@IsAdmin = 1 OR c.ApprovalStatus = 'Approved' OR c.TeacherID = @UserID)
         AND (
+            c.IsCancelled = 0 OR @IsAdmin = 1 OR c.TeacherID = @UserID
+            OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1
+            OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)
+        )
+        AND (
+            @IsAdmin = 1
+            OR
             (@OnlyMine = 1 AND (c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)))
             OR
             (@OnlyMine = 0 AND (c.IsPublic = 1 OR c.TeacherID = @UserID OR app.ufn_IsStudentInClass(c.ClassID, @UserID) = 1 OR EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = c.ClassID AND UserID_TA = @UserID)))
@@ -201,6 +224,8 @@ BEGIN
         c.Description,
         c.IsPublic,
         c.ApprovalStatus,
+        c.IsCancelled,
+        c.RejectionReason,
         c.CreatedAt,
         c.StudentCount,
         CASE 
@@ -253,9 +278,139 @@ BEGIN
         Email,
         JoinDate,
         ProgressPercent,
-        IsTA
+        IsTA,
+        IsTAPending
     FROM app.ufn_GetClassStudentList(@ClassID)
     ORDER BY JoinDate DESC;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_GetTeacherView
+    @ClassID INT,
+    @ActorID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        c.ClassID,
+        c.TeacherID,
+        u.FullName AS TeacherName,
+        CASE
+            WHEN c.TeacherID = @ActorID
+              OR uActor.Role = 'Admin'
+              OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID)
+            THEN c.InviteCode ELSE NULL
+        END AS InviteCode,
+        c.ClassName,
+        c.Description,
+        c.IsPublic,
+        c.ApprovalStatus,
+        c.IsCancelled,
+        c.CreatedAt,
+        CAST(CASE
+            WHEN c.TeacherID = @ActorID
+              OR uActor.Role = 'Admin'
+              OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID)
+            THEN 1 ELSE 0
+        END AS BIT) AS CanManage
+    FROM dbo.Classes c
+    JOIN dbo.Users u ON u.UserID = c.TeacherID
+    JOIN dbo.Users uActor ON uActor.UserID = @ActorID
+    WHERE c.ClassID = @ClassID
+      AND (
+          c.TeacherID = @ActorID
+          OR uActor.Role = 'Admin'
+          OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID)
+          OR (uActor.Role = 'Teacher' AND c.IsPublic = 1 AND c.ApprovalStatus = 'Approved' AND c.IsCancelled = 0)
+      );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_GetPublicPreviewProblems
+    @ClassID INT,
+    @ActorID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @ActorID
+        WHERE c.ClassID = @ClassID
+          AND u.Role = 'Teacher'
+          AND c.IsPublic = 1
+          AND c.ApprovalStatus = 'Approved'
+          AND c.IsCancelled = 0
+    )
+        THROW 50026, 'Ban khong co quyen xem bai tap cong khai cua lop nay.', 1;
+
+    SELECT
+        p.ProblemID,
+        p.Title,
+        p.Difficulty,
+        p.Status,
+        p.TimeLimit,
+        p.MemoryLimit,
+        cp.AssignedDate,
+        cp.DueDate,
+        cp.IsClosed,
+        'todo' AS UserStatus
+    FROM dbo.Class_Problem cp
+    JOIN dbo.Problems p ON p.ProblemID = cp.ProblemID
+    WHERE cp.ClassID = @ClassID
+      AND p.Status = 'Public'
+    ORDER BY cp.AssignedDate DESC;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_Cancel
+    @ClassID INT,
+    @TeacherID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE c.ClassID = @ClassID
+          AND c.TeacherID = @TeacherID
+          AND u.Role IN ('Teacher', 'Admin')
+    )
+        THROW 50042, 'Chi giao vien tao lop moi duoc huy lop nay.', 1;
+
+    UPDATE dbo.Classes
+    SET IsCancelled = 1
+    WHERE ClassID = @ClassID AND IsCancelled = 0;
+
+    IF @@ROWCOUNT = 0
+        THROW 50043, 'Lop hoc khong ton tai hoac da duoc huy.', 1;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Class_Resubmit
+    @ClassID INT,
+    @TeacherID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE c
+    SET ApprovalStatus = 'Pending',
+        RejectionReason = NULL
+    FROM dbo.Classes c
+    JOIN dbo.Users u ON u.UserID = @TeacherID
+    WHERE c.ClassID = @ClassID
+      AND c.TeacherID = @TeacherID
+      AND c.ApprovalStatus = 'Rejected'
+      AND c.IsCancelled = 0
+      AND u.Role IN ('Teacher', 'Admin');
+
+    IF @@ROWCOUNT = 0
+        THROW 50051, 'Chi chu lop co lop bi tu choi moi duoc gui lai don.', 1;
 END;
 GO
 
@@ -289,6 +444,13 @@ BEGIN
         EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin') OR 
         EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID)
     )
+      AND (
+          NOT EXISTS (SELECT 1 FROM dbo.Classes c WHERE c.ClassID = @ClassID AND c.IsCancelled = 1)
+          OR EXISTS (SELECT 1 FROM dbo.Classes c WHERE c.ClassID = @ClassID AND c.TeacherID = @UserID)
+          OR EXISTS (SELECT 1 FROM dbo.Class_Student cs WHERE cs.ClassID = @ClassID AND cs.UserID = @UserID)
+          OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = @ClassID AND ta.UserID_TA = @UserID)
+          OR EXISTS (SELECT 1 FROM dbo.Users u WHERE u.UserID = @UserID AND u.Role = 'Admin')
+      )
     ORDER BY cp.AssignedDate DESC;
 END;
 GO
@@ -309,7 +471,7 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND (
+            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
                 c.TeacherID = @TeacherID OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -366,7 +528,7 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND (
+            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
                 c.TeacherID = @TeacherID OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -415,7 +577,7 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND (
+            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
                 c.TeacherID = @TeacherID OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -468,7 +630,7 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND (
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
             c.TeacherID = @TeacherID OR 
             u.Role = 'Admin' OR
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -522,7 +684,7 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND (
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
             c.TeacherID = @TeacherID OR 
             u.Role = 'Admin' OR
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -584,7 +746,8 @@ GO
 CREATE OR ALTER PROCEDURE app.usp_Admin_ApproveTA
     @RequestID INT,
     @AdminID INT,
-    @IsApproved BIT
+    @IsApproved BIT,
+    @RejectionReason NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -612,7 +775,9 @@ BEGIN
             END
             ELSE
             BEGIN
-                UPDATE dbo.TA_Requests SET Status = 'Rejected' WHERE RequestID = @RequestID;
+                UPDATE dbo.TA_Requests 
+                SET Status = 'Rejected', RejectionReason = @RejectionReason 
+                WHERE RequestID = @RequestID;
             END
         END
         
@@ -679,6 +844,8 @@ BEGIN
         c.Description,
         c.IsPublic,
         c.ApprovalStatus,
+        c.IsCancelled,
+        c.RejectionReason,
         c.CreatedAt,
         c.StudentCount,
         0 AS IsJoined
@@ -706,7 +873,8 @@ BEGIN
         r.RequestedBy AS TeacherID,
         t.FullName AS TeacherName,
         r.RequestDate,
-        r.Status
+        r.Status,
+        r.RejectionReason
     FROM dbo.TA_Requests r
     JOIN dbo.Classes c ON r.ClassID = c.ClassID
     JOIN dbo.Users u ON r.UserID = u.UserID
@@ -728,10 +896,12 @@ BEGIN
 
         DECLARE @ApprovalStatus VARCHAR(20);
         DECLARE @IsPublic BIT;
+        DECLARE @IsCancelled BIT;
 
         SELECT 
             @ApprovalStatus = ApprovalStatus,
-            @IsPublic = IsPublic
+            @IsPublic = IsPublic,
+            @IsCancelled = IsCancelled
         FROM dbo.Classes
         WHERE ClassID = @ClassID;
 
@@ -749,6 +919,9 @@ BEGIN
         BEGIN
             THROW 50024, 'Day khong phai la lop hoc cong khai.', 1;
         END;
+
+        IF @IsCancelled = 1
+            THROW 50041, 'Lop hoc da duoc huy.', 1;
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
         BEGIN
@@ -768,6 +941,51 @@ BEGIN
 
         THROW;
     END CATCH
+END;
+GO
+
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListClassRequests
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.ClassID,
+        c.ClassName,
+        c.TeacherID,
+        t.FullName AS TeacherName,
+        c.CreatedAt,
+        c.ApprovalStatus,
+        c.RejectionReason
+    FROM dbo.Classes c
+    JOIN dbo.Users t ON c.TeacherID = t.UserID
+    ORDER BY CASE WHEN c.ApprovalStatus = 'Pending' THEN 0 ELSE 1 END, c.CreatedAt DESC;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ReviewClass
+    @ClassID INT,
+    @AdminID INT,
+    @IsApproved BIT,
+    @RejectionReason NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
+        THROW 50020, 'Nguoi dung khong co quyen admin.', 1;
+
+    DECLARE @Status VARCHAR(20) = CASE WHEN @IsApproved = 1 THEN 'Approved' ELSE 'Rejected' END;
+
+    UPDATE dbo.Classes
+    SET ApprovalStatus = @Status,
+        RejectionReason = CASE WHEN @IsApproved = 0 THEN @RejectionReason ELSE NULL END
+    WHERE ClassID = @ClassID AND ApprovalStatus = 'Pending';
+
+    IF @@ROWCOUNT = 0
+        THROW 50040, 'Khong tim thay yeu cau hoac da duoc xu ly.', 1;
 END;
 GO
 

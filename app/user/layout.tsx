@@ -10,10 +10,19 @@ const NAV: NavItem[] = [
   { href: "/profile", label: "Hồ sơ", icon: "user" },
 ];
 
+const TEACHER_NAV: NavItem[] = [
+  { href: "/teacher", label: "Tổng quan", icon: "home" },
+  { href: "/teacher/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
+  { href: "/teacher/problems", label: "Bài tập", icon: "code" },
+  { href: "/teacher/classes", label: "Lớp học", icon: "users" },
+  { href: "/teacher/contests", label: "Kỳ thi", icon: "trophy" },
+  { href: "/profile", label: "Hồ sơ", icon: "user" },
+];
+
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("User", "TA", "Teacher", "Admin");
   
-  const nav = [...NAV];
+  const nav = user.role === "Teacher" ? TEACHER_NAV : [...NAV];
   let roleLabel = "Học viên";
   if (user.role === "TA") roleLabel = "Trợ giảng";
   if (user.role === "Admin") roleLabel = "Quản trị viên";
@@ -23,9 +32,10 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     <AppShell
       roleLabel={roleLabel}
       fullName={user.fullName}
+      avatar={user.avatar}
       nav={nav}
       impersonating={Boolean(user.actorId)}
-      notificationsHref="/user/notifications"
+      notificationsHref={user.role === "Teacher" ? "/teacher/notifications" : "/user/notifications"}
     >
       {children}
     </AppShell>

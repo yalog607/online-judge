@@ -12,6 +12,8 @@ export interface ClassItem {
   Description: string | null;
   IsPublic: boolean;
   ApprovalStatus: string;
+  IsCancelled: boolean;
+  RejectionReason?: string;
   CreatedAt: string;
   StudentCount: number;
   IsJoined: boolean;
@@ -28,6 +30,7 @@ export interface StudentItem {
   JoinDate: string;
   ProgressPercent: number;
   IsTA?: boolean;
+  IsTAPending?: boolean;
 }
 
 export interface ClassProblemItem {
@@ -41,6 +44,20 @@ export interface ClassProblemItem {
   DueDate: string | null;
   IsClosed: boolean;
   UserStatus: "done" | "tried" | "todo";
+}
+
+export interface TeacherClassView {
+  ClassID: number;
+  TeacherID: number;
+  TeacherName: string;
+  InviteCode: string | null;
+  ClassName: string;
+  Description: string | null;
+  IsPublic: boolean;
+  ApprovalStatus: string;
+  IsCancelled: boolean;
+  CreatedAt: string;
+  CanManage: boolean;
 }
 
 export interface IClassRepository {
@@ -67,9 +84,13 @@ export interface IClassRepository {
 
   getClassDetail(classId: number, userId?: number): Promise<ClassItem | null>;
 
+  getTeacherClassView(classId: number, actorId: number): Promise<TeacherClassView | null>;
+
   getClassStudents(classId: number, actorId: number): Promise<StudentItem[]>;
 
   getClassProblems(classId: number, userId: number): Promise<ClassProblemItem[]>;
+
+  getPublicClassProblems(classId: number, actorId: number): Promise<ClassProblemItem[]>;
 
   addStudent(classId: number, teacherId: number, identifier: string): Promise<number>;
 
@@ -94,13 +115,20 @@ export interface IClassRepository {
     }
   ): Promise<ClassItem>;
 
+  cancelClass(classId: number, teacherId: number): Promise<void>;
+
+  resubmitClass(classId: number, teacherId: number): Promise<void>;
+
   requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<void>;
 
   listTARequests(adminId: number): Promise<any[]>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void>;
+  approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
 
   getClassesForTA(taUserId: number): Promise<ClassItem[]>;
+
+  listClassRequests(): Promise<ClassItem[]>;
+  approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -173,6 +201,14 @@ export class ClassRepository implements IClassRepository {
     return rows[0] ?? null;
   }
 
+  async getTeacherClassView(classId: number, actorId: number): Promise<TeacherClassView | null> {
+    const { rows } = await execProc<TeacherClassView>("usp_Class_GetTeacherView", {
+      ClassID: classId,
+      ActorID: actorId,
+    });
+    return rows[0] ?? null;
+  }
+
   async getClassStudents(classId: number, actorId: number): Promise<StudentItem[]> {
     const { rows } = await execProc<StudentItem>("usp_Class_GetStudents", {
       ClassID: classId,
@@ -185,6 +221,14 @@ export class ClassRepository implements IClassRepository {
     const { rows } = await execProc<ClassProblemItem>("usp_Class_GetProblems", {
       ClassID: classId,
       UserID: userId,
+    });
+    return rows;
+  }
+
+  async getPublicClassProblems(classId: number, actorId: number): Promise<ClassProblemItem[]> {
+    const { rows } = await execProc<ClassProblemItem>("usp_Class_GetPublicPreviewProblems", {
+      ClassID: classId,
+      ActorID: actorId,
     });
     return rows;
   }
@@ -226,6 +270,14 @@ export class ClassRepository implements IClassRepository {
     return rows[0];
   }
 
+  async cancelClass(classId: number, teacherId: number): Promise<void> {
+    await execProc("usp_Class_Cancel", { ClassID: classId, TeacherID: teacherId });
+  }
+
+  async resubmitClass(classId: number, teacherId: number): Promise<void> {
+    await execProc("usp_Class_Resubmit", { ClassID: classId, TeacherID: teacherId });
+  }
+
   async assignProblem(
     classId: number,
     teacherId: number,
@@ -263,11 +315,12 @@ export class ClassRepository implements IClassRepository {
     return rows;
   }
 
-  async approveTARequest(adminId: number, requestId: number, isApproved: boolean): Promise<void> {
+  async approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void> {
     await execProc("usp_Admin_ApproveTA", {
       AdminID: adminId,
       RequestID: requestId,
       IsApproved: isApproved,
+      RejectionReason: rejectionReason ?? null,
     });
   }
 
@@ -289,6 +342,20 @@ export class ClassRepository implements IClassRepository {
       items: rows,
       total: rows[0]?.TotalCount ?? 0,
     };
+  }
+
+  async listClassRequests(): Promise<ClassItem[]> {
+    const { rows } = await execProc("usp_Admin_ListClassRequests");
+    return rows as unknown as ClassItem[];
+  }
+
+  async approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void> {
+    await execProc("usp_Admin_ReviewClass", {
+      AdminID: adminId,
+      ClassID: classId,
+      IsApproved: isApproved,
+      RejectionReason: rejectionReason ?? null,
+    });
   }
 }
 

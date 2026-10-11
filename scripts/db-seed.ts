@@ -3,16 +3,29 @@ import bcrypt from "bcryptjs";
 import sql from "mssql";
 import { env } from "../src/lib/env";
 
-async function main() {
+async function connect(retries = 10, delayMs = 2000): Promise<sql.ConnectionPool> {
   const e = env();
-  const pool = await new sql.ConnectionPool({
-    server: e.DB_HOST,
-    port: e.DB_PORT,
-    database: e.DB_NAME,
-    user: "sa",
-    password: e.DB_SA_PASSWORD,
-    options: { encrypt: true, trustServerCertificate: true },
-  }).connect();
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await new sql.ConnectionPool({
+        server: e.DB_HOST,
+        port: e.DB_PORT,
+        database: e.DB_NAME,
+        user: "sa",
+        password: e.DB_SA_PASSWORD,
+        options: { encrypt: true, trustServerCertificate: true },
+      }).connect();
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.log(`Waiting for SQL Server to be ready (attempt ${attempt}/${retries})...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error("Failed to connect to database");
+}
+
+async function main() {
+  const pool = await connect();
 
   const users = [
     { username: "admin", email: "admin@itoj.local", fullName: "Trần Quản Trị", role: "Admin" },

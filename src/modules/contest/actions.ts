@@ -10,6 +10,7 @@ import {
   createContestSchema,
   updateContestSchema,
   addContestProblemSchema,
+  updateContestProblemScoreSchema,
   joinContestSchema,
 } from "./schema";
 
@@ -129,6 +130,29 @@ export async function removeContestProblemAction(
   }
 }
 
+export async function updateContestProblemScoreAction(
+  contestId: number,
+  problemId: number,
+  maxScore: number
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher", "Admin");
+  const parsed = updateContestProblemScoreSchema.safeParse({ problemId, maxScore });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  try {
+    await contestRepository.updateProblemScore(contestId, problemId, actor.userId, parsed.data.maxScore);
+    revalidatePath(`/teacher/contests/${contestId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
 export async function joinContestAction(
   contestId: number,
   _prev: ContestFormState,
@@ -149,6 +173,8 @@ export async function joinContestAction(
     await notifyContestJoined(contestId, user.userId, user.fullName);
     revalidatePath(`/user/contests/${contestId}`);
     revalidatePath("/user/contests");
+    revalidatePath(`/teacher/contests/${contestId}`);
+    revalidatePath("/teacher/contests");
     return { ok: true, message: "Tham gia kỳ thi thành công" };
   } catch (error) {
     if (error instanceof DomainError) {
@@ -179,3 +205,22 @@ export async function startContestNowAction(
     throw error;
   }
 }
+
+export async function deleteContestAction(
+  contestId: number
+): Promise<{ error?: string; ok?: boolean; message?: string }> {
+  const actor = await requireRole("Teacher", "Admin");
+
+  try {
+    await contestRepository.deleteContest(contestId, actor.userId);
+    revalidatePath("/teacher/contests");
+    revalidatePath("/user/contests");
+    return { ok: true, message: "Xóa kỳ thi thành công" };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+

@@ -117,30 +117,59 @@ BEGIN
     )
         RETURN 0;
 
-    DECLARE @Status VARCHAR(20);
+    DECLARE @Status VARCHAR(20), @ProblemStatus VARCHAR(20), @ProblemCreatorID INT, @ContestClassID INT;
     DECLARE @CreatorID INT;
     DECLARE @IsAdmin BIT = 0;
+    DECLARE @CreatorRole VARCHAR(20);
 
     IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
         SET @IsAdmin = 1;
 
     SELECT 
         @Status = app.ufn_GetContestStatus(StartTime, EndTime),
-        @CreatorID = CreatorID
+        @CreatorID = CreatorID,
+        @ContestClassID = ClassID
     FROM dbo.Contests 
     WHERE ContestID = @ContestID;
 
     IF @Status IS NULL
         RETURN 0;
 
-    IF EXISTS (
-        SELECT 1 FROM dbo.Problems 
-        WHERE ProblemID = @ProblemID AND Status = 'Hidden'
-    ) AND @IsAdmin = 0 AND @CreatorID <> @UserID
+    SELECT @ProblemStatus = Status, @ProblemCreatorID = CreatorID
+    FROM dbo.Problems
+    WHERE ProblemID = @ProblemID;
+
+    IF @ProblemStatus NOT IN ('Public', 'Private')
         RETURN 0;
+
+    IF @ProblemStatus = 'Private'
+    BEGIN
+        SELECT @CreatorRole = Role FROM dbo.Users WHERE UserID = @CreatorID;
+        IF @IsAdmin = 0 AND NOT (
+            @CreatorRole = 'Admin'
+            OR (
+                @CreatorRole = 'Teacher'
+                AND (
+                    @ProblemCreatorID = @CreatorID
+                    OR EXISTS (
+                        SELECT 1
+                        FROM dbo.Class_Problem cp
+                        JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                        WHERE cp.ProblemID = @ProblemID AND c.TeacherID = @CreatorID
+                    )
+                )
+            )
+        )
+            RETURN 0;
+    END;
 
     IF @Status = 'Upcoming' AND @CreatorID <> @UserID AND @IsAdmin = 0
         RETURN 0;
+
+    -- Keep the existing read-only behavior for ended, open contests, but do not
+    -- let that public archive path expose private problems to nonparticipants.
+    IF @ProblemStatus = 'Public' AND @Status = 'Ended' AND @ContestClassID IS NULL
+        RETURN 1;
 
     IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1
         RETURN 1;

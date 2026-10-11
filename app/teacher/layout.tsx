@@ -16,6 +16,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     <AppShell
       roleLabel={user.role === "Admin" ? "Quản trị" : "Giảng viên"}
       fullName={user.fullName}
+      avatar={user.avatar}
       nav={NAV}
       impersonating={Boolean(user.actorId)}
       notificationsHref="/teacher/notifications"

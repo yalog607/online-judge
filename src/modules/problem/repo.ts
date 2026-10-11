@@ -11,7 +11,9 @@ export type ProblemListRow = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus?: "Public" | "Private" | null;
   CreatorID: number;
+  CreatorFullName?: string | null;
   AcRate: number;
   UserStatus: "done" | "tried" | "todo";
   ClassName?: string;
@@ -21,19 +23,23 @@ export type ProblemListRow = {
 export type ManageProblemRow = {
   ProblemID: number;
   CreatorID: number;
+  CreatorFullName?: string | null;
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus: "Public" | "Private" | null;
   CreatedAt: string;
   ClassID: number | null;
   ClassName: string | null;
+  CanManage: boolean;
   TotalCount: number;
 };
 
 export type ProblemDetail = {
   ProblemID: number;
   CreatorID: number;
+  CreatorFullName: string;
   Title: string;
   Statement: string;
   InputFormat: string | null;
@@ -43,9 +49,13 @@ export type ProblemDetail = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus: "Public" | "Private" | null;
   RejectionReason: string | null;
   JudgeMode: JudgeMode;
   FunctionSpec: string | null;
+  ClassID?: number | null;
+  ClassName?: string | null;
+  TeacherID?: number | null;
 };
 
 export type TestcasePublic = { TestCaseID: number; InputData: string; ExpectedOutput: string };
@@ -57,6 +67,7 @@ export async function listForUser(input: {
   tag?: string;
   difficulty?: Difficulty;
   userStatus?: "done" | "tried" | "todo";
+  problemStatus?: ProblemStatus;
   page: number;
   pageSize: number;
   ownerOnly?: boolean;
@@ -67,6 +78,7 @@ export async function listForUser(input: {
     Tag: input.tag ?? null,
     Difficulty: input.difficulty ?? null,
     UserStatus: input.userStatus ?? null,
+    ProblemStatus: input.problemStatus ?? null,
     Page: input.page,
     PageSize: input.pageSize,
     OwnerOnly: input.ownerOnly ? 1 : 0,
@@ -77,6 +89,7 @@ export async function listForUser(input: {
 export async function listForManage(input: {
   actorId: number;
   search?: string;
+  tag?: string;
   difficulty?: Difficulty;
   status?: ProblemStatus;
   page: number;
@@ -86,6 +99,7 @@ export async function listForManage(input: {
   const { rows } = await execProc<ManageProblemRow>("usp_Problem_ListForManage", {
     ActorID: input.actorId,
     Search: input.search ?? null,
+    Tag: input.tag ?? null,
     Difficulty: input.difficulty ?? null,
     Status: input.status ?? null,
     Page: input.page,
@@ -100,6 +114,14 @@ export async function getProblem(problemId: number): Promise<ProblemDetail | nul
   return rows[0] ?? null;
 }
 
+export async function canTAEditProblem(problemId: number, taId: number): Promise<boolean> {
+  const { rows } = await execProc<{ CanEdit: boolean }>("usp_Problem_CanTAEdit", {
+    ProblemID: problemId,
+    TAID: taId,
+  });
+  return Boolean(rows[0]?.CanEdit);
+}
+
 export async function createProblem(input: {
   creatorId: number;
   title: string;
@@ -111,6 +133,7 @@ export async function createProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
+  proposedStatus?: "Public" | "Private";
   classId?: number;
   dueDate?: string | null;
   judgeMode?: JudgeMode;
@@ -127,6 +150,7 @@ export async function createProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? "Public",
+    ProposedStatus: input.proposedStatus ?? null,
     ClassID: input.classId ?? null,
     DueDate: input.dueDate ? new Date(input.dueDate) : null,
     JudgeMode: input.judgeMode ?? "stdin",
@@ -147,6 +171,8 @@ export async function updateProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
+  proposedStatus?: "Public" | "Private";
+  needsReview?: boolean;
   judgeMode?: JudgeMode;
   functionSpec?: string | null;
 }) {
@@ -162,6 +188,8 @@ export async function updateProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? null,
+    ProposedStatus: input.proposedStatus ?? null,
+    NeedsReview: input.needsReview ? 1 : 0,
     JudgeMode: input.judgeMode ?? null,
     FunctionSpec: input.functionSpec ?? null,
   });

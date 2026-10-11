@@ -50,7 +50,8 @@ RETURN
         u.Email,
         cs.JoinDate,
         cs.ProgressPercent,
-        CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = cs.ClassID AND ta.UserID_TA = cs.UserID) THEN 1 ELSE 0 END AS BIT) AS IsTA
+        CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = cs.ClassID AND ta.UserID_TA = cs.UserID) THEN 1 ELSE 0 END AS BIT) AS IsTA,
+        CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.TA_Requests r WHERE r.ClassID = cs.ClassID AND r.UserID = cs.UserID AND r.Status = 'Pending') THEN 1 ELSE 0 END AS BIT) AS IsTAPending
     FROM dbo.Class_Student cs
     INNER JOIN dbo.Users u ON cs.UserID = u.UserID
     WHERE cs.ClassID = @ClassID

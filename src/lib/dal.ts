@@ -8,6 +8,7 @@ type CurrentUser = {
   userId: number;
   role: Role;
   fullName: string;
+  avatar: string | null;
   status: "Active" | "Locked";
   actorId?: number;
 };
@@ -21,6 +22,7 @@ export const verifySession = cache(async (): Promise<CurrentUser | null> => {
     Role: Role;
     FullName: string;
     Status: "Active" | "Locked";
+    Avatar: string | null;
   }>("usp_Session_Validate", { SessionID: session.sessionId });
 
   const user = rows[0];
@@ -30,6 +32,7 @@ export const verifySession = cache(async (): Promise<CurrentUser | null> => {
     userId: user.UserID,
     role: user.Role,
     fullName: user.FullName,
+    avatar: user.Avatar ?? null,
     status: user.Status,
     actorId: session.actorId,
   };

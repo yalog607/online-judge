@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { uploadFile } from "@/lib/storage";
 import { documentRepository } from "./repo";
+import { classRepository } from "@/modules/class/repo";
 import { notifyClassDocument } from "@/modules/notification/events";
 import { uploadDocumentSchema, validateDocumentFile } from "./schema";
 
@@ -16,14 +17,18 @@ export type DocumentFormState = {
 
 export async function uploadDocumentAction(
   _prev: DocumentFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<DocumentFormState> {
-  const user = await requireRole("Teacher", "Admin");
+  const user = await requireRole("Teacher", "TA", "Admin");
 
   const classIdRaw = formData.get("classId");
   const classId = Number(classIdRaw);
   if (!classId || Number.isNaN(classId)) {
     return { error: "Mã lớp học không hợp lệ." };
+  }
+  const classAccess = await classRepository.getTeacherClassView(classId, user.userId);
+  if (!classAccess?.CanManage || classAccess.IsCancelled) {
+    return { error: "Bạn không có quyền tải tài liệu lên lớp này." };
   }
 
   const file = formData.get("file") as File | null;
@@ -79,9 +84,9 @@ export async function uploadDocumentAction(
 
 export async function deleteDocumentAction(
   documentId: number,
-  classId: number
+  classId: number,
 ): Promise<DocumentFormState> {
-  const user = await requireRole("Teacher", "Admin");
+  const user = await requireRole("Teacher", "TA", "Admin");
 
   try {
     await documentRepository.deleteDocument(documentId, user.userId);

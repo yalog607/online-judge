@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createSession, destroySession, readSession, SESSION_TTL_MS } from "@/lib/session";
-import { requireUser, roleHome } from "@/lib/dal";
+import { requireRole, requireUser, roleHome } from "@/lib/dal";
 import {
   changePasswordSchema,
   loginSchema,
@@ -10,6 +11,8 @@ import {
   requestRegisterOtpSchema,
   requestResetOtpSchema,
   resetPasswordSchema,
+  setUserRoleSchema,
+  setUserStatusSchema,
   updateProfileSchema,
 } from "./schema";
 import * as service from "./service";
@@ -114,6 +117,8 @@ export async function updateProfileAction(
   }
 
   await service.repo.updateProfile(user.userId, parsed.data.fullName, avatarUrl);
+  revalidatePath("/", "layout");
+  revalidatePath("/profile");
   return { ok: true };
 }
 
@@ -126,6 +131,7 @@ export async function changePasswordAction(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   try {
     await service.changePassword(user.userId, parsed.data.oldPassword, parsed.data.newPassword);
+    revalidatePath("/profile");
   } catch (e) {
     return { error: e instanceof AuthError ? e.message : "Đổi mật khẩu thất bại." };
   }
@@ -136,10 +142,12 @@ export async function impersonateAction(targetUserId: number) {
   const actor = await requireUser();
   const allowed = await validateImpersonate(actor.userId, targetUserId);
   if (!allowed) throw new Error("Không có quyền mô phỏng người dùng này.");
+  const targetUser = await getUserById(targetUserId);
+  if (!targetUser) throw new Error("Người dùng mục tiêu không tồn tại.");
   const oldSession = await readSession();
   if (oldSession) await revokeDbSession(oldSession.sessionId);
   await startSession(targetUserId, actor.userId);
-  redirect("/user");
+  redirect(roleHome(targetUser.Role));
 }
 
 export async function endImpersonationAction() {
@@ -155,3 +163,47 @@ export async function endImpersonationAction() {
   await startSession(actor.UserID);
   redirect(roleHome(actor.Role));
 }
+
+export async function setUserStatusAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireRole("Admin");
+  const parsed = setUserStatusSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  if (admin.userId === parsed.data.userId && parsed.data.status === "Locked") {
+    return { error: "Không thể tự khóa tài khoản của chính mình." };
+  }
+
+  try {
+    await service.setUserStatus(admin.userId, parsed.data.userId, parsed.data.status);
+    revalidatePath("/admin/users");
+    return { ok: true };
+  } catch (e) {
+    return { error: e instanceof AuthError ? e.message : "Thao tác thất bại." };
+  }
+}
+
+export async function setUserRoleAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireRole("Admin");
+  const parsed = setUserRoleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  if (admin.userId === parsed.data.userId) {
+    return { error: "Không thể tự thay đổi vai trò của chính mình." };
+  }
+
+  try {
+    await service.setUserRole(admin.userId, parsed.data.userId, parsed.data.role);
+    revalidatePath("/admin/users");
+    return { ok: true };
+  } catch (e) {
+    return { error: e instanceof AuthError ? e.message : "Thao tác thất bại." };
+  }
+}
+
+
