@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
-import { listForUser } from "@/modules/problem/repo";
+import { listForManage, listForUser } from "@/modules/problem/repo";
 import { DifficultyBadge, UserStatusBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
+import { RowActions } from "../../teacher/problems/row-actions";
 
 const PAGE_SIZE = 20;
 
@@ -13,20 +14,39 @@ export default async function ProblemListPage({
 }) {
   const user = await requireUser();
   const isStaff = user.role === "TA" || user.role === "Teacher" || user.role === "Admin";
+  const canApprove = user.role === "Teacher" || user.role === "Admin";
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
+  const isApprovalView = canApprove && sp.view === "pending";
 
-  const { rows, total } = await listForUser({
-    userId: user.userId,
+  const userResult = isApprovalView ? null : await listForUser({
+      userId: user.userId,
+      search: sp.q || undefined,
+      tag: sp.tag || undefined,
+      difficulty: (sp.difficulty || undefined) as never,
+      userStatus: (sp.status || undefined) as never,
+      problemStatus: (sp.problemStatus || undefined) as never,
+      page,
+      pageSize: PAGE_SIZE,
+      ownerOnly: sp.view === "mine",
+    });
+  const approvalResult = isApprovalView ? await listForManage({
+    actorId: user.userId,
     search: sp.q || undefined,
     tag: sp.tag || undefined,
     difficulty: (sp.difficulty || undefined) as never,
-    userStatus: (sp.status || undefined) as never,
-    problemStatus: (sp.problemStatus || undefined) as never,
+    status: "Pending",
     page,
     pageSize: PAGE_SIZE,
-    ownerOnly: sp.view === "mine",
-  });
+  }) : null;
+  const rows = userResult?.rows ?? [];
+  const approvalRows = approvalResult?.rows ?? [];
+  const total = approvalResult?.total ?? userResult?.total ?? 0;
+  const pendingCount = canApprove
+    ? isApprovalView
+      ? total
+      : (await listForManage({ actorId: user.userId, status: "Pending", page: 1, pageSize: 1 })).total
+    : 0;
 
   const buildHref = (p: number) => {
     const params = new URLSearchParams({ ...sp, page: String(p) } as Record<string, string>);
@@ -37,10 +57,14 @@ export default async function ProblemListPage({
     <div className="flex flex-col gap-5 pt-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Danh sách bài tập</h1>
-          <p className="mt-1 text-fg-muted">Chọn bài để luyện tập, lọc theo chủ đề và độ khó.</p>
+          <h1 className="text-2xl font-semibold">{isApprovalView ? "Bài tập chờ duyệt" : "Danh sách bài tập"}</h1>
+          <p className="mt-1 text-fg-muted">
+            {isApprovalView
+              ? "Duyệt bài tập trợ giảng gửi lên từ các lớp bạn phụ trách."
+              : "Chọn bài để luyện tập, lọc theo chủ đề và độ khó."}
+          </p>
         </div>
-        {isStaff && (
+        {isStaff && !isApprovalView && (
           <Link
             href="/user/problems/new"
             className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:bg-primary/90"
@@ -51,24 +75,38 @@ export default async function ProblemListPage({
       </div>
 
       {isStaff && (
-        <div className="flex gap-4 border-b border-line pb-2">
+        <nav aria-label="Danh sách bài tập" className="flex gap-5 border-b border-line pb-2">
           <Link 
             href="/user/problems" 
-            className={`font-medium pb-2 -mb-[9px] ${sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+            className={`whitespace-nowrap pb-2 -mb-[9px] font-medium ${!isApprovalView && sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
           >
             Tất cả
           </Link>
           <Link 
             href="/user/problems?view=mine" 
-            className={`font-medium pb-2 -mb-[9px] ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+            className={`whitespace-nowrap pb-2 -mb-[9px] font-medium ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
           >
             Bài tập của tôi
           </Link>
-        </div>
+          {canApprove && (
+            <Link
+              href="/user/problems?view=pending"
+              className={`inline-flex items-center gap-2 whitespace-nowrap pb-2 -mb-[9px] font-semibold ${isApprovalView ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+            >
+              Chờ duyệt
+              {pendingCount > 0 && (
+                <span className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none ${isApprovalView ? 'bg-primary text-primary-fg' : 'bg-warn-soft text-warn'}`}>
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </Link>
+          )}
+        </nav>
       )}
 
       <form key={new URLSearchParams(sp as Record<string, string>).toString()} className="flex gap-2.5 card p-2.5 overflow-x-auto items-center scrollbar-hide" method="get">
         {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
+        {isApprovalView && <input type="hidden" name="view" value="pending" />}
         <input
           name="q"
           defaultValue={sp.q}
@@ -91,7 +129,7 @@ export default async function ProblemListPage({
           <option value="Medium">Độ khó: Trung bình</option>
           <option value="Hard">Độ khó: Khó</option>
         </select>
-        {isStaff && (
+        {isStaff && !isApprovalView && (
           <select
             name="problemStatus"
             defaultValue={sp.problemStatus ?? ""}
@@ -105,7 +143,7 @@ export default async function ProblemListPage({
             <option value="Rejected">Trạng thái bài: Đã từ chối</option>
           </select>
         )}
-        <select
+        { !isApprovalView && <select
           name="status"
           defaultValue={sp.status ?? ""}
           className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
@@ -114,12 +152,12 @@ export default async function ProblemListPage({
           <option value="done">Trạng thái giải: Đã giải</option>
           <option value="tried">Trạng thái giải: Đã thử</option>
           <option value="todo">Trạng thái giải: Chưa làm</option>
-        </select>
+        </select>}
         <button type="submit" className="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm">
           Tìm kiếm
         </button>
         <Link
-          href={`/user/problems${sp.view === "mine" ? "?view=mine" : ""}`}
+          href={`/user/problems${isApprovalView ? "?view=pending" : sp.view === "mine" ? "?view=mine" : ""}`}
           className="shrink-0 rounded-lg border border-line bg-muted px-4 py-2 font-medium text-fg text-sm hover:bg-muted/80 transition-colors"
         >
           Xóa lọc
@@ -145,7 +183,60 @@ export default async function ProblemListPage({
         </div>
       )}
 
-      <div className="card">
+      {isApprovalView ? (
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1400px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[72px]" />
+              <col className="w-[260px]" />
+              <col className="w-[175px]" />
+              <col className="w-[200px]" />
+              <col className="w-[120px]" />
+              <col className="w-[180px]" />
+              <col className="w-[400px]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-line bg-muted text-left font-medium text-fg-muted">
+                <th className="px-5 py-3">STT</th>
+                <th className="px-5 py-3">Tên bài</th>
+                <th className="px-5 py-3">Người tạo</th>
+                <th className="px-5 py-3">Chủ đề</th>
+                <th className="px-5 py-3">Độ khó</th>
+                <th className="px-5 py-3">Trạng thái</th>
+                <th className="px-5 py-3 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {approvalRows.map((p, i) => (
+                <tr key={p.ProblemID} className="align-middle transition-colors hover:bg-muted/40">
+                  <td className="whitespace-nowrap px-5 py-4 text-fg-muted">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="px-5 py-4 font-medium">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Link href={`/teacher/problems/${p.ProblemID}`} className="truncate hover:underline" title={p.Title}>{p.Title}</Link>
+                      <span className="shrink-0 rounded border border-line/50 bg-muted px-1.5 py-0.5 text-[10px] font-normal text-fg-muted">#{p.ProblemID}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-fg-muted">{p.CreatorFullName ?? "-"}</td>
+                  <td className="px-5 py-4 text-fg-muted">
+                    {p.Tags ? <div className="flex flex-wrap gap-1">{[...new Set(p.Tags.split(",").map((t) => t.trim()).filter(Boolean))].map((tag) => <span key={tag} className="rounded border border-line/50 bg-muted px-1.5 py-0.5 text-xs">{tag}</span>)}</div> : "-"}
+                  </td>
+                  <td className="px-5 py-4"><DifficultyBadge value={p.Difficulty} /></td>
+                  <td className="px-5 py-4"><ProblemStatusBadge value={p.Status} /></td>
+                  <td className="px-5 py-4 text-right">
+                    <RowActions problemId={p.ProblemID} status={p.Status} proposedStatus={p.ProposedStatus} actorRole={user.role} canManage={p.CanManage} />
+                  </td>
+                </tr>
+              ))}
+              {approvalRows.length === 0 && (
+                <tr><td colSpan={7} className="px-5 py-14 text-center"><p className="font-medium text-fg">Không có bài tập đang chờ duyệt</p><p className="mt-1 text-sm text-fg-muted">Bài trợ giảng gửi từ lớp bạn phụ trách sẽ xuất hiện ở đây.</p></td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <Pager page={page} pageSize={PAGE_SIZE} total={total} buildHref={buildHref} />
+      </div>
+      ) : <div className="card">
         <table className="w-full">
           <thead>
             <tr className="border-b border-line text-left text-sm text-fg-muted">
@@ -174,11 +265,6 @@ export default async function ProblemListPage({
                     </Link>
                     <span className="text-[10px] text-fg-muted font-normal px-1.5 py-0.5 bg-muted rounded border border-line/50">#{p.ProblemID}</span>
                   </div>
-                  {p.ClassName && (
-                    <div className="mt-1 text-xs text-fg-muted font-normal">
-                      Lớp: {p.ClassName}
-                    </div>
-                  )}
                 </td>
                 <td className="px-5 py-3">{p.CreatorFullName ?? "-"}</td>
                 <td className="px-5 py-3 text-fg-muted">
@@ -237,6 +323,7 @@ export default async function ProblemListPage({
         </table>
         <Pager page={page} pageSize={PAGE_SIZE} total={total} buildHref={buildHref} />
       </div>
+      }
     </div>
   );
 }

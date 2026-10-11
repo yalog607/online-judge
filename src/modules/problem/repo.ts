@@ -11,6 +11,7 @@ export type ProblemListRow = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus?: "Public" | "Private" | null;
   CreatorID: number;
   CreatorFullName?: string | null;
   AcRate: number;
@@ -27,9 +28,11 @@ export type ManageProblemRow = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus: "Public" | "Private" | null;
   CreatedAt: string;
   ClassID: number | null;
   ClassName: string | null;
+  CanManage: boolean;
   TotalCount: number;
 };
 
@@ -46,9 +49,13 @@ export type ProblemDetail = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus: "Public" | "Private" | null;
   RejectionReason: string | null;
   JudgeMode: JudgeMode;
   FunctionSpec: string | null;
+  ClassID?: number | null;
+  ClassName?: string | null;
+  TeacherID?: number | null;
 };
 
 export type TestcasePublic = { TestCaseID: number; InputData: string; ExpectedOutput: string };
@@ -107,6 +114,14 @@ export async function getProblem(problemId: number): Promise<ProblemDetail | nul
   return rows[0] ?? null;
 }
 
+export async function canTAEditProblem(problemId: number, taId: number): Promise<boolean> {
+  const { rows } = await execProc<{ CanEdit: boolean }>("usp_Problem_CanTAEdit", {
+    ProblemID: problemId,
+    TAID: taId,
+  });
+  return Boolean(rows[0]?.CanEdit);
+}
+
 export async function createProblem(input: {
   creatorId: number;
   title: string;
@@ -118,6 +133,7 @@ export async function createProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
+  proposedStatus?: "Public" | "Private";
   classId?: number;
   dueDate?: string | null;
   judgeMode?: JudgeMode;
@@ -134,6 +150,7 @@ export async function createProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? "Public",
+    ProposedStatus: input.proposedStatus ?? null,
     ClassID: input.classId ?? null,
     DueDate: input.dueDate ? new Date(input.dueDate) : null,
     JudgeMode: input.judgeMode ?? "stdin",
@@ -154,6 +171,8 @@ export async function updateProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
+  proposedStatus?: "Public" | "Private";
+  needsReview?: boolean;
   judgeMode?: JudgeMode;
   functionSpec?: string | null;
 }) {
@@ -169,6 +188,8 @@ export async function updateProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? null,
+    ProposedStatus: input.proposedStatus ?? null,
+    NeedsReview: input.needsReview ? 1 : 0,
     JudgeMode: input.judgeMode ?? null,
     FunctionSpec: input.functionSpec ?? null,
   });

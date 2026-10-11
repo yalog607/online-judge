@@ -147,6 +147,8 @@ export async function joinContestAction(
     await contestRepository.joinContest(contestId, user.userId, parsed.data.password);
     revalidatePath(`/user/contests/${contestId}`);
     revalidatePath("/user/contests");
+    revalidatePath(`/teacher/contests/${contestId}`);
+    revalidatePath("/teacher/contests");
     return { ok: true, message: "Tham gia kỳ thi thành công" };
   } catch (error) {
     if (error instanceof DomainError) {

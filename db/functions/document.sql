@@ -13,7 +13,8 @@ BEGIN
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @UserID
         WHERE c.ClassID = @ClassID 
-          AND (c.TeacherID = @UserID OR u.Role = 'Admin')
+          AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+               OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
     )
     BEGIN
         SET @Allowed = 1;

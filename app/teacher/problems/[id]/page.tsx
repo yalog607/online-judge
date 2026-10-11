@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
-import { getProblem, listPublicTestcases } from "@/modules/problem/repo";
+import { checkProblemAccess, getProblem, listPublicTestcases } from "@/modules/problem/repo";
 import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge } from "@/components/badge";
 import { MathContent } from "@/components/math-content";
@@ -29,6 +29,7 @@ export default async function TeacherProblemPreviewPage({
   const problemId = Number(id);
   const problem = await getProblem(problemId);
   if (!problem) notFound();
+  if (!(await checkProblemAccess(problemId, user.userId))) notFound();
 
   const [examples, commentRows] = await Promise.all([
     listPublicTestcases(problemId),
@@ -65,12 +66,16 @@ export default async function TeacherProblemPreviewPage({
             <h1 className="text-[22px] font-semibold tracking-tight">
               {problem.ProblemID}. {problem.Title}
             </h1>
-            <Link
+            {problem.Status === "Hidden" ? (
+              <span className="rounded-lg border border-bad/30 bg-bad-soft px-4 py-2 text-sm font-medium text-bad">
+                Bài đã khóa
+              </span>
+            ) : <Link
               href={`/user/problems/${problem.ProblemID}`}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg hover:opacity-90"
             >
               Làm thử bài này
-            </Link>
+            </Link>}
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
             <DifficultyBadge value={problem.Difficulty} />

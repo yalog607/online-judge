@@ -27,6 +27,7 @@ export function ProblemForm({
   testcases,
   classes = [],
   isTA = false,
+  defaultClassId,
   disabled = false,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -34,6 +35,7 @@ export function ProblemForm({
   testcases?: TestcaseFull[];
   classes?: Array<{ ClassID: number; ClassName: string }>;
   isTA?: boolean;
+  defaultClassId?: number;
   disabled?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {});
@@ -49,7 +51,9 @@ export function ProblemForm({
   const [outputFormat, setOutputFormat] = useState(problem?.OutputFormat ?? "");
   const [mathTab, setMathTab] = useState<"edit" | "preview">("edit");
   const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>(
-    problem?.Status ?? "Public",
+    isTA
+      ? problem?.ProposedStatus ?? "Private"
+      : problem?.Status ?? "Public",
   );
 
   const initialSpec = parseFunctionSpec(problem?.FunctionSpec);
@@ -101,7 +105,21 @@ export function ProblemForm({
           </select>
         </label>
         {isTA ? (
-          <input type="hidden" name="status" value="Pending" />
+          <>
+            <input type="hidden" name="status" value="Pending" />
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+              <span>Đề xuất trạng thái sau khi được duyệt</span>
+              <select
+                name="proposedStatus"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as ProblemStatus)}
+                className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+              >
+                <option value="Public">Công khai</option>
+                <option value="Private">Riêng tư</option>
+              </select>
+            </label>
+          </>
         ) : (
           <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
             <span>Trạng thái bài tập</span>
@@ -233,11 +251,12 @@ export function ProblemForm({
               <span>Lớp học {isTA && <span className="text-bad">*</span>}</span>
               <select
                 name="classId"
+                defaultValue={defaultClassId ? String(defaultClassId) : ""}
                 required={isTA}
                 className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
               >
                 {!isTA && <option value="">-- Không giao cho lớp học --</option>}
-                {isTA && <option value="" disabled selected>-- Chọn lớp học --</option>}
+                {isTA && <option value="" disabled>-- Chọn lớp học --</option>}
                 {classes.map((c) => (
                   <option key={c.ClassID} value={c.ClassID}>
                     {c.ClassName}

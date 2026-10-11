@@ -46,6 +46,7 @@ export const contestFilterSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   userId: z.coerce.number().int().positive().optional(),
   onlyMine: z.boolean().optional(),
+  onlyJoined: z.boolean().optional(),
 });
 
 export type CreateContestInput = z.infer<typeof createContestSchema>;

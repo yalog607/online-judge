@@ -82,6 +82,7 @@ export async function createProblemAction(
     problemId = await repo.createProblem({
       creatorId: actor.userId,
       ...parsed.data,
+      proposedStatus: actor.role === "TA" ? parsed.data.proposedStatus : undefined,
       functionSpec: fn.functionSpec,
     });
   } catch (e) {
@@ -98,6 +99,23 @@ export async function createProblemAction(
   }
 }
 
+function areTestcasesEqual(
+  oldList: { InputData: string; ExpectedOutput: string; IsHidden: boolean }[],
+  newList: { input: string; expectedOutput: string; isHidden: boolean }[],
+) {
+  if (oldList.length !== newList.length) return false;
+  for (let i = 0; i < oldList.length; i++) {
+    if (
+      oldList[i].InputData !== newList[i].input ||
+      oldList[i].ExpectedOutput !== newList[i].expectedOutput ||
+      Boolean(oldList[i].IsHidden) !== Boolean(newList[i].isHidden)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function updateProblemAction(
   problemId: number,
   _prev: FormState,
@@ -111,13 +129,21 @@ export async function updateProblemAction(
     const testcases = await collectTestcases(formData);
     const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
     if (fn.error) return { error: fn.error };
+
+    const existingTestcases = await repo.listOwnerTestcases(problemId, actor.userId);
+    const hasTestcaseChanges = !areTestcasesEqual(existingTestcases, testcases);
+
     await repo.updateProblem({
       problemId,
       actorId: actor.userId,
       ...parsed.data,
+      proposedStatus: actor.role === "TA" ? parsed.data.proposedStatus : undefined,
+      needsReview: actor.role === "TA" && hasTestcaseChanges,
       functionSpec: fn.functionSpec,
     });
-    if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
+    if (hasTestcaseChanges) {
+      await repo.replaceTestcases(problemId, actor.userId, testcases);
+    }
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Cập nhật bài tập thất bại." };
   }
@@ -136,7 +162,7 @@ export async function updateProblemAction(
 }
 
 export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus, rejectionReason?: string) {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "Admin");
   await repo.setProblemStatus(problemId, actor.userId, status, rejectionReason);
   revalidatePath("/teacher/problems");
   revalidatePath(`/teacher/problems/${problemId}/edit`);

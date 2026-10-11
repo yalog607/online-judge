@@ -13,6 +13,9 @@ import { AssignProblemDialog } from "./assign-problem-dialog";
 import { RemoveClassProblemButton } from "./remove-class-problem-button";
 import { ApproveProblemButton } from "./approve-problem-button";
 import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
+import { TeacherClassReadonlyView } from "./teacher-class-readonly-view";
+import { CancelClassButton } from "../cancel-class-button";
+import { ResubmitClassButton } from "../resubmit-class-button";
 
 export default async function TeacherClassDetailPage({
   params,
@@ -29,8 +32,15 @@ export default async function TeacherClassDetailPage({
   const classId = parseInt(id, 10);
   if (isNaN(classId)) notFound();
 
-  const [classDetail, students, documents, problems, allProblems, submissions] = await Promise.all([
-    classRepository.getClassDetail(classId, actor.userId),
+  const classDetail = await classRepository.getTeacherClassView(classId, actor.userId);
+  if (!classDetail) notFound();
+
+  if (!classDetail.CanManage) {
+    const problems = await classRepository.getPublicClassProblems(classId, actor.userId);
+    return <TeacherClassReadonlyView classDetail={classDetail} problems={problems} />;
+  }
+
+  const [students, documents, problems, allProblems, submissions] = await Promise.all([
     classRepository.getClassStudents(classId, actor.userId),
     documentRepository.listDocuments(classId, actor.userId),
     classRepository.getClassProblems(classId, actor.userId),
@@ -38,8 +48,6 @@ export default async function TeacherClassDetailPage({
     activeTab === "submissions" ? classRepository.getClassSubmissions(classId, actor.userId) : Promise.resolve({ items: [], total: 0 }),
   ]);
 
-
-  if (!classDetail) notFound();
 
   const assignedProblemIds = new Set(problems.map((p) => p.ProblemID));
   const availableToAdd = allProblems.rows
@@ -66,6 +74,26 @@ export default async function TeacherClassDetailPage({
           </Link>
           <div className="mt-2 flex items-center gap-3">
             <h1 className="text-2xl font-semibold">{classDetail.ClassName}</h1>
+            {classDetail.IsCancelled && (
+              <span className="rounded-full border border-bad/30 bg-bad/10 px-2.5 py-0.5 text-xs font-medium text-bad">
+                Đã hủy
+              </span>
+            )}
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                classDetail.ApprovalStatus === "Approved"
+                  ? "bg-ok-soft text-ok"
+                  : classDetail.ApprovalStatus === "Rejected"
+                    ? "bg-bad-soft text-bad"
+                    : "bg-warn-soft text-warn"
+              }`}
+            >
+              {classDetail.ApprovalStatus === "Approved"
+                ? "Đã duyệt"
+                : classDetail.ApprovalStatus === "Rejected"
+                  ? "Bị từ chối"
+                  : "Chờ duyệt"}
+            </span>
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 classDetail.IsPublic
@@ -81,13 +109,29 @@ export default async function TeacherClassDetailPage({
           </p>
         </div>
 
-        <EditClassDialog
-          classId={classId}
-          initialClassName={classDetail.ClassName}
-          initialDescription={classDetail.Description}
-          initialIsPublic={classDetail.IsPublic}
-        />
+        <div className="flex items-center gap-2">
+          {classDetail.TeacherID === actor.userId &&
+            classDetail.ApprovalStatus === "Rejected" &&
+            !classDetail.IsCancelled && <ResubmitClassButton classId={classId} />}
+          {!classDetail.IsCancelled && (
+            <EditClassDialog
+              classId={classId}
+              initialClassName={classDetail.ClassName}
+              initialDescription={classDetail.Description}
+              initialIsPublic={classDetail.IsPublic}
+            />
+          )}
+          {classDetail.TeacherID === actor.userId && !classDetail.IsCancelled && (
+            <CancelClassButton classId={classId} className={classDetail.ClassName} />
+          )}
+        </div>
       </div>
+
+      {classDetail.IsCancelled && (
+        <div className="rounded-lg border border-bad/30 bg-bad/5 px-4 py-3 text-sm text-bad">
+          Lớp đã hủy. Học sinh cũ vẫn có thể xem bài tập và lịch sử nộp bài; lớp không nhận học sinh hoặc bài nộp mới.
+        </div>
+      )}
 
       <div className="flex border-b border-line gap-4">
         <Link
@@ -166,7 +210,9 @@ export default async function TeacherClassDetailPage({
               Quản lý các bài tập được giao cho học sinh trong lớp học này.
             </p>
           </div>
-          <AssignProblemDialog classId={classId} availableProblems={availableToAdd} />
+          {!classDetail.IsCancelled && (
+            <AssignProblemDialog classId={classId} availableProblems={availableToAdd} />
+          )}
         </div>
 
         <div className="card overflow-hidden">
@@ -221,11 +267,13 @@ export default async function TeacherClassDetailPage({
                         {p.Status === "Pending" && (
                           <ApproveProblemButton problemId={p.ProblemID} />
                         )}
-                        <RemoveClassProblemButton
-                          classId={classId}
-                          problemId={p.ProblemID}
-                          problemTitle={p.Title}
-                        />
+                        {!classDetail.IsCancelled && (
+                          <RemoveClassProblemButton
+                            classId={classId}
+                            problemId={p.ProblemID}
+                            problemTitle={p.Title}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -241,7 +289,7 @@ export default async function TeacherClassDetailPage({
         <p className="mb-4 text-xs text-fg-muted">
           Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học sinh trong lớp.
         </p>
-        <DocumentUploadForm classId={classId} />
+        {!classDetail.IsCancelled && <DocumentUploadForm classId={classId} />}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -249,13 +297,13 @@ export default async function TeacherClassDetailPage({
         <TeacherDocumentList classId={classId} documents={documents} />
       </div>
 
-      <div className="card p-5">
+      {!classDetail.IsCancelled && <div className="card p-5">
         <h2 className="mb-2 text-base font-semibold text-fg">Thêm học sinh vào lớp</h2>
         <p className="mb-4 text-xs text-fg-muted">
           Nhập địa chỉ email hoặc tên đăng nhập của học sinh để thêm trực tiếp vào lớp.
         </p>
         <AddStudentForm classId={classId} />
-      </div>
+      </div>}
 
       <TeacherClassStudentsManager classId={classId} students={students} />
         </div>

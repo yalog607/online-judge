@@ -8,10 +8,12 @@ export function JoinContestDialog({
   contestId,
   contestName,
   isProtected,
+  redirectHref = "/user/contests",
 }: {
   contestId: number;
   contestName: string;
   isProtected: boolean;
+  redirectHref?: string;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +31,7 @@ export function JoinContestDialog({
         setError(result.error);
       } else {
         setIsOpen(false);
-        router.push(`/user/contests/${contestId}`);
+        router.push(`${redirectHref}/${contestId}`);
         router.refresh();
       }
     });
@@ -42,7 +44,7 @@ export function JoinContestDialog({
         if (result?.error) {
           alert(result.error);
         } else {
-          router.push(`/user/contests/${contestId}`);
+          router.push(`${redirectHref}/${contestId}`);
           router.refresh();
         }
       });

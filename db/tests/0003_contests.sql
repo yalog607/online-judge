@@ -23,7 +23,7 @@ BEGIN
     SET @UserID = SCOPE_IDENTITY();
 END;
 
-SELECT TOP 1 @ProblemID = ProblemID FROM dbo.Problems;
+SELECT TOP 1 @ProblemID = ProblemID FROM dbo.Problems WHERE Status = 'Public';
 
 IF @ProblemID IS NULL
 BEGIN
