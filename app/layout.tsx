@@ -8,9 +8,25 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const TITLE = "ITOJ - Online Judge";
+const DESCRIPTION = "Hệ thống luyện tập và chấm bài lập trình trực tuyến ITOJ";
+
 export const metadata: Metadata = {
-  title: "ITOJ - Online Judge",
-  description: "Hệ thống luyện tập và chấm bài lập trình trực tuyến ITOJ",
+  metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    siteName: "ITOJ",
+    type: "website",
+    locale: "vi_VN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
