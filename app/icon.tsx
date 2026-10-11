@@ -15,10 +15,10 @@ export default function Icon() {
           justifyContent: "center",
           background: "#2563eb",
           color: "#ffffff",
-          fontSize: 17,
+          fontSize: 14,
           fontWeight: 700,
-          borderRadius: 7,
-          letterSpacing: -0.5,
+          borderRadius: 9,
+          letterSpacing: -0.3,
         }}
       >
         IT
