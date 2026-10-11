@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { contestRepository } from "./repo";
+import { notifyContestJoined, notifyContestStarted } from "@/modules/notification/events";
 import {
   createContestSchema,
   updateContestSchema,
@@ -169,6 +170,7 @@ export async function joinContestAction(
 
   try {
     await contestRepository.joinContest(contestId, user.userId, parsed.data.password);
+    await notifyContestJoined(contestId, user.userId, user.fullName);
     revalidatePath(`/user/contests/${contestId}`);
     revalidatePath("/user/contests");
     revalidatePath(`/teacher/contests/${contestId}`);
@@ -190,6 +192,7 @@ export async function startContestNowAction(
 
   try {
     await contestRepository.startContestNow(contestId, actor.userId, durationMinutes);
+    await notifyContestStarted(contestId, actor.userId);
     revalidatePath(`/teacher/contests/${contestId}`);
     revalidatePath(`/user/contests/${contestId}`);
     revalidatePath("/teacher/contests");

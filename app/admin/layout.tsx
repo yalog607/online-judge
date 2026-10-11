@@ -3,6 +3,7 @@ import { AppShell, type NavItem } from "@/components/app-shell";
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Tổng quan", icon: "home" },
+  { href: "/admin/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
   { href: "/admin/users", label: "Người dùng", icon: "users" },
   { href: "/admin/approvals", label: "Duyệt Yêu Cầu", icon: "shield" },
   { href: "/admin/reports", label: "Báo cáo thống kê", icon: "chart" },
@@ -18,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       avatar={user.avatar}
       nav={NAV}
       impersonating={Boolean(user.actorId)}
+      notificationsHref="/admin/notifications"
     >
       {children}
     </AppShell>

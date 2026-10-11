@@ -43,7 +43,11 @@ const theme = EditorView.theme({
     minHeight: "320px",
   },
   "&.cm-focused": { outline: "none" },
-  ".cm-scroller": { fontFamily: "var(--font-mono), ui-monospace, monospace", lineHeight: "1.6" },
+  ".cm-scroller": {
+    fontFamily: "var(--font-mono), ui-monospace, monospace",
+    lineHeight: "1.6",
+    overflow: "auto",
+  },
   ".cm-content": { caretColor: "var(--fg)", padding: "12px 0" },
   ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--fg)" },
   ".cm-gutters": {
@@ -86,11 +90,14 @@ export function CodeEditor({
   onChange,
   language,
   placeholder,
+  height = "min(65vh, 560px)",
 }: {
   value: string;
   onChange: (value: string) => void;
   language: EditorLanguage;
   placeholder?: string;
+  // Chiều cao cố định: nội dung dài sẽ cuộn bên trong editor thay vì kéo dài trang.
+  height?: string;
 }) {
   const extensions = useMemo(
     () => [
@@ -105,6 +112,7 @@ export function CodeEditor({
     <CodeMirror
       value={value}
       onChange={onChange}
+      height={height}
       extensions={extensions}
       theme="none"
       indentWithTab={false}

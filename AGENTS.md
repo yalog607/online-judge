@@ -65,6 +65,15 @@ Page/Component -> Server Action hoặc API Route -> Service -> Repository
 - Docker volume `db-data`: dữ liệu vật lý của SQL Server.
 - Filesystem tạm: source code và file trung gian khi chấm; không dùng làm lưu trữ lâu dài.
 
+## Quy tắc giao diện
+
+- Nguồn thiết kế duy nhất cho giao diện là artifact ITOJ: https://claude.ai/artifact/YXSCQak2cxUESw416gBd1Y
+- Mọi màn hình, component, bố cục, màu sắc, khoảng cách và nội dung mới hoặc được sửa phải lấy từ artifact này. Không tự sáng tác kiểu dáng khác.
+- Trước khi làm giao diện, đọc artifact (công cụ `Artifact` với `action: "read"`), tìm màn hình/thành phần tương ứng trong mã nguồn của nó rồi bám sát. Màn hình chưa có trong artifact thì dùng đúng các token, kiểu nút, card, bảng, badge và bố cục của artifact, và nói rõ trong phần bàn giao.
+- Dùng các token màu và component hiện có trong `app/globals.css`, `src/components/` (tương ứng `--bg`, `--card`, `--line`, `--pri`...). Không đưa thêm thư viện UI hoặc bảng màu khác.
+- Hỗ trợ cả giao diện sáng/tối và màn hình hẹp (≤ 820px) như artifact.
+- Khi làm xong, kiểm tra giao diện thực tế trên trình duyệt và so với artifact/ảnh tham chiếu; không báo hoàn thành chỉ dựa vào typecheck.
+
 ## Quy trình khi sửa code
 
 1. Đọc route/component và toàn bộ luồng action/service/repository/procedure liên quan.
@@ -85,5 +94,6 @@ Nếu thay đổi database, chạy thêm `npm run db:test` trên môi trường 
 - Source tuân theo kiến trúc hiện có.
 - Không làm lộ secret hoặc testcase ẩn.
 - Lỗi được xử lý ở đúng tầng và có thông báo phù hợp.
+- Giao diện khớp artifact thiết kế (xem "Quy tắc giao diện").
 - Có bằng chứng kiểm tra cho phần đã thay đổi.
 - Nêu rõ phần nào chưa thể kiểm tra; không tuyên bố đã sửa xong nếu chưa xác minh.

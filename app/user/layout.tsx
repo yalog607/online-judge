@@ -3,6 +3,7 @@ import { AppShell, type NavItem } from "@/components/app-shell";
 
 const NAV: NavItem[] = [
   { href: "/user", label: "Tổng quan", icon: "home" },
+  { href: "/user/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
   { href: "/user/problems", label: "Bài tập", icon: "code" },
   { href: "/user/classes", label: "Lớp học", icon: "users" },
   { href: "/user/contests", label: "Kỳ thi", icon: "trophy" },
@@ -11,6 +12,7 @@ const NAV: NavItem[] = [
 
 const TEACHER_NAV: NavItem[] = [
   { href: "/teacher", label: "Tổng quan", icon: "home" },
+  { href: "/teacher/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
   { href: "/teacher/problems", label: "Bài tập", icon: "code" },
   { href: "/teacher/classes", label: "Lớp học", icon: "users" },
   { href: "/teacher/contests", label: "Kỳ thi", icon: "trophy" },
@@ -33,6 +35,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       avatar={user.avatar}
       nav={nav}
       impersonating={Boolean(user.actorId)}
+      notificationsHref={user.role === "Teacher" ? "/teacher/notifications" : "/user/notifications"}
     >
       {children}
     </AppShell>

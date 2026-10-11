@@ -12,6 +12,7 @@ import {
 import type { JudgeJobResult } from "@/modules/judge/schema";
 import { LANGUAGES } from "./languages";
 import { InfraError, runInSandbox } from "./sandbox";
+import { notifyJudgeResult } from "@/modules/notification/events";
 import { functionOutputsMatch, outputsMatch } from "./compare";
 import { buildFunctionFiles } from "@/modules/problem/harness";
 import { parseFunctionSpec } from "@/modules/problem/function-spec";
@@ -44,6 +45,7 @@ async function judgeSubmission(
       passedCases,
       results: extra.results ?? [],
     });
+    await notifyJudgeResult(submission.SubmissionID, result, passedCases);
     return { result, passedCases };
   };
 
@@ -149,6 +151,7 @@ export async function judgeJob(
         passedCases: "0/0",
         results: [],
       });
+      await notifyJudgeResult(submissionId, "IE", "0/0");
       return { submissionId, result: "IE" };
     }
     await releaseSubmission(submissionId, workerId).catch(() => {});
