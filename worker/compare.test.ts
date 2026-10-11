@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RESULT_MARKER, functionOutputsMatch, outputsMatch } from "./compare";
-
-describe("outputsMatch", () => {
-  it("ignores CRLF, trailing spaces and trailing blank lines", () => {
-    expect(outputsMatch("1 \r\n2\r\n\r\n", "1\n2")).toBe(true);
-  });
-  it("detects different output", () => {
-    expect(outputsMatch("1\n3", "1\n2")).toBe(false);
-  });
-});
+import { RESULT_MARKER, functionOutputsMatch } from "./compare";
 
 describe("functionOutputsMatch", () => {
   const marker = RESULT_MARKER;

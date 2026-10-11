@@ -1,16 +1,3 @@
-function normalize(text: string): string {
-  return text
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .map((line) => line.replace(/[ \t]+$/, ""))
-    .join("\n")
-    .replace(/\n+$/, "");
-}
-
-export function outputsMatch(actual: string, expected: string): boolean {
-  return normalize(actual) === normalize(expected);
-}
-
 export const RESULT_MARKER = "@@ITOJ_RESULT@@";
 
 const DOUBLE_TOLERANCE = 1e-6;
@@ -27,7 +14,7 @@ function jsonEqual(a: unknown, b: unknown, tolerant: boolean): boolean {
   return a === b;
 }
 
-// Function-mode comparison: the driver prints RESULT_MARKER on its own line followed by the
+// The driver prints RESULT_MARKER on its own line followed by the
 // returned value as JSON. Anything the user's code printed before the marker is ignored.
 export function functionOutputsMatch(
   stdout: string,

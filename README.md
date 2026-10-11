@@ -78,10 +78,10 @@ deploy/                 Cấu hình triển khai và Caddy
 
 1. Source code được lưu vào bảng `Submissions` với trạng thái `Pending`, sau đó web đẩy job `{ submissionId }` vào hàng đợi BullMQ `judge` trên Redis.
 2. Worker nhận job từ queue, claim submission theo id bằng `app.usp_Judge_Claim` và chuyển sang `Judging`. Job lỗi hạ tầng được retry; submission kẹt hoặc job bị mất được sweeper của worker đưa lại vào queue.
-3. Source code được ghi vào thư mục tạm.
+3. Hệ thống chỉ chấm theo hàm: source của học viên (chỉ gồm hàm theo chữ ký `FunctionSpec` của bài) được ghép với driver do hệ thống sinh theo ngôn ngữ, rồi ghi vào thư mục tạm.
 4. Worker biên dịch/chạy source trong Docker sandbox, không có network và bị giới hạn tài nguyên.
-5. `InputData` của từng testcase được truyền vào `stdin`.
-6. `stdout` được so sánh với `ExpectedOutput` để xác định verdict.
+5. `InputData` của từng testcase (mỗi dòng là một tham số dạng JSON) được truyền vào `stdin` của driver.
+6. Driver gọi hàm và in kết quả JSON sau dấu `@@ITOJ_RESULT@@`; worker so sánh với `ExpectedOutput` để xác định verdict. Bài chưa có chữ ký hàm hợp lệ không chấm được (`IE`).
 7. Kết quả tổng và kết quả từng testcase được lưu lại trong SQL Server qua `app.usp_Judge_SaveResult` (chỉ worker đang giữ claim mới ghi được).
 8. Thư mục tạm được xóa sau khi chấm.
 9. Kết quả job trả về qua queue events; trang bài nộp nhận qua SSE (`/api/submissions/[id]/events`) nên cập nhật ngay, và tự chuyển sang polling nếu SSE lỗi.

@@ -36,15 +36,12 @@ async function collectTestcases(formData: FormData) {
   return manual;
 }
 
-// Reads the function-mode fields (fnName / fnParamName[] / fnParamType[] / fnReturns) and
-// checks every testcase against the declared signature so mistakes show up when saving.
-function parseFunctionMode(
+// Reads the function signature fields (fnName / fnParamName[] / fnParamType[] / fnReturns) and
+// checks every testcase against it so mistakes show up when saving.
+function parseFunctionSpec(
   formData: FormData,
-  judgeMode: "stdin" | "function",
   testcases: { input: string; expectedOutput: string }[],
 ): { functionSpec: string | null; error?: string } {
-  if (judgeMode !== "function") return { functionSpec: null };
-
   const names = formData.getAll("fnParamName") as string[];
   const types = formData.getAll("fnParamType") as string[];
   const spec = functionSpecSchema.safeParse({
@@ -75,7 +72,7 @@ export async function createProblemAction(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Không đọc được testcase." };
   }
-  const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
+  const fn = parseFunctionSpec(formData, testcases);
   if (fn.error) return { error: fn.error };
 
   let problemId: number;
@@ -130,7 +127,7 @@ export async function updateProblemAction(
 
   try {
     const testcases = await collectTestcases(formData);
-    const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
+    const fn = parseFunctionSpec(formData, testcases);
     if (fn.error) return { error: fn.error };
 
     const existingTestcases = await repo.listOwnerTestcases(problemId, actor.userId);
