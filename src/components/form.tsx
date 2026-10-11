@@ -2,11 +2,15 @@
 
 import { useFormStatus } from "react-dom";
 import type { ButtonHTMLAttributes } from "react";
+import { PasswordInput } from "@/components/password-input";
 
 const BUTTON_VARIANT = {
   primary: "bg-primary text-primary-fg shadow-card hover:opacity-90",
   ghost: "bg-transparent text-fg-muted hover:bg-muted",
 };
+
+const FIELD_INPUT =
+  "rounded-lg border border-line bg-muted px-3.5 py-2.5 text-base text-fg outline-none focus:border-primary focus:bg-surface focus:ring-[3px] focus:ring-primary-soft w-full";
 
 export function SubmitButton({
   children,
@@ -40,13 +44,11 @@ export function Field({
   return (
     <label htmlFor={id} className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
       <span>{label}</span>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-base text-fg outline-none focus:border-primary focus:bg-surface focus:ring-[3px] focus:ring-primary-soft"
-        {...rest}
-      />
+      {type === "password" ? (
+        <PasswordInput id={id} name={id} className={FIELD_INPUT} {...rest} />
+      ) : (
+        <input id={id} name={id} type={type} className={FIELD_INPUT} {...rest} />
+      )}
     </label>
   );
 }

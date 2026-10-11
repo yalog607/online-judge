@@ -143,13 +143,13 @@ async function currentHome() {
 }
 
 const BTN_PRIMARY =
-  "inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-fg shadow-card transition-opacity hover:opacity-90";
+  "inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-fg shadow-card hover:opacity-90 btn-shine";
 const BTN_SECONDARY =
   "inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-5 py-2.5 font-medium transition-colors hover:bg-muted";
 
 function SectionHead({ kicker, title, lead }: { kicker: string; title: string; lead?: string }) {
   return (
-    <div className="mb-9 max-w-2xl">
+    <div className="reveal mb-9 max-w-2xl">
       <span className="mb-2.5 block text-xs font-semibold tracking-[0.08em] text-primary uppercase">
         {kicker}
       </span>
@@ -205,20 +205,22 @@ export default async function Home() {
 
       <main>
         <section className="relative overflow-hidden py-[72px] max-[1000px]:py-11">
+          <div aria-hidden="true" className="hero-orb hero-orb-a" />
+          <div aria-hidden="true" className="hero-orb hero-orb-b" />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(var(--grid-line)_1px,transparent_1px),linear-gradient(90deg,var(--grid-line)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:linear-gradient(#000_25%,transparent)]"
+            className="hero-grid pointer-events-none absolute inset-0 bg-[linear-gradient(var(--grid-line)_1px,transparent_1px),linear-gradient(90deg,var(--grid-line)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:linear-gradient(#000_25%,transparent)]"
           />
           <div className="relative mx-auto grid w-full max-w-[1200px] grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] items-center gap-12 px-5 max-[1000px]:grid-cols-1">
             <div className="flex min-w-0 flex-col items-start">
-              <h1 className="mb-[18px] text-[clamp(34px,5.2vw,58px)] leading-[1.04] font-bold tracking-[-0.04em] text-balance">
+              <h1 style={{ "--d": "0.05s" } as React.CSSProperties} className="enter mb-[18px] text-[clamp(34px,5.2vw,58px)] leading-[1.04] font-bold tracking-[-0.04em] text-balance">
                 Thực hành và luyện tập không ngừng
               </h1>
-              <p className="mb-7 max-w-[520px] text-lg leading-relaxed text-fg-muted">
+              <p style={{ "--d": "0.18s" } as React.CSSProperties} className="enter mb-7 max-w-[520px] text-lg leading-relaxed text-fg-muted">
                 ITOJ là hệ thống luyện tập lập trình, hỗ trợ chấm bài cho lớp học và kỳ thi. Sinh
                 viên luyện thuật toán, giảng viên theo dõi tiến độ của học viên rõ ràng.
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div style={{ "--d": "0.3s" } as React.CSSProperties} className="enter flex flex-wrap gap-3">
                 {home ? (
                   <Link href={home} className={BTN_PRIMARY}>
                     <Icon name="send" size={16} />
@@ -236,7 +238,7 @@ export default async function Home() {
                   </>
                 )}
               </div>
-              <ul className="mt-7 flex flex-col gap-2 text-fg-muted">
+              <ul style={{ "--d": "0.42s" } as React.CSSProperties} className="enter mt-7 flex flex-col gap-2 text-fg-muted">
                 {[
                   "Mỗi bài chạy trong container riêng",
                   "Tắt mạng, giới hạn CPU, RAM, thời gian",
@@ -252,7 +254,7 @@ export default async function Home() {
 
             <div
               aria-label="Ví dụ một lần chấm bài"
-              className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-pop"
+              className="float-slow min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-pop"
             >
               <div className="flex items-center gap-3 border-b border-line bg-muted px-3.5 py-2.5">
                 <span className="flex gap-1.5" aria-hidden="true">
@@ -312,10 +314,10 @@ export default async function Home() {
               title="Mọi thứ một lớp học lập trình cần"
               lead="Từ bài tập đầu tiên đến kỳ thi cuối kỳ, trên cùng một hệ thống."
             />
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-4 reveal-stagger">
               {FEATURES.map((f) => (
-                <div key={f.title} className="card flex flex-col gap-3 p-[22px]">
-                  <div className="grid h-11 w-11 place-items-center rounded-[10px] bg-primary-soft text-primary">
+                <div key={f.title} className="card card-hover group flex flex-col gap-3 p-[22px]">
+                  <div className="icon-pop grid h-11 w-11 place-items-center rounded-[10px] bg-primary-soft text-primary">
                     <Icon name={f.icon} size={22} />
                   </div>
                   <h3 className="text-base font-semibold">{f.title}</h3>
@@ -332,9 +334,9 @@ export default async function Home() {
         >
           <div className="mx-auto w-full max-w-[1200px] px-5">
             <SectionHead kicker="Quy trình" title="Một lần nộp bài đi qua ba bước" />
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4 reveal-stagger">
               {STEPS.map((s, i) => (
-                <div key={s.title} className="card flex flex-col gap-2 p-[22px]">
+                <div key={s.title} className="card card-hover group flex flex-col gap-2 p-[22px]">
                   <div className="mb-1.5 grid h-[30px] w-[30px] place-items-center rounded-full bg-fg text-[13px] font-bold text-bg">
                     {i + 1}
                   </div>
@@ -353,9 +355,9 @@ export default async function Home() {
               title="Biết ngay bài làm sai ở đâu"
               lead="Năm phán quyết quen thuộc của các kỳ thi lập trình."
             />
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-3 reveal-stagger">
               {VERDICTS.map((v) => (
-                <div key={v.code} className="card flex flex-col items-start gap-2.5 p-4">
+                <div key={v.code} className="card card-hover flex flex-col items-start gap-2.5 p-4">
                   <Badge kind={v.kind}>{v.code}</Badge>
                   <p className="text-[13px] text-fg-muted">{v.body}</p>
                 </div>
@@ -370,10 +372,10 @@ export default async function Home() {
         >
           <div className="mx-auto w-full max-w-[1200px] px-5">
             <SectionHead kicker="Vai trò" title="Mỗi người một góc làm việc riêng" />
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-4 reveal-stagger">
               {ROLES.map((r) => (
-                <div key={r.title} className="card flex flex-col gap-3 p-[22px]">
-                  <div className="grid h-11 w-11 place-items-center rounded-[10px] bg-primary-soft text-primary">
+                <div key={r.title} className="card card-hover group flex flex-col gap-3 p-[22px]">
+                  <div className="icon-pop grid h-11 w-11 place-items-center rounded-[10px] bg-primary-soft text-primary">
                     <Icon name={r.icon} size={22} />
                   </div>
                   <h3 className="text-base font-semibold">{r.title}</h3>
@@ -387,7 +389,7 @@ export default async function Home() {
         {!home && (
           <section className="py-[72px] max-[820px]:py-[52px]">
             <div className="mx-auto w-full max-w-[1200px] px-5">
-              <div className="flex flex-col items-center gap-3.5 rounded-[20px] bg-fg px-6 py-[52px] text-center text-bg">
+              <div className="reveal flex flex-col items-center gap-3.5 rounded-[20px] bg-fg px-6 py-[52px] text-center text-bg">
                 <h2 className="text-[clamp(26px,3.4vw,36px)] font-bold tracking-[-0.03em]">
                   Sẵn sàng cho bài đầu tiên?
                 </h2>

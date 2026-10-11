@@ -40,7 +40,7 @@ export function NotificationBanner({
       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
       : type === "bad"
         ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-        : "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+        : "border-primary/30 bg-primary/10 text-primary";
 
   return (
     <div
@@ -64,7 +64,7 @@ export function NotificationBanner({
           </span>
         )}
         {type === "info" && (
-          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-primary/20 text-primary">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
