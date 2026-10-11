@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { uploadFile } from "@/lib/storage";
 import { documentRepository } from "./repo";
+import { notifyClassDocument } from "@/modules/notification/events";
 import { uploadDocumentSchema, validateDocumentFile } from "./schema";
 
 export type DocumentFormState = {
@@ -64,6 +65,7 @@ export async function uploadDocumentAction(
     }
 
     await documentRepository.addDocument(classId, user.userId, parsed.data);
+    await notifyClassDocument(classId, fileName, user.userId);
     revalidatePath(`/teacher/classes/${classId}`);
     revalidatePath(`/user/classes/${classId}`);
     return { ok: true, message: "Tải lên tài liệu thành công." };

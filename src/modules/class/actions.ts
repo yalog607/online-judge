@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { classRepository } from "./repo";
+import { notifyStudentAdded, notifyStudentRemoved } from "@/modules/notification/events";
 import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
 
 export type FormState = { error?: string; ok?: boolean; message?: string };
@@ -93,7 +94,8 @@ export async function addStudentAction(
   }
 
   try {
-    await classRepository.addStudent(classId, actor.userId, identifier);
+    const studentId = await classRepository.addStudent(classId, actor.userId, identifier);
+    await notifyStudentAdded(classId, studentId);
     revalidatePath(`/teacher/classes/${classId}`);
     return { ok: true, message: "Thêm học sinh vào lớp thành công!" };
   } catch (error) {
@@ -110,6 +112,7 @@ export async function removeStudentAction(
 ): Promise<void> {
   const actor = await requireRole("Teacher", "Admin");
   await classRepository.removeStudent(classId, actor.userId, studentId);
+  await notifyStudentRemoved(classId, studentId);
   revalidatePath(`/teacher/classes/${classId}`);
 }
 

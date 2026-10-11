@@ -8,6 +8,7 @@ import { createSubmission } from "@/modules/submission/repo";
 import { dispatchSubmission } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
+import { notifyProblemStatus } from "@/modules/notification/events";
 import { parseTestcaseZip } from "./testcase-zip";
 import { problemFormSchema, submitCodeSchema } from "./schema";
 import { functionSpecSchema, validateFunctionTestcase } from "./function-spec";
@@ -127,6 +128,7 @@ export async function updateProblemAction(
 export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus, rejectionReason?: string) {
   const actor = await requireRole("Teacher", "TA", "Admin");
   await repo.setProblemStatus(problemId, actor.userId, status, rejectionReason);
+  await notifyProblemStatus(problemId, status, actor.userId);
   revalidatePath("/teacher/problems");
   revalidatePath(`/teacher/problems/${problemId}/edit`);
   revalidatePath(`/user/problems/${problemId}/edit`);
