@@ -8,7 +8,7 @@ export default async function UserClassesPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const user = await requireRole("User", "TA");
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
   const sp = await searchParams;
 
   const { classes } = await classRepository.listClasses({
@@ -57,7 +57,9 @@ export default async function UserClassesPage({
                 className="flex flex-col justify-between card p-5 hover:border-fg-muted transition-colors"
               >
                 <div>
-                  <span className="text-xs font-medium text-primary">Đang tham gia</span>
+                  <span className={`text-xs font-medium ${c.IsCancelled ? "text-bad" : "text-primary"}`}>
+                    {c.IsCancelled ? "Đã hủy · chỉ xem lịch sử" : "Đang tham gia"}
+                  </span>
                   <h3 className="mt-1 text-lg font-semibold text-fg">
                     <Link href={getHref(c.ClassID)} className="hover:underline">
                       {c.ClassName}

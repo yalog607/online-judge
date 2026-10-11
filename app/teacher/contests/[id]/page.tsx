@@ -10,6 +10,10 @@ import { AddProblemDialog } from "./add-problem-dialog";
 import { RemoveProblemButton } from "./remove-problem-button";
 import { StartContestDialog } from "./start-contest-dialog";
 import { DeleteContestDialog } from "../delete-contest-dialog";
+import { listComments } from "@/modules/contest-comment/repo";
+import { ContestComments } from "../../../user/contests/[id]/comments";
+import { mapToCommentView } from "@/modules/contest-comment/view";
+import { ContestParticipantPage } from "@/modules/contest/participant-page";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -58,24 +62,46 @@ export default async function TeacherContestDetailPage({
   const contestId = Number(id);
   if (isNaN(contestId)) notFound();
 
-  const [contest, problems, leaderboard, { classes }, allProblems] = await Promise.all([
-    contestRepository.getContest(contestId, actor.userId),
-    contestRepository.listProblems(contestId, actor.userId).catch(() => []),
-    contestRepository.getLeaderboard(contestId).catch(() => []),
-    classRepository.listClasses({
-      userId: actor.userId,
-      onlyMine: true,
-      page: 1,
-      pageSize: 100,
-    }),
-    listProblemsForManage({
-      actorId: actor.userId,
-      page: 1,
-      pageSize: 100,
-    }),
-  ]);
-
+  const contest = await contestRepository.getContest(contestId, actor.userId);
   if (!contest) notFound();
+
+  const canManage = actor.role === "Admin" || contest.creatorId === actor.userId;
+  if (!canManage) {
+    return (
+      <ContestParticipantPage
+        params={Promise.resolve({ id })}
+        searchParams={searchParams}
+        contestBasePath="/teacher/contests"
+        listHref="/teacher/contests"
+      />
+    );
+  }
+
+  const [problems, leaderboard, rawComments, { classes }, publicProblems, privateProblems] = await Promise.all(
+    [
+      contestRepository.listProblems(contestId, actor.userId).catch(() => []),
+      contestRepository.getLeaderboard(contestId, actor.userId).catch(() => []),
+      listComments(contestId, actor.userId).catch(() => []),
+      classRepository.listClasses({
+        userId: actor.userId,
+        onlyMine: true,
+        page: 1,
+        pageSize: 100,
+      }),
+      listProblemsForManage({
+        actorId: actor.userId,
+        status: "Public",
+        page: 1,
+        pageSize: 100,
+      }),
+      listProblemsForManage({
+        actorId: actor.userId,
+        status: "Private",
+        page: 1,
+        pageSize: 100,
+      }),
+    ],
+  );
 
   const activeTab = sParams?.tab || "problems";
 
@@ -85,12 +111,8 @@ export default async function TeacherContestDetailPage({
   }));
 
   const attachedProblemIds = new Set(problems.map((p) => p.problemId));
-  const availableToAdd = allProblems.rows
-    .filter(
-      (p) =>
-        !attachedProblemIds.has(p.ProblemID) &&
-        p.Status !== "Hidden",
-    )
+  const availableToAdd = [...publicProblems.rows, ...privateProblems.rows]
+    .filter((p) => !attachedProblemIds.has(p.ProblemID) && (p.Status === "Public" || p.CanManage))
     .map((p) => ({
       problemId: p.ProblemID,
       title: p.Title,
@@ -102,15 +124,16 @@ export default async function TeacherContestDetailPage({
       <div>
         <Link
           href="/teacher/contests"
-          className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors mb-2"
+          className="mb-2 inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-xs font-semibold text-fg-muted transition-colors hover:bg-muted hover:text-fg"
         >
-          ← Quay lại danh sách kỳ thi
+          ← Thoát kỳ thi
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-fg">{contest.contestName}</h1>
               <StatusBadge status={contest.status} />
+              <span className="text-xs text-fg-muted">Tạo bởi {contest.creatorName}</span>
               {contest.isProtected && (
                 <span className="rounded bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20">
                   Có mật khẩu
@@ -118,7 +141,9 @@ export default async function TeacherContestDetailPage({
               )}
             </div>
             {contest.description && (
-              <p className="mt-1 text-sm text-fg-muted whitespace-pre-line">{contest.description}</p>
+              <p className="mt-1 text-sm text-fg-muted whitespace-pre-line">
+                {contest.description}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -177,6 +202,16 @@ export default async function TeacherContestDetailPage({
         >
           Bảng xếp hạng ({leaderboard.length})
         </Link>
+        <Link
+          href={`/teacher/contests/${contestId}?tab=comments`}
+          className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === "comments"
+              ? "border-primary text-primary"
+              : "border-transparent text-fg-muted hover:text-fg"
+          }`}
+        >
+          Bình luận ({rawComments.length})
+        </Link>
       </div>
 
       {activeTab === "problems" && (
@@ -206,7 +241,8 @@ export default async function TeacherContestDetailPage({
                 {problems.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có bài tập nào trong đề thi. Nhấn &quot;Thêm bài tập&quot; để gán bài vào kỳ thi.
+                      Chưa có bài tập nào trong đề thi. Nhấn &quot;Thêm bài tập&quot; để gán bài vào
+                      kỳ thi.
                     </td>
                   </tr>
                 ) : (
@@ -229,9 +265,7 @@ export default async function TeacherContestDetailPage({
                       <td className="px-4 py-3 text-xs text-fg-muted">
                         {(p.timeLimit / 1000).toFixed(1)}s / {p.memoryLimit}MB
                       </td>
-                      <td className="px-4 py-3 font-semibold text-primary">
-                        {p.maxScore} điểm
-                      </td>
+                      <td className="px-4 py-3 font-semibold text-primary">{p.maxScore} điểm</td>
                       <td className="px-4 py-3 text-right">
                         <RemoveProblemButton
                           contestId={contestId}
@@ -282,9 +316,15 @@ export default async function TeacherContestDetailPage({
                   leaderboard.map((row) => (
                     <tr key={row.userId} className="hover:bg-muted/40 transition-colors">
                       <td className="px-4 py-3 font-bold text-center">
-                        {row.rank === 1 && <span className="text-amber-500 font-extrabold text-base">🥇 1</span>}
-                        {row.rank === 2 && <span className="text-slate-400 font-extrabold text-base">🥈 2</span>}
-                        {row.rank === 3 && <span className="text-amber-700 font-extrabold text-base">🥉 3</span>}
+                        {row.rank === 1 && (
+                          <span className="text-amber-500 font-extrabold text-base">🥇 1</span>
+                        )}
+                        {row.rank === 2 && (
+                          <span className="text-slate-400 font-extrabold text-base">🥈 2</span>
+                        )}
+                        {row.rank === 3 && (
+                          <span className="text-amber-700 font-extrabold text-base">🥉 3</span>
+                        )}
                         {row.rank > 3 && <span className="text-fg-muted">#{row.rank}</span>}
                       </td>
                       <td className="px-4 py-3 font-medium text-fg">
@@ -313,6 +353,18 @@ export default async function TeacherContestDetailPage({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeTab === "comments" && (
+        <div className="card p-6">
+          <ContestComments
+            contestId={contestId}
+            currentUserId={actor.userId}
+            canModerate={canManage}
+            canComment={true}
+            comments={rawComments.map(mapToCommentView)}
+          />
         </div>
       )}
     </div>

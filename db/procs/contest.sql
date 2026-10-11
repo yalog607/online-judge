@@ -104,14 +104,23 @@ BEGIN
     SELECT 
         co.*,
         CAST(CASE 
-            WHEN @RequesterID IS NOT NULL AND (
-                EXISTS (SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = @ContestID AND cu.UserID = @RequesterID)
-                OR app.ufn_CanUserAccessContest(@ContestID, @RequesterID) = 1
+            WHEN @RequesterID IS NOT NULL AND EXISTS (
+                SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = @ContestID AND cu.UserID = @RequesterID
             ) THEN 1 
             ELSE 0 
         END AS BIT) AS IsJoined
     FROM app.uvw_ContestOverview co
-    WHERE co.ContestID = @ContestID;
+    WHERE co.ContestID = @ContestID
+      AND @RequesterID IS NOT NULL
+      AND (
+          co.CreatorID = @RequesterID
+          OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @RequesterID AND Role = 'Admin')
+          OR EXISTS (SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = @ContestID AND cu.UserID = @RequesterID)
+          OR co.ClassID IS NULL
+          OR EXISTS (SELECT 1 FROM dbo.Classes c WHERE c.ClassID = co.ClassID AND c.TeacherID = @RequesterID)
+          OR EXISTS (SELECT 1 FROM dbo.Class_Student cs WHERE cs.ClassID = co.ClassID AND cs.UserID = @RequesterID)
+          OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = co.ClassID AND ta.UserID_TA = @RequesterID)
+      );
 END;
 GO
 
@@ -122,7 +131,8 @@ CREATE OR ALTER PROCEDURE app.usp_Contest_List
     @Page INT = 1,
     @PageSize INT = 20,
     @UserID INT = NULL,
-    @OnlyMine BIT = 0
+    @OnlyMine BIT = 0,
+    @OnlyJoined BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -135,6 +145,19 @@ BEGIN
       AND (@ClassID IS NULL OR co.ClassID = @ClassID)
       AND (@Search IS NULL OR co.ContestName LIKE '%' + @Search + '%')
       AND (@OnlyMine = 0 OR (@UserID IS NOT NULL AND co.CreatorID = @UserID))
+      AND (@OnlyJoined = 0 OR (@UserID IS NOT NULL AND EXISTS (
+          SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = co.ContestID AND cu.UserID = @UserID
+      )))
+      AND @UserID IS NOT NULL
+      AND (
+          co.CreatorID = @UserID
+          OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+          OR EXISTS (SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = co.ContestID AND cu.UserID = @UserID)
+          OR co.ClassID IS NULL
+          OR EXISTS (SELECT 1 FROM dbo.Classes c WHERE c.ClassID = co.ClassID AND c.TeacherID = @UserID)
+          OR EXISTS (SELECT 1 FROM dbo.Class_Student cs WHERE cs.ClassID = co.ClassID AND cs.UserID = @UserID)
+          OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = co.ClassID AND ta.UserID_TA = @UserID)
+      )
     ORDER BY 
         CASE 
             WHEN co.[Status] = 'Ongoing' THEN 1
@@ -158,26 +181,46 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    IF NOT EXISTS (
-        SELECT 1 
-        FROM dbo.Contests c
-        LEFT JOIN dbo.Users u ON u.UserID = @RequesterID
-        WHERE c.ContestID = @ContestID 
-          AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
-    )
-        THROW 50035, 'Ban khong co quyen them bai tap vao ky thi nay.', 1;
-
-    IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID)
-        THROW 50036, 'Bai tap khong ton tai.', 1;
-
-    IF EXISTS (
-        SELECT 1 FROM dbo.Problems 
-        WHERE ProblemID = @ProblemID AND Status = 'Hidden'
-    )
-        THROW 50037, 'Khong the them bai tap da bi khoa vao ky thi.', 1;
-
     BEGIN TRY
         BEGIN TRANSACTION;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.Contests c WITH (UPDLOCK, HOLDLOCK)
+            JOIN dbo.Users u ON u.UserID = @RequesterID
+            WHERE c.ContestID = @ContestID
+              AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
+        )
+            THROW 50035, 'Ban khong co quyen them bai tap vao ky thi nay.', 1;
+
+        DECLARE @ProblemStatus VARCHAR(20), @ProblemCreatorID INT, @RequesterRole VARCHAR(20);
+        SELECT @ProblemStatus = Status, @ProblemCreatorID = CreatorID
+        FROM dbo.Problems WITH (UPDLOCK, HOLDLOCK)
+        WHERE ProblemID = @ProblemID;
+
+        SELECT @RequesterRole = Role FROM dbo.Users WHERE UserID = @RequesterID;
+
+        IF @ProblemStatus IS NULL
+            THROW 50036, 'Bai tap khong ton tai.', 1;
+
+        IF @ProblemStatus NOT IN ('Public', 'Private')
+            THROW 50037, 'Chi co the them bai Cong khai hoac bai Rieng tu duoc phep quan ly.', 1;
+
+        IF @ProblemStatus = 'Private'
+           AND @RequesterRole <> 'Admin'
+           AND NOT (
+               @RequesterRole = 'Teacher'
+               AND (
+                   @ProblemCreatorID = @RequesterID
+                   OR EXISTS (
+                       SELECT 1
+                       FROM dbo.Class_Problem cp
+                       JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                       WHERE cp.ProblemID = @ProblemID AND c.TeacherID = @RequesterID
+                   )
+               )
+           )
+            THROW 50037, 'Ban khong co quyen su dung bai Rieng tu nay trong ky thi.', 1;
 
         IF EXISTS (SELECT 1 FROM dbo.Contest_Problem WHERE ContestID = @ContestID AND ProblemID = @ProblemID)
         BEGIN
@@ -248,7 +291,7 @@ BEGIN
     IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @RequesterID AND Role = 'Admin')
         SET @IsAdmin = 1;
 
-    SELECT 
+    SELECT
         @Status = app.ufn_GetContestStatus(StartTime, EndTime),
         @CreatorID = CreatorID
     FROM dbo.Contests 
@@ -257,10 +300,22 @@ BEGIN
     IF @Status IS NULL
         THROW 50038, 'Ky thi khong ton tai.', 1;
 
+    IF @CreatorID <> @RequesterID AND @IsAdmin = 0
+       AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @RequesterID)
+       AND NOT (
+           @Status = 'Ended'
+           AND EXISTS (
+               SELECT 1 FROM dbo.Contests c
+               WHERE c.ContestID = @ContestID
+                 AND (c.ClassID IS NULL OR app.ufn_CanUserAccessContest(@ContestID, @RequesterID) = 1)
+           )
+       )
+        THROW 50039, 'Ban can tham gia ky thi truoc khi xem danh sach de.', 1;
+
     IF @Status = 'Upcoming' AND @CreatorID <> @RequesterID AND @IsAdmin = 0
         THROW 50039, 'Ky thi chua bat dau.', 1;
 
-    SELECT 
+    SELECT
         cp.ProblemID,
         p.Title,
         p.Difficulty,
@@ -278,6 +333,10 @@ BEGIN
        AND cpr.ProblemID = cp.ProblemID 
        AND cpr.UserID = @RequesterID
     WHERE cp.ContestID = @ContestID
+      AND (
+          @CreatorID = @RequesterID OR @IsAdmin = 1
+          OR app.ufn_CanUserAccessContestProblem(@ContestID, cp.ProblemID, @RequesterID) = 1
+      )
     ORDER BY cp.OrderIndex ASC, cp.ProblemID ASC;
 END;
 GO
@@ -307,11 +366,11 @@ BEGIN
     IF @CreatorID IS NULL
         THROW 50040, 'Ky thi khong ton tai.', 1;
 
-    IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('Teacher', 'Admin'))
-        THROW 50043, 'Giao vien hoac Admin khong the tham gia ky thi.', 1;
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher'))
+        THROW 50043, 'Tai khoan nay khong the tham gia ky thi.', 1;
 
-    IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
-        THROW 50043, 'Ban da co quyen quan ly ky thi nay.', 1;
+    IF @CreatorID = @UserID
+        THROW 50043, 'Nguoi tao ky thi quan ly ky thi va khong the tham gia nhu thi sinh.', 1;
 
     IF @Status = 'Ended'
         THROW 50043, 'Ky thi da ket thuc.', 1;
@@ -354,10 +413,27 @@ END;
 GO
 
 CREATE OR ALTER PROCEDURE app.usp_Contest_GetLeaderboard
-    @ContestID INT
+    @ContestID INT,
+    @RequesterID INT
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Contests c
+        WHERE c.ContestID = @ContestID
+          AND (
+              c.ClassID IS NULL
+              OR c.CreatorID = @RequesterID
+              OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @RequesterID AND Role = 'Admin')
+              OR EXISTS (SELECT 1 FROM dbo.Contest_User cu WHERE cu.ContestID = c.ContestID AND cu.UserID = @RequesterID)
+              OR EXISTS (SELECT 1 FROM dbo.Classes cls WHERE cls.ClassID = c.ClassID AND cls.TeacherID = @RequesterID)
+              OR EXISTS (SELECT 1 FROM dbo.Class_Student cs WHERE cs.ClassID = c.ClassID AND cs.UserID = @RequesterID)
+              OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @RequesterID)
+          )
+    )
+        THROW 50045, 'Ban khong co quyen xem bang xep hang ky thi nay.', 1;
 
     SELECT 
         [Rank],

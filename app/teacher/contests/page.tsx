@@ -52,6 +52,7 @@ export default async function TeacherContestsPage({
   const page = Math.max(1, Number(sp.page) || 1);
   const statusParam = (sp.status as "Upcoming" | "Ongoing" | "Ended" | "All") || "All";
   const selectedClassId = sp.classId ? Number(sp.classId) : undefined;
+  const joinedView = sp.view === "joined";
 
   const [{ items: contests, total }, { classes }] = await Promise.all([
     contestRepository.listContests({
@@ -62,6 +63,7 @@ export default async function TeacherContestsPage({
       pageSize: PAGE_SIZE,
       userId: actor.userId,
       onlyMine: sp.view === "mine",
+      onlyJoined: joinedView,
     }),
     classRepository.listClasses({
       userId: actor.userId,
@@ -108,6 +110,13 @@ export default async function TeacherContestsPage({
         >
           Kỳ thi của tôi
         </Link>
+        <Link
+          href={`/teacher/contests?view=joined&status=${statusParam}`}
+          aria-current={joinedView ? "page" : undefined}
+          className={`font-medium pb-2 -mb-[9px] ${joinedView ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+        >
+          Kỳ thi tôi tham gia
+        </Link>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
@@ -132,7 +141,7 @@ export default async function TeacherContestsPage({
         </div>
 
         <form className="flex flex-wrap items-center gap-2" method="get">
-          {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
+          {sp.view && <input type="hidden" name="view" value={sp.view} />}
           <input type="hidden" name="status" value={statusParam} />
           <select
             name="classId"
@@ -185,6 +194,7 @@ export default async function TeacherContestsPage({
           <thead className="border-b border-line bg-muted text-fg-muted font-medium">
             <tr>
               <th className="px-4 py-3">Tên kỳ thi</th>
+              <th className="px-4 py-3">Người tạo</th>
               <th className="px-4 py-3">Trạng thái</th>
               <th className="px-4 py-3">Thời gian</th>
               <th className="px-4 py-3">Phạm vi</th>
@@ -195,17 +205,20 @@ export default async function TeacherContestsPage({
           <tbody className="divide-y divide-line">
             {contests.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-fg-muted">
+                <td colSpan={7} className="px-4 py-12 text-center text-fg-muted">
                   Không tìm thấy kỳ thi nào phù hợp.
                 </td>
               </tr>
             ) : (
-              contests.map((c) => (
+              contests.map((c) => {
+                const canManage = actor.role === "Admin" || c.creatorId === actor.userId;
+                const detailHref = `/teacher/contests/${c.contestId}`;
+                return (
                 <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
                   <td className="px-4 py-3 font-medium text-fg">
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/teacher/contests/${c.contestId}`}
+                        href={detailHref}
                         className="hover:underline font-semibold"
                       >
                         {c.contestName}
@@ -219,6 +232,10 @@ export default async function TeacherContestsPage({
                     {c.description && (
                       <p className="mt-0.5 text-xs text-fg-muted line-clamp-1">{c.description}</p>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-fg-muted">
+                    <span className="font-medium text-fg">{c.creatorName}</span>
+                    <span className="block text-[11px]">@{c.creatorUsername}</span>
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={c.status} />
@@ -246,16 +263,19 @@ export default async function TeacherContestsPage({
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link
-                        href={`/teacher/contests/${c.contestId}`}
+                        href={detailHref}
                         className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors"
                       >
-                        Quản lý
+                        {canManage ? "Quản lý" : c.status === "Ended" ? "Xem kết quả" : "Xem / tham gia"}
                       </Link>
-                      <DeleteContestDialog contestId={c.contestId} contestName={c.contestName} />
+                      {canManage && (
+                        <DeleteContestDialog contestId={c.contestId} contestName={c.contestName} />
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

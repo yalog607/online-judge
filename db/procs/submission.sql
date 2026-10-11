@@ -34,11 +34,14 @@ BEGIN
         IF @ContestStatus = 'Ended'
             THROW 50024, 'Ky thi da ket thuc.', 1;
 
-        IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 0
+        IF @Status NOT IN ('Public', 'Private')
+            THROW 50025, 'Bai tap khong o trang thai hop le cho ky thi.', 1;
+
+        IF app.ufn_CanUserAccessContestProblem(@ContestID, @ProblemID, @UserID) = 0
             THROW 50025, 'Ban khong co quyen tham gia ky thi nay.', 1;
 
-        IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('Teacher', 'Admin'))
-            THROW 50027, 'Giao vien hoac Admin khong the tham gia hay nop bai trong ky thi.', 1;
+        IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher'))
+            THROW 50027, 'Tai khoan nay khong the nop bai trong ky thi.', 1;
 
         IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
             THROW 50027, 'Ban dang co quyen quan ly ky thi nay nen khong the nop bai nhu thi sinh.', 1;
@@ -51,6 +54,15 @@ BEGIN
     END
     ELSE
     BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.Classes c
+            JOIN dbo.Class_Problem cp ON cp.ClassID = c.ClassID
+            JOIN dbo.Class_Student cs ON cs.ClassID = c.ClassID AND cs.UserID = @UserID
+            WHERE c.IsCancelled = 1 AND cp.ProblemID = @ProblemID
+        )
+            THROW 50041, 'Lop hoc da duoc huy; khong the nop bai moi cho bai tap cua lop.', 1;
+
         IF app.ufn_CanUserAccessProblem(@ProblemID, @UserID) = 0
             THROW 50021, 'Ban khong co quyen nop bai cho bai tap nay.', 1;
     END;
