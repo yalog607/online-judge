@@ -6,12 +6,13 @@ export const notifChannel = (userId: number) => `notif:user:${userId}`;
 
 const g = globalThis as typeof globalThis & { __itojNotifPublisher?: IORedis };
 
-// Publisher fails fast (no offline queue, 1 retry) so a Redis outage never stalls a request.
+// Commands queue until the connection is ready (first publish after start-up); service.ts bounds
+// the wait with a timeout, so a Redis outage never stalls a request for long.
 function publisher() {
   if (!g.__itojNotifPublisher) {
     const client = new IORedis(env().REDIS_URL, {
       maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
+      connectTimeout: 2000,
     });
     client.on("error", () => {});
     g.__itojNotifPublisher = client;

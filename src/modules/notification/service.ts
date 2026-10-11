@@ -27,7 +27,7 @@ export async function notify(input: NotifyInput): Promise<void> {
   try {
     const data = notifyInputSchema.parse(input);
     const created = await repo.createNotifications(data);
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       created.map((row) =>
         withTimeout(
           publishToUser(row.userId, {
@@ -46,6 +46,8 @@ export async function notify(input: NotifyInput): Promise<void> {
         ),
       ),
     );
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) console.error(`notify: ${failed} realtime publish(es) failed`);
   } catch (e) {
     console.error("notify failed", e);
   }
