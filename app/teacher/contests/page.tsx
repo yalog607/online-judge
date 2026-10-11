@@ -8,21 +8,22 @@ import { DeleteContestDialog } from "./delete-contest-dialog";
 
 const PAGE_SIZE = 20;
 
-function formatDateTime(iso: string) {
+function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
   if (status === "Ongoing") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500 border border-emerald-500/20">
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
         Đang diễn ra
       </span>
@@ -30,13 +31,13 @@ function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
   }
   if (status === "Upcoming") {
     return (
-      <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20">
+      <span className="inline-flex items-center rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-500/20">
         Sắp diễn ra
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20">
+    <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-fg-muted border border-line">
       Đã kết thúc
     </span>
   );
@@ -78,97 +79,70 @@ export default async function TeacherContestsPage({
     className: c.ClassName,
   }));
 
-  const tabs = [
-    { label: "Tất cả", value: "All" },
-    { label: "Đang diễn ra", value: "Ongoing" },
-    { label: "Sắp diễn ra", value: "Upcoming" },
-    { label: "Đã kết thúc", value: "Ended" },
-  ];
+  const startRecord = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const endRecord = Math.min(page * PAGE_SIZE, total);
 
   return (
     <div className="flex flex-col gap-6 pt-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-fg">Quản lý kỳ thi</h1>
+          <h1 className="text-2xl font-bold text-fg">Danh sách kỳ thi</h1>
           <p className="mt-1 text-sm text-fg-muted">
-            Tạo và tổ chức các kỳ thi, kiểm tra định kỳ cho học sinh.
+            Quản lý các kỳ thi bạn tổ chức.
           </p>
         </div>
         <CreateContestDialog classes={classOptions} />
       </div>
 
-      <div className="flex gap-4 border-b border-line pb-2">
-        <Link 
-          href={`/teacher/contests?status=${statusParam}`} 
-          className={`font-medium pb-2 -mb-[9px] ${sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
-        >
-          Tất cả
-        </Link>
-        <Link 
-          href={`/teacher/contests?view=mine&status=${statusParam}`} 
-          className={`font-medium pb-2 -mb-[9px] ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
-        >
-          Kỳ thi của tôi
-        </Link>
-        <Link
-          href={`/teacher/contests?view=joined&status=${statusParam}`}
-          aria-current={joinedView ? "page" : undefined}
-          className={`font-medium pb-2 -mb-[9px] ${joinedView ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
-        >
-          Kỳ thi tôi tham gia
-        </Link>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
-        <div className="flex items-center gap-1 overflow-x-auto">
-          {tabs.map((tab) => {
-            const isActive = statusParam === tab.value;
-            const params = new URLSearchParams({ ...sp, status: tab.value, page: "1" } as Record<string, string>);
-            return (
-              <Link
-                key={tab.value}
-                href={`/teacher/contests?${params.toString()}`}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-fg"
-                    : "text-fg-muted hover:bg-muted hover:text-fg"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+      <form className="card p-3 sm:p-4 flex flex-col md:flex-row items-center gap-3" method="get">
+        {sp.view && <input type="hidden" name="view" value={sp.view} />}
+        <div className="relative flex-1 w-full">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-fg-muted">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            name="q"
+            defaultValue={sp.q}
+            placeholder="Tìm theo tên kỳ thi, mã kỳ thi..."
+            className="w-full rounded-lg border border-line bg-muted/40 pl-9 pr-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors"
+          />
         </div>
 
-        <form className="flex flex-wrap items-center gap-2" method="get">
-          {sp.view && <input type="hidden" name="view" value={sp.view} />}
-          <input type="hidden" name="status" value={statusParam} />
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <select
             name="classId"
             defaultValue={sp.classId ?? ""}
-            className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary"
+            className="w-full md:w-auto rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors cursor-pointer"
           >
-            <option value="">Lớp học (Tất cả)</option>
+            <option value="">Môn học (Tất cả)</option>
             {classOptions.map((c) => (
               <option key={c.classId} value={c.classId}>
                 {c.className}
               </option>
             ))}
           </select>
-          <input
-            name="q"
-            defaultValue={sp.q}
-            placeholder="Tìm theo tên kỳ thi..."
-            className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary"
-          />
+
+          <select
+            name="status"
+            defaultValue={statusParam}
+            className="w-full md:w-auto rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors cursor-pointer"
+          >
+            <option value="All">Trạng thái (Tất cả)</option>
+            <option value="Ongoing">Đang diễn ra</option>
+            <option value="Upcoming">Sắp diễn ra</option>
+            <option value="Ended">Đã kết thúc</option>
+          </select>
+
           <button
             type="submit"
-            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg hover:opacity-90"
+            className="rounded-lg bg-primary px-4 py-2 text-xs sm:text-sm font-semibold text-primary-fg hover:opacity-90 transition-opacity whitespace-nowrap"
           >
             Tìm
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
 
       {sp.classId && (
         <div className="flex items-center gap-2 text-xs">
@@ -191,15 +165,15 @@ export default async function TeacherContestsPage({
 
       <div className="card overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-line bg-muted text-fg-muted font-medium">
+          <thead className="border-b border-line bg-muted/40 text-fg-muted text-xs font-semibold uppercase tracking-wider">
             <tr>
-              <th className="px-4 py-3">Tên kỳ thi</th>
-              <th className="px-4 py-3">Người tạo</th>
-              <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3">Thời gian</th>
-              <th className="px-4 py-3">Phạm vi</th>
-              <th className="px-4 py-3">Đề thi / Thí sinh</th>
-              <th className="px-4 py-3 text-right">Thao tác</th>
+              <th className="px-4 py-3 w-14">STT</th>
+              <th className="px-4 py-3 w-24">MÃ</th>
+              <th className="px-4 py-3">TÊN KỲ THI</th>
+              <th className="px-4 py-3 w-48">MÔN</th>
+              <th className="px-4 py-3 w-36">NGÀY THI</th>
+              <th className="px-4 py-3 w-32">TRẠNG THÁI</th>
+              <th className="px-4 py-3 w-24 text-right">HÀNH ĐỘNG</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -210,86 +184,130 @@ export default async function TeacherContestsPage({
                 </td>
               </tr>
             ) : (
-              contests.map((c) => {
+              contests.map((c, idx) => {
                 const canManage = actor.role === "Admin" || c.creatorId === actor.userId;
                 const detailHref = `/teacher/contests/${c.contestId}`;
+                const code = `KT${String(c.contestId).padStart(3, "0")}`;
+
                 return (
-                <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-fg">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={detailHref}
-                        className="hover:underline font-semibold"
-                      >
-                        {c.contestName}
-                      </Link>
-                      {c.isProtected && (
-                        <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
-                          Mật khẩu
-                        </span>
+                  <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs text-fg-muted">
+                      {(page - 1) * PAGE_SIZE + idx + 1}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-fg-muted">
+                      {code}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-fg">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={detailHref}
+                          className="hover:underline font-semibold text-fg hover:text-primary transition-colors"
+                        >
+                          {c.contestName}
+                        </Link>
+                        {c.isProtected && (
+                          <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
+                            Mật khẩu
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-muted">
+                        {c.creatorId !== actor.userId && (
+                          <span>Bởi {c.creatorName}</span>
+                        )}
+                        {c.description && (
+                          <span className="line-clamp-1">{c.description}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-xs font-medium text-fg">
+                      {c.className ? (
+                        <span className="text-primary">{c.className}</span>
+                      ) : (
+                        <span className="text-fg-muted">Chung</span>
                       )}
-                    </div>
-                    {c.description && (
-                      <p className="mt-0.5 text-xs text-fg-muted line-clamp-1">{c.description}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    <span className="font-medium text-fg">{c.creatorName}</span>
-                    <span className="block text-[11px]">@{c.creatorUsername}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    <div>{formatDateTime(c.startTime)}</div>
-                    <div className="text-[11px] text-fg-subtle">đến {formatDateTime(c.endTime)}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    {c.className && c.classId ? (
-                      <Link
-                        href={`/teacher/contests?classId=${c.classId}${sp.view === "mine" ? "&view=mine" : ""}${statusParam !== "All" ? `&status=${statusParam}` : ""}`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {c.className}
-                      </Link>
-                    ) : (
-                      <span className="text-fg-muted">Công khai</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    <div>{c.problemCount} bài tập</div>
-                    <div className="text-[11px]">{c.participantCount} thí sinh</div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={detailHref}
-                        className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors"
-                      >
-                        {canManage ? "Quản lý" : c.status === "Ended" ? "Xem kết quả" : "Xem / tham gia"}
-                      </Link>
-                      {canManage && (
-                        <DeleteContestDialog contestId={c.contestId} contestName={c.contestName} />
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-fg">
+                      <div className="font-medium">{formatDate(c.startTime)}</div>
+                      <div className="text-[11px] text-fg-muted">
+                        {formatTime(c.startTime)} - {formatTime(c.endTime)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {canManage ? (
+                          <Link
+                            href={detailHref}
+                            className="p-1.5 text-fg-muted hover:text-primary rounded-md hover:bg-muted transition-colors"
+                            title="Quản lý kỳ thi"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                          </Link>
+                        ) : (
+                          <Link
+                            href={detailHref}
+                            className="p-1.5 text-fg-muted hover:text-primary rounded-md hover:bg-muted transition-colors"
+                            title="Xem chi tiết kỳ thi"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
+                          </Link>
+                        )}
+                        {canManage && (
+                          <DeleteContestDialog
+                            contestId={c.contestId}
+                            contestName={c.contestName}
+                            variant="icon"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 );
               })
             )}
           </tbody>
         </table>
-      </div>
 
-      <Pager
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={total}
-        buildHref={(p) => {
-          const params = new URLSearchParams({ ...sp, page: String(p) } as Record<string, string>);
-          return `/teacher/contests?${params.toString()}`;
-        }}
-      />
+        {total > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-line text-xs text-fg-muted">
+            <div>
+              Hiển thị {startRecord} - {endRecord} trong tổng số {total} kỳ thi
+            </div>
+            <Pager
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              buildHref={(p) => {
+                const params = new URLSearchParams({ ...sp, page: String(p) } as Record<string, string>);
+                return `/teacher/contests?${params.toString()}`;
+              }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

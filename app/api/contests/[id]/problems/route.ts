@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { contestRepository } from "@/modules/contest/repo";
-import { addContestProblemSchema } from "@/modules/contest/schema";
+import { addContestProblemSchema, updateContestProblemScoreSchema } from "@/modules/contest/schema";
 
 export async function GET(
   _req: NextRequest,
@@ -114,5 +114,52 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: "Gỡ bài tập thất bại." }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await verifySession();
+    if (!session) {
+      return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+    }
+
+    if (session.role !== "Teacher" && session.role !== "Admin") {
+      return NextResponse.json(
+        { error: "Chỉ giáo viên hoặc quản trị viên mới có thể cập nhật điểm bài tập." },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+    const contestId = parseInt(id, 10);
+    if (isNaN(contestId)) {
+      return NextResponse.json({ error: "Mã kỳ thi không hợp lệ." }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const parsed = updateContestProblemScoreSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
+    await contestRepository.updateProblemScore(
+      contestId,
+      parsed.data.problemId,
+      session.userId,
+      parsed.data.maxScore
+    );
+    return NextResponse.json({
+      success: true,
+      message: "Cập nhật điểm bài tập thành công.",
+    });
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Cập nhật điểm bài tập thất bại." }, { status: 500 });
   }
 }

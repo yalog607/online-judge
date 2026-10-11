@@ -7,6 +7,7 @@ import { listForManage as listProblemsForManage } from "@/modules/problem/repo";
 import { DifficultyBadge } from "@/components/badge";
 import { EditContestDialog } from "./edit-contest-dialog";
 import { AddProblemDialog } from "./add-problem-dialog";
+import { EditProblemScoreDialog } from "./edit-problem-score-dialog";
 import { RemoveProblemButton } from "./remove-problem-button";
 import { StartContestDialog } from "./start-contest-dialog";
 import { DeleteContestDialog } from "../delete-contest-dialog";
@@ -218,12 +219,23 @@ export default async function TeacherContestDetailPage({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-fg">Danh sách bài tập trong đề thi</h2>
-            <AddProblemDialog
-              contestId={contestId}
-              availableProblems={availableToAdd}
-              nextOrderIndex={problems.length + 1}
-            />
+            {contest.status !== "Ended" && (
+              <AddProblemDialog
+                contestId={contestId}
+                availableProblems={availableToAdd}
+                nextOrderIndex={problems.length + 1}
+              />
+            )}
           </div>
+
+          {contest.status === "Ongoing" && (
+            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-300">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                Kỳ thi đang diễn ra. Bạn vẫn có thể thêm bài, gỡ bài hoặc đổi điểm số; hệ thống sẽ tự động đồng bộ và tính lại điểm số trên bảng xếp hạng theo thời gian thực.
+              </span>
+            </div>
+          )}
 
           <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
@@ -265,13 +277,31 @@ export default async function TeacherContestDetailPage({
                       <td className="px-4 py-3 text-xs text-fg-muted">
                         {(p.timeLimit / 1000).toFixed(1)}s / {p.memoryLimit}MB
                       </td>
-                      <td className="px-4 py-3 font-semibold text-primary">{p.maxScore} điểm</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-primary">{p.maxScore} điểm</span>
+                          {contest.status !== "Ended" && (
+                            <EditProblemScoreDialog
+                              contestId={contestId}
+                              problemId={p.problemId}
+                              problemTitle={p.title}
+                              currentScore={p.maxScore}
+                              isOngoing={contest.status === "Ongoing"}
+                            />
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-right">
-                        <RemoveProblemButton
-                          contestId={contestId}
-                          problemId={p.problemId}
-                          problemTitle={p.title}
-                        />
+                        {contest.status !== "Ended" ? (
+                          <RemoveProblemButton
+                            contestId={contestId}
+                            problemId={p.problemId}
+                            problemTitle={p.title}
+                            isOngoing={contest.status === "Ongoing"}
+                          />
+                        ) : (
+                          <span className="text-xs text-fg-muted font-mono">Đã kết thúc</span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -334,7 +364,6 @@ export default async function TeacherContestDetailPage({
                           </div>
                           <div>
                             <span className="font-semibold block">{row.fullName}</span>
-                            <span className="text-xs text-fg-muted">@{row.username}</span>
                           </div>
                         </div>
                       </td>

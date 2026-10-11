@@ -50,9 +50,12 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
           setError(null);
           setIsOpen(true);
         }}
-        className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:opacity-90 transition-opacity flex items-center gap-1.5"
+        className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-xs sm:text-sm text-primary-fg hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-sm"
       >
-        <span>+ Tạo kỳ thi</span>
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+        </svg>
+        <span>TẠO KỲ THI MỚI</span>
       </button>
 
       {isOpen && (
