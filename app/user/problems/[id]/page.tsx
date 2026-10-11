@@ -218,6 +218,7 @@ export default async function ProblemDetailPage({
             problemId={problem.ProblemID}
             contestId={canAccessContest ? contestId : undefined}
             starters={starters}
+            functionName={functionSpec?.name}
           />
         )}
       </div>
