@@ -20,6 +20,22 @@
   --neutral-soft: #e8eaee;
   --code-bg: #fafafb;
   --primary-fg: #ffffff;
+  --vsc-bg: #ffffff;
+  --vsc-fg: #1f1f1f;
+  --vsc-gutter: #6e7681;
+  --vsc-gutter-active: #0b216f;
+  --vsc-line: #f0f0f0;
+  --vsc-select: #add6ff;
+  --vsc-cursor: #000000;
+  --vsc-keyword: #0000ff;
+  --vsc-control: #af00db;
+  --vsc-string: #a31515;
+  --vsc-number: #098658;
+  --vsc-comment: #008000;
+  --vsc-type: #267f99;
+  --vsc-function: #795e26;
+  --vsc-variable: #001080;
+  --vsc-meta: #0000ff;
   --sh: 0 1px 2px rgba(11, 15, 25, 0.04), 0 4px 14px rgba(11, 15, 25, 0.04);
   --sh-pop: 0 2px 4px rgba(11, 15, 25, 0.05), 0 14px 36px rgba(11, 15, 25, 0.1);
   --grid-line: rgba(11, 15, 25, 0.045);
@@ -45,6 +61,22 @@
     --neutral-soft: #232c40;
     --code-bg: #0e1420;
     --primary-fg: #1a0b3d;
+    --vsc-bg: #1e1e1e;
+    --vsc-fg: #d4d4d4;
+    --vsc-gutter: #858585;
+    --vsc-gutter-active: #c6c6c6;
+    --vsc-line: #2a2d2e;
+    --vsc-select: #264f78;
+    --vsc-cursor: #aeafad;
+    --vsc-keyword: #569cd6;
+    --vsc-control: #c586c0;
+    --vsc-string: #ce9178;
+    --vsc-number: #b5cea8;
+    --vsc-comment: #6a9955;
+    --vsc-type: #4ec9b0;
+    --vsc-function: #dcdcaa;
+    --vsc-variable: #9cdcfe;
+    --vsc-meta: #569cd6;
     --sh: 0 1px 2px rgba(0, 0, 0, 0.35);
     --sh-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
     --grid-line: rgba(255, 255, 255, 0.045);
@@ -70,6 +102,22 @@
   --neutral-soft: #232c40;
   --code-bg: #0e1420;
   --primary-fg: #1a0b3d;
+  --vsc-bg: #1e1e1e;
+  --vsc-fg: #d4d4d4;
+  --vsc-gutter: #858585;
+  --vsc-gutter-active: #c6c6c6;
+  --vsc-line: #2a2d2e;
+  --vsc-select: #264f78;
+  --vsc-cursor: #aeafad;
+  --vsc-keyword: #569cd6;
+  --vsc-control: #c586c0;
+  --vsc-string: #ce9178;
+  --vsc-number: #b5cea8;
+  --vsc-comment: #6a9955;
+  --vsc-type: #4ec9b0;
+  --vsc-function: #dcdcaa;
+  --vsc-variable: #9cdcfe;
+  --vsc-meta: #569cd6;
   --sh:0 1px 2px rgba(0, 0, 0, 0.35);
   --sh-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
   --grid-line: rgba(255, 255, 255, 0.045);
@@ -465,4 +513,20 @@ html {
   .reveal-stagger > *:nth-child(6) {
     animation-range: entry 30% entry 75%;
   }
+}
+
+/* Thanh cuộn mảnh cho danh sách thả xuống */
+[role="listbox"] {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--fg-muted) 40%, transparent) transparent;
+}
+[role="listbox"]::-webkit-scrollbar {
+  width: 6px;
+}
+[role="listbox"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+[role="listbox"]::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--fg-muted) 40%, transparent);
+  border-radius: 9999px;
 }

@@ -1,3 +1,4 @@
+import { Select } from "@/components/select";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
@@ -111,29 +112,31 @@ export default async function TeacherContestsPage({
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <select
+          <Select
             name="classId"
+          label="Môn học"
             defaultValue={sp.classId ?? ""}
             className="w-full md:w-auto rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors cursor-pointer"
           >
-            <option value="">Môn học (Tất cả)</option>
+            <option value="">Tất cả</option>
             {classOptions.map((c) => (
               <option key={c.classId} value={c.classId}>
                 {c.className}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
+          <Select
             name="status"
+          label="Trạng thái"
             defaultValue={statusParam}
             className="w-full md:w-auto rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors cursor-pointer"
           >
-            <option value="All">Trạng thái (Tất cả)</option>
+            <option value="All">Tất cả</option>
             <option value="Ongoing">Đang diễn ra</option>
             <option value="Upcoming">Sắp diễn ra</option>
             <option value="Ended">Đã kết thúc</option>
-          </select>
+          </Select>
 
           <button
             type="submit"

@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useActionState, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -105,7 +106,7 @@ export function SubmitForm({
       <input type="hidden" name="problemId" value={problemId} />
       {contestId && <input type="hidden" name="contestId" value={contestId} />}
       <div className="flex items-center justify-between gap-3 border-b border-line px-3.5 py-3">
-        <select
+        <Select
           name="language"
           value={language}
           onChange={(e) => {
@@ -123,7 +124,7 @@ export function SubmitForm({
               {l.label}
             </option>
           ))}
-        </select>
+        </Select>
         <div className="flex items-center gap-2">
           {starters && (
             <button

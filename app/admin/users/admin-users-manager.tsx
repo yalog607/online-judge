@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -174,18 +175,19 @@ export function AdminUsersManager({
               />
             </div>
 
-            <select
+            <Select
               name="role"
+          label="Vai trò"
               defaultValue={roleFilter ?? ""}
               onChange={(e) => e.target.form?.requestSubmit()}
               className="rounded-lg border border-line bg-muted/50 px-3 py-2 text-sm text-fg focus:border-primary focus:bg-surface focus:outline-none"
             >
-              <option value="">Vai trò (Tất cả)</option>
+              <option value="">Tất cả</option>
               <option value="User">User</option>
               <option value="Teacher">Teacher</option>
               <option value="TA">TA</option>
               <option value="Admin">Admin</option>
-            </select>
+            </Select>
 
             <button
               type="submit"

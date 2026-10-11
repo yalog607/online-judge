@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -167,7 +168,7 @@ export function DocumentUploadForm({ classId }: { classId: number }) {
           <label className="mb-1 block text-xs font-medium text-fg-muted">
             1. Chọn loại tập tin tài liệu <span className="text-danger">*</span>
           </label>
-          <select
+          <Select
             name="fileType"
             value={selectedType}
             onChange={handleTypeChange}
@@ -180,7 +181,7 @@ export function DocumentUploadForm({ classId }: { classId: number }) {
             <option value="archive">Tập tin nén (.zip, .rar, .7z)</option>
             <option value="code">Mã nguồn / Text (.cpp, .c, .py, .java, .txt)</option>
             <option value="">Tất cả định dạng cho phép</option>
-          </select>
+          </Select>
           <p className="mt-1 text-xs text-fg-muted">
             Định dạng chấp nhận:{" "}
             <span className="font-mono text-primary font-medium">
