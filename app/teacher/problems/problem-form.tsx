@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { Field, FormError, SubmitButton } from "@/components/form";
 import { MathContent } from "@/components/math-content";
 import type { FormState } from "@/modules/auth/actions";
-import type { JudgeMode, ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
+import type { ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
 import { FUNCTION_TYPES, parseFunctionSpec } from "@/modules/problem/function-spec";
 
 type Row = { key: number; input: string; expectedOutput: string; isHidden: boolean };
@@ -58,7 +58,6 @@ export function ProblemForm({
   );
 
   const initialSpec = parseFunctionSpec(problem?.FunctionSpec);
-  const [judgeMode, setJudgeMode] = useState<JudgeMode>(problem?.JudgeMode ?? "stdin");
   const [fnName, setFnName] = useState(initialSpec?.name ?? "");
   const [fnReturns, setFnReturns] = useState(initialSpec?.returns ?? "int");
   const [params, setParams] = useState<ParamRow[]>(
@@ -139,21 +138,8 @@ export function ProblemForm({
       </div>
 
       <div className="flex flex-col gap-3 card p-4">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-          <span>Kiểu chấm bài</span>
-          <Select
-            name="judgeMode"
-            value={judgeMode}
-            onChange={(e) => setJudgeMode(e.target.value as JudgeMode)}
-            className={FIELD_CLASS}
-          >
-            <option value="stdin">Đọc stdin / in stdout (truyền thống)</option>
-            <option value="function">Viết hàm (kiểu LeetCode)</option>
-          </Select>
-        </label>
-
-        {judgeMode === "function" && (
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-fg">Chữ ký hàm</h3>
             <p className="text-xs text-fg-muted">
               Học viên chỉ viết hàm, hệ thống tự sinh phần đọc input và in kết quả. Mỗi dòng input của
               testcase là một tham số viết dạng JSON theo đúng thứ tự (ví dụ{" "}
@@ -168,6 +154,7 @@ export function ProblemForm({
                   value={fnName}
                   onChange={(e) => setFnName(e.target.value)}
                   placeholder="twoSum"
+                  required
                   className={FIELD_CLASS}
                 />
               </label>
@@ -235,8 +222,7 @@ export function ProblemForm({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {classes.length > 0 && !problem && (

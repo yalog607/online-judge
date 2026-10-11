@@ -29,37 +29,37 @@ EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
 
 -- Metadata only: the hidden Pending value from the TA form must not demote approval.
 EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope base title', N'Scope base statement',
-    N'one integer', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Private';
+    N'one integer', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, 'Private';
 INSERT @Results VALUES ('Tags and difficulty preserve approved status', CASE WHEN EXISTS (
     SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID AND Status = 'Public' AND Tags = N'base,tagged' AND Difficulty = 'Medium'
 ) THEN 1 ELSE 0 END);
 
 -- Each content/configuration field independently requires review.
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope base statement', N'one integer', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Private';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope base statement', N'one integer', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, 'Private';
 INSERT @Results VALUES ('Title change requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending' AND ProposedStatus='Private') THEN 1 ELSE 0 END);
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'one integer', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Public';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'one integer', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, 'Public';
 INSERT @Results VALUES ('Statement change requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Public';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'one integer', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, 'Public';
 INSERT @Results VALUES ('Input format change requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Public';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 1000, 256, N'base,tagged', 'Medium', 'Pending', NULL, 'Public';
 INSERT @Results VALUES ('Output format change requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 256, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Public';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 256, N'base,tagged', 'Medium', 'Pending', NULL, 'Public';
 INSERT @Results VALUES ('Time limit change requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', NULL, NULL, 'Public';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', NULL, 'Public';
 INSERT @Results VALUES ('Memory limit change requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Public';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', 'function', N'{"name":"solve","params":[],"returns":"int"}', 'Public';
-INSERT @Results VALUES ('Judge mode and function configuration require review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', N'{"name":"solve","params":[],"returns":"int"}', 'Public';
+INSERT @Results VALUES ('Function configuration requires review', CASE WHEN EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending') THEN 1 ELSE 0 END);
 
 -- Pending and rejected edits remain pending and keep the TA visibility proposal.
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', 'function', N'{"name":"solve","params":[],"returns":"int"}', 'Private';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Scope changed title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', N'{"name":"solve","params":[],"returns":"int"}', 'Private';
 EXEC app.usp_Problem_SetStatus @ProblemID, @TeacherID, 'Rejected', N'Needs changes';
-EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Resubmitted title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', 'function', N'{"name":"solve","params":[],"returns":"int"}', 'Public';
+EXEC app.usp_Problem_Update @ProblemID, @TAID, N'Resubmitted title', N'Scope changed statement', N'two integers', N'two integers', 2000, 512, N'base,tagged', 'Medium', 'Pending', N'{"name":"solve","params":[],"returns":"int"}', 'Public';
 INSERT @Results VALUES ('Rejected TA edit returns to pending and updates proposal', CASE WHEN EXISTS (
     SELECT 1 FROM dbo.Problems WHERE ProblemID=@ProblemID AND Status='Pending' AND ProposedStatus='Public' AND RejectionReason IS NULL AND Title=N'Resubmitted title'
 ) THEN 1 ELSE 0 END);

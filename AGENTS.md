@@ -54,7 +54,8 @@ Page/Component -> Server Action hoặc API Route -> Service -> Repository
 - Web đẩy job `{ submissionId }` vào queue `judge` (BullMQ/Redis); worker nhận job và claim theo id qua `app.usp_Judge_Claim`; không tự truy vấn bảng hàng đợi. `usp_Judge_ClaimNext` đã deprecated.
 - Job lỗi hạ tầng phải được trả về queue (`usp_Judge_Release`) để retry; hết lượt retry thì lưu `IE`.
 - Mã nguồn phải chạy trong Docker sandbox, tắt network và có giới hạn CPU, RAM, thời gian, PID và kích thước output.
-- Testcase được đưa vào `stdin`; `stdout` được so sánh với `ExpectedOutput`.
+- Chỉ chấm theo hàm: học viên viết hàm theo chữ ký (`FunctionSpec`) của bài; worker sinh driver quanh code đó, đưa testcase vào `stdin` của driver, đọc kết quả sau `@@ITOJ_RESULT@@` và so sánh với `ExpectedOutput` (JSON). Không còn chế độ chấm stdin/stdout.
+- Bài không có `FunctionSpec` hợp lệ không chấm được: lưu `IE`, không chạy code.
 - Phân biệt lỗi hạ tầng với verdict của bài làm. Không biến lỗi thiếu Docker/image/mount thành `RE` của người dùng.
 - Thư mục chấm là thư mục tạm và phải được dọn sau khi hoàn tất.
 
