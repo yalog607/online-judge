@@ -142,7 +142,7 @@ export default async function UserClassDetailPage({
                           <td className="px-5 py-4 text-fg-muted">{idx + 1}</td>
                           <td className="px-5 py-4 font-medium text-fg">
                             <a
-                              href={doc.CloudinaryURL}
+                              href={`/api/documents/${doc.DocumentID}`}
                               target="_blank"
                               rel="noreferrer"
                               className="hover:text-primary hover:underline"
@@ -165,12 +165,12 @@ export default async function UserClassDetailPage({
                           </td>
                           <td className="px-5 py-4 text-right">
                             <a
-                              href={doc.CloudinaryURL}
+                              href={`/api/documents/${doc.DocumentID}?download=1`}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-fg hover:bg-muted transition-colors"
                             >
-                              Tải về / Xem →
+                              Tải về →
                             </a>
                           </td>
                         </tr>

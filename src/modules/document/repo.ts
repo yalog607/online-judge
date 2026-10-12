@@ -24,6 +24,11 @@ export interface IDocumentRepository {
     userId: number,
     category?: string | null
   ): Promise<DocumentItem[]>;
+
+  getDocument(
+    documentId: number,
+    userId: number
+  ): Promise<DocumentItem | null>;
 }
 
 export class DocumentRepository implements IDocumentRepository {
@@ -61,6 +66,17 @@ export class DocumentRepository implements IDocumentRepository {
       Category: category ?? null,
     });
     return rows;
+  }
+
+  async getDocument(
+    documentId: number,
+    userId: number
+  ): Promise<DocumentItem | null> {
+    const { rows } = await execProc<DocumentItem>("usp_Document_Get", {
+      DocumentID: documentId,
+      UserID: userId,
+    });
+    return rows[0] ?? null;
   }
 }
 

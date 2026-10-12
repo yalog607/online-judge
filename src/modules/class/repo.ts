@@ -60,6 +60,26 @@ export interface TeacherClassView {
   CanManage: boolean;
 }
 
+export interface ImportStudentResultItem {
+  rowOrder: number;
+  identifier: string;
+  userId: number | null;
+  username: string | null;
+  fullName: string | null;
+  email: string | null;
+  status: "SUCCESS" | "ALREADY_EXISTS" | "NOT_FOUND" | "CANNOT_ADD_TEACHER" | "DUPLICATE_IN_FILE";
+}
+
+export interface ImportStudentsSummary {
+  total: number;
+  successCount: number;
+  alreadyExistsCount: number;
+  notFoundCount: number;
+  cannotAddTeacherCount: number;
+  duplicateCount: number;
+  results: ImportStudentResultItem[];
+}
+
 export interface IClassRepository {
   createClass(teacherId: number, input: {
     className: string;
@@ -93,6 +113,8 @@ export interface IClassRepository {
   getPublicClassProblems(classId: number, actorId: number): Promise<ClassProblemItem[]>;
 
   addStudent(classId: number, teacherId: number, identifier: string): Promise<number>;
+
+  importStudents(classId: number, actorId: number, identifiers: string[]): Promise<ImportStudentsSummary>;
 
   removeStudent(classId: number, teacherId: number, studentId: number): Promise<boolean>;
 
@@ -240,6 +262,47 @@ export class ClassRepository implements IClassRepository {
       Identifier: identifier,
     });
     return rows[0].StudentID;
+  }
+
+  async importStudents(
+    classId: number,
+    actorId: number,
+    identifiers: string[]
+  ): Promise<ImportStudentsSummary> {
+    const payload = identifiers.map((identifier) => ({ identifier }));
+    const { rows } = await execProc<{
+      RowOrder: number;
+      Identifier: string;
+      UserID: number | null;
+      Username: string | null;
+      FullName: string | null;
+      Email: string | null;
+      Status: "SUCCESS" | "ALREADY_EXISTS" | "NOT_FOUND" | "CANNOT_ADD_TEACHER" | "DUPLICATE_IN_FILE";
+    }>("usp_Class_ImportStudents", {
+      ClassID: classId,
+      ActorID: actorId,
+      StudentsJson: JSON.stringify(payload),
+    });
+
+    const results: ImportStudentResultItem[] = rows.map((r) => ({
+      rowOrder: r.RowOrder,
+      identifier: r.Identifier,
+      userId: r.UserID,
+      username: r.Username,
+      fullName: r.FullName,
+      email: r.Email,
+      status: r.Status,
+    }));
+
+    return {
+      total: results.length,
+      successCount: results.filter((r) => r.status === "SUCCESS").length,
+      alreadyExistsCount: results.filter((r) => r.status === "ALREADY_EXISTS").length,
+      notFoundCount: results.filter((r) => r.status === "NOT_FOUND").length,
+      cannotAddTeacherCount: results.filter((r) => r.status === "CANNOT_ADD_TEACHER").length,
+      duplicateCount: results.filter((r) => r.status === "DUPLICATE_IN_FILE").length,
+      results,
+    };
   }
 
   async removeStudent(classId: number, teacherId: number, studentId: number): Promise<boolean> {
