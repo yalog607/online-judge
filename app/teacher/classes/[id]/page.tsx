@@ -16,6 +16,8 @@ import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
 import { TeacherClassReadonlyView } from "./teacher-class-readonly-view";
 import { CancelClassButton } from "../cancel-class-button";
 import { ResubmitClassButton } from "../resubmit-class-button";
+import { ImportStudentsDialog } from "./import-students-dialog";
+import { ExportStudentsButton } from "./export-students-button";
 
 export default async function TeacherClassDetailPage({
   params,
@@ -110,6 +112,12 @@ export default async function TeacherClassDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
+          {!classDetail.IsCancelled && (
+            <>
+              <ImportStudentsDialog classId={classId} />
+              <ExportStudentsButton classId={classId} />
+            </>
+          )}
           {classDetail.TeacherID === actor.userId &&
             classDetail.ApprovalStatus === "Rejected" &&
             !classDetail.IsCancelled && <ResubmitClassButton classId={classId} />}

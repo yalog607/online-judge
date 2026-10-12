@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { impersonateAction } from "@/modules/auth/actions";
 import { RequestTAUpgradeButton } from "./request-ta-button";
 import { RemoveStudentButton } from "./remove-student-button";
+import { ImportStudentsDialog } from "./import-students-dialog";
+import { ExportStudentsButton } from "./export-students-button";
 import type { StudentItem } from "@/modules/class/repo";
 
 type TeacherClassStudentsManagerProps = {
@@ -76,6 +78,8 @@ export function TeacherClassStudentsManager({
         </div>
 
         <div className="flex items-center gap-2">
+          <ImportStudentsDialog classId={classId} />
+          <ExportStudentsButton classId={classId} />
           <button
             type="button"
             disabled={!selectedStudent}

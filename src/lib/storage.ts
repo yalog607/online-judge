@@ -41,3 +41,39 @@ export async function uploadFile(
     stream.end(buffer);
   });
 }
+
+export function extractCloudinaryPublicId(
+  url: string
+): { publicId: string; resourceType: "raw" | "image" } | null {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("cloudinary.com")) return null;
+
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const resourceType = (parts[1] === "image" ? "image" : "raw") as "raw" | "image";
+
+    const uploadIndex = parts.indexOf("upload");
+    if (uploadIndex === -1 || uploadIndex >= parts.length - 1) return null;
+
+    let subParts = parts.slice(uploadIndex + 1);
+    if (subParts.length > 0 && /^v\d+$/.test(subParts[0])) {
+      subParts = subParts.slice(1);
+    }
+    const publicId = decodeURIComponent(subParts.join("/"));
+    return { publicId, resourceType };
+  } catch {
+    return null;
+  }
+}
+
+export function getPrivateDownloadUrl(
+  publicId: string,
+  resourceType: "raw" | "image" = "raw"
+): string {
+  const cld = configuredCloudinary();
+  return cld.utils.private_download_url(publicId, "", {
+    resource_type: resourceType,
+    type: "upload",
+  });
+}
+
