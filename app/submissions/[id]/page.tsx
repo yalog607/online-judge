@@ -32,7 +32,7 @@ export default async function SubmissionDetailPage({
       <div className="flex items-center justify-between">
         <div>
           <Link
-            href={`/user/problems/${detail.ProblemID}`}
+            href={user.role === "Teacher" || user.role === "Admin" ? `/teacher/problems/${detail.ProblemID}` : `/user/problems/${detail.ProblemID}`}
             className="text-sm text-fg-muted underline"
           >
             ← {detail.ProblemTitle}

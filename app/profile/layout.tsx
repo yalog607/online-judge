@@ -19,7 +19,7 @@ export default async function ProfileLayout({ children }: { children: React.Reac
     roleLabel = "Giảng viên";
     nav = [
       { href: "/teacher", label: "Tổng quan", icon: "home" },
-      { href: "/teacher/problems", label: "Bài tập", icon: "code" },
+      { href: "/teacher/problems", label: "Ngân hàng bài tập", icon: "code" },
       { href: "/teacher/classes", label: "Lớp học", icon: "users" },
       { href: "/teacher/contests", label: "Kỳ thi", icon: "trophy" },
       { href: "/profile", label: "Hồ sơ", icon: "user" },
