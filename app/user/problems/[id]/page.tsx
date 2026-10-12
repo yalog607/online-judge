@@ -54,8 +54,9 @@ export default async function ProblemDetailPage({
   const canAccess = canAccessDirect || canAccessContest;
   if (!canAccess) notFound();
 
-  // Function-mode problems start the editor from a generated signature stub per language.
-  const functionSpec = problem.JudgeMode === "function" ? parseFunctionSpec(problem.FunctionSpec) : null;
+  // The editor starts from a generated signature stub per language. Legacy problems without
+  // a valid signature cannot be judged, so they are not open for submissions.
+  const functionSpec = parseFunctionSpec(problem.FunctionSpec);
   const starters = functionSpec
     ? Object.fromEntries(
         ["cpp", "c", "java", "python", "javascript", "go", "csharp"].map((l) => [
@@ -229,11 +230,16 @@ export default async function ProblemDetailPage({
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm font-semibold text-amber-500">
             Kỳ thi này đã kết thúc. Bạn chỉ có thể xem lại đề bài, không thể nộp bài làm.
           </div>
+        ) : !functionSpec || !starters ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm font-semibold text-amber-500">
+            Bài tập này chưa được cấu hình hàm nên chưa thể nộp bài. Vui lòng liên hệ người tạo bài tập.
+          </div>
         ) : (
           <SubmitForm
             problemId={problem.ProblemID}
             contestId={canAccessContest ? contestId : undefined}
             starters={starters}
+            functionName={functionSpec.name}
           />
         )}
       </div>

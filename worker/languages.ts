@@ -3,8 +3,6 @@ export type LanguageConfig = {
   sourceFile: string;
   compile?: string[];
   compileTimeoutMs?: number;
-  // Function-mode submissions ship the generated driver as a second source file.
-  functionCompile?: string[];
   run: string[];
 };
 
@@ -46,17 +44,13 @@ export const LANGUAGES: Record<string, LanguageConfig> = {
   go: {
     image: "itoj-judge-go:latest",
     sourceFile: "main.go",
+    // The generated driver is shipped as a second source file next to the student's code.
     compile: [
-      "sh",
-      "-c",
-      "cp -r /opt/gocache /sandbox/.gocache && GOCACHE=/sandbox/.gocache go build -o main main.go",
-    ],
-    compileTimeoutMs: 30000,
-    functionCompile: [
       "sh",
       "-c",
       "cp -r /opt/gocache /sandbox/.gocache && GOCACHE=/sandbox/.gocache go build -o main main.go driver.go",
     ],
+    compileTimeoutMs: 30000,
     run: ["./main"],
   },
 };

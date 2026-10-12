@@ -3,7 +3,6 @@ import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
 export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejected";
-export type JudgeMode = "stdin" | "function";
 
 export type ProblemListRow = {
   ProblemID: number;
@@ -51,7 +50,7 @@ export type ProblemDetail = {
   Status: ProblemStatus;
   ProposedStatus: "Public" | "Private" | null;
   RejectionReason: string | null;
-  JudgeMode: JudgeMode;
+  // Signature of the function students implement; null for legacy problems not yet configured.
   FunctionSpec: string | null;
   ClassID?: number | null;
   ClassName?: string | null;
@@ -136,7 +135,6 @@ export async function createProblem(input: {
   proposedStatus?: "Public" | "Private";
   classId?: number;
   dueDate?: string | null;
-  judgeMode?: JudgeMode;
   functionSpec?: string | null;
 }): Promise<number> {
   const { rows } = await execProc<{ ProblemID: number }>("usp_Problem_Create", {
@@ -153,7 +151,6 @@ export async function createProblem(input: {
     ProposedStatus: input.proposedStatus ?? null,
     ClassID: input.classId ?? null,
     DueDate: input.dueDate ? new Date(input.dueDate) : null,
-    JudgeMode: input.judgeMode ?? "stdin",
     FunctionSpec: input.functionSpec ?? null,
   });
   return rows[0].ProblemID;
@@ -173,7 +170,6 @@ export async function updateProblem(input: {
   status?: ProblemStatus;
   proposedStatus?: "Public" | "Private";
   needsReview?: boolean;
-  judgeMode?: JudgeMode;
   functionSpec?: string | null;
 }) {
   await execProc("usp_Problem_Update", {
@@ -190,7 +186,6 @@ export async function updateProblem(input: {
     Status: input.status ?? null,
     ProposedStatus: input.proposedStatus ?? null,
     NeedsReview: input.needsReview ? 1 : 0,
-    JudgeMode: input.judgeMode ?? null,
     FunctionSpec: input.functionSpec ?? null,
   });
 }

@@ -11,7 +11,6 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Create
     @Status VARCHAR(20) = 'Public',
     @ClassID INT = NULL,
     @DueDate DATETIME2(0) = NULL,
-    @JudgeMode VARCHAR(20) = 'stdin',
     @FunctionSpec NVARCHAR(MAX) = NULL,
     @ProposedStatus VARCHAR(20) = NULL
 AS
@@ -36,14 +35,11 @@ BEGIN
     ELSE
         SET @ProposedStatus = NULL;
 
-    IF @JudgeMode IS NULL OR @JudgeMode NOT IN ('stdin', 'function')
-        SET @JudgeMode = 'stdin';
-
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, JudgeMode, FunctionSpec, ProposedStatus)
-        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status, @JudgeMode, @FunctionSpec, @ProposedStatus);
+        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, FunctionSpec, ProposedStatus)
+        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status, @FunctionSpec, @ProposedStatus);
 
         DECLARE @NewProblemID INT = SCOPE_IDENTITY();
 
@@ -83,7 +79,6 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Update
     @Tags NVARCHAR(200),
     @Difficulty VARCHAR(20),
     @Status VARCHAR(20) = NULL,
-    @JudgeMode VARCHAR(20) = NULL,
     @FunctionSpec NVARCHAR(MAX) = NULL,
     @ProposedStatus VARCHAR(20) = NULL,
     @NeedsReview BIT = 0
@@ -120,7 +115,6 @@ BEGIN
     DECLARE @CurrentOutputFormat NVARCHAR(MAX);
     DECLARE @CurrentTimeLimit INT;
     DECLARE @CurrentMemoryLimit INT;
-    DECLARE @CurrentJudgeMode VARCHAR(20);
     DECLARE @CurrentFunctionSpec NVARCHAR(MAX);
     DECLARE @ActorRole VARCHAR(20);
 
@@ -132,7 +126,6 @@ BEGIN
         @CurrentOutputFormat = p.OutputFormat,
         @CurrentTimeLimit = p.TimeLimit,
         @CurrentMemoryLimit = p.MemoryLimit,
-        @CurrentJudgeMode = p.JudgeMode,
         @CurrentFunctionSpec = p.FunctionSpec,
         @ActorRole = u.Role 
     FROM dbo.Problems p
@@ -150,7 +143,6 @@ BEGIN
            OR (COALESCE(@OutputFormat, N'') <> COALESCE(@CurrentOutputFormat, N''))
            OR (@TimeLimit <> @CurrentTimeLimit)
            OR (@MemoryLimit <> @CurrentMemoryLimit)
-           OR (COALESCE(@JudgeMode, @CurrentJudgeMode) <> @CurrentJudgeMode)
            OR (COALESCE(@FunctionSpec, '') <> COALESCE(@CurrentFunctionSpec, ''))
         BEGIN
             SET @IsMajorEdit = 1;
@@ -180,8 +172,7 @@ BEGIN
                     THEN CASE WHEN @ProposedStatus IN ('Public', 'Private') THEN @ProposedStatus ELSE COALESCE(ProposedStatus, 'Private') END
                 ELSE ProposedStatus
             END,
-            JudgeMode = COALESCE(@JudgeMode, JudgeMode),
-            FunctionSpec = CASE WHEN COALESCE(@JudgeMode, JudgeMode) = 'function' THEN COALESCE(@FunctionSpec, FunctionSpec) ELSE NULL END
+            FunctionSpec = COALESCE(@FunctionSpec, FunctionSpec)
         WHERE ProblemID = @ProblemID;
 
         COMMIT TRANSACTION;
@@ -265,7 +256,7 @@ BEGIN
         p.ProblemID, p.CreatorID, u.FullName AS CreatorFullName, 
         p.Title, p.Statement, p.InputFormat, p.OutputFormat,
         p.TimeLimit, p.MemoryLimit, p.Tags, p.Difficulty, p.Status, 
-        p.RejectionReason, p.JudgeMode, p.FunctionSpec, p.ProposedStatus,
+        p.RejectionReason, p.FunctionSpec, p.ProposedStatus,
         cp.ClassID, c.ClassName, c.TeacherID
     FROM dbo.Problems p
     LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID

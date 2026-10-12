@@ -54,7 +54,7 @@ export default async function UserClassesPage({
             {myClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between card p-5 hover:border-fg-muted transition-colors"
+                className="flex flex-col justify-between card card-hover p-5"
               >
                 <div>
                   <span className={`text-xs font-medium ${c.IsCancelled ? "text-bad" : "text-primary"}`}>
@@ -92,7 +92,7 @@ export default async function UserClassesPage({
             {taClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between rounded-xl border border-primary/30 bg-primary/5 p-5 hover:border-primary/50 transition-colors"
+                className="flex flex-col justify-between rounded-xl border border-primary/30 bg-primary/5 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-pop"
               >
                 <div>
                   <span className="text-xs font-medium text-primary uppercase tracking-wider">Trợ giảng</span>
@@ -128,7 +128,7 @@ export default async function UserClassesPage({
             {otherClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between card p-5"
+                className="flex flex-col justify-between card card-hover p-5"
               >
                 <div>
                   <span className="text-xs font-medium text-fg-muted">

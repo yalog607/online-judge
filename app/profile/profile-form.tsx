@@ -29,7 +29,7 @@ export function ProfileForm({
   return (
     <form action={action} className="mt-4 flex flex-col gap-4">
       <div className="flex items-center gap-4 py-2">
-        <div className="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-full bg-indigo-600 text-xl font-bold text-white shadow-inner">
+        <div className="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-full bg-primary text-xl font-bold text-primary-fg shadow-inner">
           {previewUrl ? (
             <Image
               src={previewUrl}

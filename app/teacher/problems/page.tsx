@@ -1,3 +1,4 @@
+import { Select } from "@/components/select";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { listForManage } from "@/modules/problem/repo";
@@ -122,28 +123,30 @@ export default async function ManageProblemsPage({
           placeholder="Chủ đề (tag)..."
           className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
         />
-        <select
+        <Select
           name="difficulty"
+          label="Độ khó"
           defaultValue={sp.difficulty ?? ""}
           className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
         >
-          <option value="">Độ khó: Tất cả</option>
-          <option value="Easy">Độ khó: Dễ</option>
-          <option value="Medium">Độ khó: Trung bình</option>
-          <option value="Hard">Độ khó: Khó</option>
-        </select>
-        <select
+          <option value="">Tất cả</option>
+          <option value="Easy">Dễ</option>
+          <option value="Medium">Trung bình</option>
+          <option value="Hard">Khó</option>
+        </Select>
+        <Select
           name="status"
+          label="Trạng thái bài"
           defaultValue={sp.status ?? ""}
           className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
         >
-          <option value="">Trạng thái bài: Tất cả</option>
-          <option value="Public">Trạng thái bài: Công khai</option>
-          <option value="Private">Trạng thái bài: Riêng tư</option>
-          <option value="Hidden">Trạng thái bài: Đã khóa</option>
-          <option value="Pending">Trạng thái bài: Chờ duyệt</option>
-          <option value="Rejected">Trạng thái bài: Đã từ chối</option>
-        </select>
+          <option value="">Tất cả</option>
+          <option value="Public">Công khai</option>
+          <option value="Private">Riêng tư</option>
+          <option value="Hidden">Đã khóa</option>
+          <option value="Pending">Chờ duyệt</option>
+          <option value="Rejected">Đã từ chối</option>
+        </Select>
         <button type="submit" className="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm hover:opacity-90 transition-opacity">
           Tìm kiếm
         </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, FormEvent } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { useRouter } from "next/navigation";
 import { joinContestAction } from "@/modules/contest/actions";
 
@@ -94,9 +95,8 @@ export function JoinContestDialog({
                 <label className="mb-1 block text-xs font-medium text-fg-muted">
                   Mật khẩu kỳ thi <span className="text-danger">*</span>
                 </label>
-                <input
+                <PasswordInput
                   name="password"
-                  type="password"
                   required
                   placeholder="Nhập mật khẩu..."
                   className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary"

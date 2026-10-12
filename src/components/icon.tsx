@@ -14,8 +14,18 @@ const PATHS = {
   check: '<path d="M20 6L9 17l-5-5"/>',
   send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
   upload: '<path d="M12 16V4M6 10l6-6 6 6M4 20h16"/>',
+  bell: '<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/>',
   settings:
     '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  'chevron-down': '<path d="M6 9l6 6 6-6"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  'eye-off':
+    '<path d="M3 3l18 18M10.6 5.1A10 10 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-3.2 4.2M6.6 6.6A17 17 0 002 12s3.5 7 10 7a10 10 0 004.4-1M9.9 9.9a3 3 0 004.2 4.2"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  fire: '<path d="M12 3s5 4 5 9a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-8z"/>',
+  server:
+    '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 8h.01M7 17h.01"/>',
+  flag: '<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
 } as const;
 
 export type IconName = keyof typeof PATHS;

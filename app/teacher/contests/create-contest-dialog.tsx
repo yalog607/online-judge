@@ -1,6 +1,8 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useState, useTransition, FormEvent } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { useRouter } from "next/navigation";
 import { createContestAction } from "@/modules/contest/actions";
 
@@ -152,7 +154,7 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
                   <label className="mb-1 block text-xs font-medium text-fg-muted">
                     Gán vào lớp học (Tùy chọn)
                   </label>
-                  <select
+                  <Select
                     name="classId"
                     className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary"
                   >
@@ -162,15 +164,14 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
                         {c.className}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-fg-muted">
                     Mật khẩu tham gia (Tùy chọn)
                   </label>
-                  <input
+                  <PasswordInput
                     name="password"
-                    type="password"
                     defaultValue=""
                     autoComplete="new-password"
                     placeholder="Để trống nếu công khai"
