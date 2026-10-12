@@ -240,3 +240,28 @@ export async function checkProblemAccess(problemId: number, userId: number): Pro
   });
   return Boolean(rows[0]?.CanAccess);
 }
+
+export type ClonedProblemResult = {
+  ProblemID: number;
+  Title: string;
+  Difficulty: Difficulty;
+  Status: ProblemStatus;
+  CreatedAt: string;
+};
+
+export async function cloneProblem(
+  problemId: number,
+  actorId: number,
+  newTitle?: string,
+): Promise<ClonedProblemResult> {
+  const { rows } = await execProc<ClonedProblemResult>("usp_Problem_Clone", {
+    ProblemID: problemId,
+    ActorID: actorId,
+    NewTitle: newTitle ?? null,
+  });
+  if (!rows[0]) {
+    throw new Error("Failed to clone problem");
+  }
+  return rows[0];
+}
+

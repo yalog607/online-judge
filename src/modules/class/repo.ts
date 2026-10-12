@@ -1,6 +1,54 @@
 import "server-only";
-import { execProc } from "@/db/exec";
+import { execProc, DomainError } from "@/db/exec";
 import type { ProblemStatus } from "@/modules/problem/repo";
+
+export interface StudentProgressSummary {
+  UserID: number;
+  FullName: string;
+  Username: string;
+  Email: string;
+  JoinDate: string;
+  ProgressPercent: number;
+  TotalProblems: number;
+  SolvedProblems: number;
+  AttemptedProblems: number;
+  UnattemptedProblems: number;
+  TotalSubmissions: number;
+  TotalAC: number;
+}
+
+export interface StudentProblemProgress {
+  ProblemID: number;
+  Title: string;
+  Difficulty: string;
+  TimeLimit: number;
+  MemoryLimit: number;
+  AssignedDate: string;
+  DueDate: string | null;
+  IsClosed: boolean;
+  Status: "Solved" | "Attempted" | "Unattempted";
+  BestResult: string | null;
+  SubmissionCount: number;
+  LastSubmitTime: string | null;
+}
+
+export interface StudentClassSubmission {
+  SubmissionID: number;
+  ProblemID: number;
+  ProblemTitle: string;
+  Language: string;
+  Result: string;
+  Runtime: number | null;
+  Memory: number | null;
+  PassedCases: number | null;
+  SubmitTime: string;
+}
+
+export interface StudentProgressDetailData {
+  student: StudentProgressSummary;
+  problems: StudentProblemProgress[];
+  submissions: StudentClassSubmission[];
+}
 
 export interface ClassItem {
   ClassID: number;
@@ -151,6 +199,12 @@ export interface IClassRepository {
 
   listClassRequests(): Promise<ClassItem[]>;
   approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
+
+  getStudentProgressDetail(
+    classId: number,
+    studentId: number,
+    actorId: number
+  ): Promise<StudentProgressDetailData>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -419,6 +473,27 @@ export class ClassRepository implements IClassRepository {
       IsApproved: isApproved,
       RejectionReason: rejectionReason ?? null,
     });
+  }
+
+  async getStudentProgressDetail(
+    classId: number,
+    studentId: number,
+    actorId: number
+  ): Promise<StudentProgressDetailData> {
+    const res = await execProc<unknown>("usp_Class_GetStudentProgressDetail", {
+      ClassID: classId,
+      StudentID: studentId,
+      ActorID: actorId,
+    });
+
+    const student = res.sets[0]?.[0] as StudentProgressSummary | undefined;
+    if (!student) {
+      throw new DomainError(50032, "Không tìm thấy thông tin tiến độ sinh viên.");
+    }
+    const problems = (res.sets[1] as StudentProblemProgress[] | undefined) ?? [];
+    const submissions = (res.sets[2] as StudentClassSubmission[] | undefined) ?? [];
+
+    return { student, problems, submissions };
   }
 }
 

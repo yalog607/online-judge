@@ -6,6 +6,7 @@ import { RequestTAUpgradeButton } from "./request-ta-button";
 import { RemoveStudentButton } from "./remove-student-button";
 import { ImportStudentsDialog } from "./import-students-dialog";
 import { ExportStudentsButton } from "./export-students-button";
+import { StudentProgressModal } from "./student-progress-modal";
 import type { StudentItem } from "@/modules/class/repo";
 
 type TeacherClassStudentsManagerProps = {
@@ -33,6 +34,7 @@ export function TeacherClassStudentsManager({
   const [searchQuery, setSearchQuery] = useState("");
   const [isImpersonateModalOpen, setIsImpersonateModalOpen] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [progressStudent, setProgressStudent] = useState<StudentItem | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const filteredStudents = students.filter((s) => {
@@ -230,8 +232,18 @@ export function TeacherClassStudentsManager({
                         {new Date(s.JoinDate).toLocaleDateString("vi-VN")}
                       </td>
 
-                      <td className="px-4 py-3.5 text-center font-medium text-emerald-600 dark:text-emerald-400">
-                        {s.ProgressPercent}%
+                      <td className="px-4 py-3.5 text-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProgressStudent(s);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                          title="Bấm để xem chi tiết tiến độ sinh viên"
+                        >
+                          <span>{s.ProgressPercent}%</span>
+                        </button>
                       </td>
 
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
@@ -239,6 +251,13 @@ export function TeacherClassStudentsManager({
                           className="flex items-center justify-end gap-3"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          <button
+                            type="button"
+                            onClick={() => setProgressStudent(s)}
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
+                            Xem tiến độ
+                          </button>
                           {!s.IsTA && s.IsTAPending && (
                             <span className="text-warn text-xs font-medium">
                               Chờ duyệt TA
@@ -341,6 +360,15 @@ export function TeacherClassStudentsManager({
             </div>
           </div>
         </div>
+      )}
+
+      {progressStudent && (
+        <StudentProgressModal
+          key={progressStudent.UserID}
+          classId={classId}
+          student={progressStudent}
+          onClose={() => setProgressStudent(null)}
+        />
       )}
     </div>
   );

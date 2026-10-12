@@ -1,23 +1,15 @@
 import { requireRole } from "@/lib/dal";
-import { AppShell, type NavItem } from "@/components/app-shell";
-
-const NAV: NavItem[] = [
-  { href: "/admin", label: "Tổng quan", icon: "home" },
-  { href: "/admin/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
-  { href: "/admin/users", label: "Người dùng", icon: "users" },
-  { href: "/admin/approvals", label: "Duyệt Yêu Cầu", icon: "shield" },
-  { href: "/admin/reports", label: "Báo cáo thống kê", icon: "chart" },
-  { href: "/profile", label: "Hồ sơ", icon: "user" },
-];
+import { AppShell } from "@/components/app-shell";
+import { ADMIN_NAV, getRoleLabel } from "@/lib/nav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("Admin");
   return (
     <AppShell
-      roleLabel="Quản trị"
+      roleLabel={getRoleLabel(user.role)}
       fullName={user.fullName}
       avatar={user.avatar}
-      nav={NAV}
+      nav={ADMIN_NAV}
       impersonating={Boolean(user.actorId)}
       notificationsHref="/admin/notifications"
     >

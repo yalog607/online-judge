@@ -1,5 +1,6 @@
 import { Select } from "@/components/select";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { listForManage, listForUser } from "@/modules/problem/repo";
 import { DifficultyBadge, UserStatusBadge, ProblemStatusBadge } from "@/components/badge";
@@ -15,8 +16,13 @@ export default async function ProblemListPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const user = await requireUser();
-  const isStaff = user.role === "TA" || user.role === "Teacher" || user.role === "Admin";
-  const canApprove = user.role === "Teacher" || user.role === "Admin";
+  if (user.role === "Teacher" || user.role === "Admin") {
+    const spRecord = await searchParams;
+    const queryString = new URLSearchParams(spRecord as Record<string, string>).toString();
+    redirect(queryString ? `/teacher/problems?${queryString}` : "/teacher/problems");
+  }
+  const isStaff = user.role === "TA";
+  const canApprove = false;
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const isApprovalView = canApprove && sp.view === "pending";

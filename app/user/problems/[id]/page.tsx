@@ -30,7 +30,7 @@ export default async function ProblemDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ contestId?: string }>;
+  searchParams?: Promise<{ contestId?: string; from?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
@@ -160,13 +160,25 @@ export default async function ProblemDetailPage({
     </div>
   );
 
+  const isTeacherOrAdmin = user.role === "Teacher" || user.role === "Admin";
+  const backHref = contestId
+    ? (isTeacherOrAdmin ? `/teacher/contests/${contestId}` : `/user/contests/${contestId}`)
+    : (sParams?.from === "preview"
+        ? `/teacher/problems/${problemId}`
+        : (isTeacherOrAdmin ? "/teacher/problems" : "/user/problems"));
+  const backText = contestId
+    ? "Quay lại kỳ thi"
+    : (sParams?.from === "preview"
+        ? "Quay lại chi tiết bài tập"
+        : (isTeacherOrAdmin ? "Quay lại ngân hàng bài tập" : "Quay lại danh sách"));
+
   return (
     <div className="flex flex-col gap-4 pt-6">
       <Link
-        href={contestId ? `/user/contests/${contestId}` : "/user/problems"}
+        href={backHref}
         className="inline-flex items-center gap-1.5 text-fg-muted hover:text-fg"
       >
-        ← {contestId ? "Quay lại kỳ thi" : "Quay lại danh sách"}
+        ← {backText}
       </Link>
       {contestId && (
         <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs font-medium text-primary">

@@ -24,6 +24,10 @@ export default async function ManageProblemsPage({
       ? sp.name
         ? `Đã tạo bài tập "${sp.name}" thành công!`
         : "Đã tạo bài tập mới thành công!"
+      : sp.success === "cloned"
+        ? sp.name
+          ? `Đã nhân bản bài tập thành "${sp.name}" thành công!`
+          : "Đã nhân bản bài tập thành công!"
       : sp.success === "updated"
         ? sp.name
           ? `Đã cập nhật bài tập "${sp.name}" thành công!`
@@ -68,8 +72,8 @@ export default async function ManageProblemsPage({
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Danh sách bài tập</h1>
-          <p className="mt-1 text-fg-muted">Quản lý bài tập, lọc theo chủ đề, độ khó và trạng thái.</p>
+          <h1 className="text-2xl font-semibold">Ngân hàng bài tập</h1>
+          <p className="mt-1 text-fg-muted">Quản lý kho bài tập dùng chung, nhân bản bài mẫu, lọc theo chủ đề, độ khó và trạng thái để giao cho lớp học hoặc kỳ thi.</p>
         </div>
         <Link
           href="/teacher/problems/new"
@@ -238,6 +242,7 @@ export default async function ManageProblemsPage({
                   <div className="flex items-center justify-end">
                     <RowActions 
                       problemId={p.ProblemID} 
+                      problemTitle={p.Title}
                       status={p.Status} 
                       proposedStatus={p.ProposedStatus}
                       actorRole={actor.role}

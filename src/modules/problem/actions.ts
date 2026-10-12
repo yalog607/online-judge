@@ -35,9 +35,6 @@ async function collectTestcases(formData: FormData) {
   }
   return manual;
 }
-
-// Reads the function signature fields (fnName / fnParamName[] / fnParamType[] / fnReturns) and
-// checks every testcase against it so mistakes show up when saving.
 function parseFunctionSpec(
   formData: FormData,
   testcases: { input: string; expectedOutput: string }[],
@@ -193,3 +190,11 @@ export async function submitCodeAction(_prev: FormState, formData: FormData): Pr
     return { error: e instanceof DomainError ? e.message : "Nộp bài thất bại." };
   }
 }
+
+export async function cloneProblemAction(problemId: number, newTitle?: string) {
+  const actor = await requireRole("Teacher", "Admin");
+  const result = await repo.cloneProblem(problemId, actor.userId, newTitle);
+  revalidatePath("/teacher/problems");
+  return { ok: true, problem: result };
+}
+
