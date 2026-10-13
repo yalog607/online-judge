@@ -128,6 +128,21 @@ export interface ImportStudentsSummary {
   results: ImportStudentResultItem[];
 }
 
+export interface ClassSubmissionItem {
+  SubmissionID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  ProblemID: number;
+  ProblemTitle: string;
+  Language: string;
+  Result: "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "Pending" | "Judging";
+  Runtime: number | null;
+  Memory: number | null;
+  SubmitTime: string | Date;
+  TotalCount?: number;
+}
+
 export interface IClassRepository {
   createClass(teacherId: number, input: {
     className: string;
@@ -196,6 +211,15 @@ export interface IClassRepository {
   approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
 
   getClassesForTA(taUserId: number): Promise<ClassItem[]>;
+
+  getClassSubmissions(
+    classId: number,
+    actorId: number,
+    page?: number,
+    pageSize?: number,
+    problemId?: number,
+    result?: string
+  ): Promise<{ items: ClassSubmissionItem[]; total: number }>;
 
   listClassRequests(): Promise<ClassItem[]>;
   approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
@@ -448,10 +472,19 @@ export class ClassRepository implements IClassRepository {
     return rows;
   }
 
-  async getClassSubmissions(classId: number, actorId: number, page: number = 1, pageSize: number = 20) {
-    const { rows } = await execProc("usp_Class_GetSubmissions", {
+  async getClassSubmissions(
+    classId: number,
+    actorId: number,
+    page: number = 1,
+    pageSize: number = 20,
+    problemId?: number,
+    result?: string
+  ): Promise<{ items: ClassSubmissionItem[]; total: number }> {
+    const { rows } = await execProc<ClassSubmissionItem>("usp_Class_GetSubmissions", {
       ClassID: classId,
       ActorID: actorId,
+      ProblemID: problemId ?? null,
+      Result: result ?? null,
       Page: page,
       PageSize: pageSize,
     });

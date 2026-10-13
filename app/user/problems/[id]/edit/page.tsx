@@ -1,4 +1,4 @@
-
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
@@ -32,6 +32,12 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
 
   return (
     <div className="max-w-3xl pt-8">
+      <Link
+        href="/user/problems"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-fg mb-4"
+      >
+        ← Quay lại tất cả bài tập
+      </Link>
       <h1 className="mb-6 text-2xl font-semibold">Sửa bài tập {isTA ? "(Bản nháp)" : ""}</h1>
       
       {isTA && problem.Status === "Pending" && (

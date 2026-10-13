@@ -103,3 +103,32 @@ export interface ContestLeaderboardEntry {
   penaltyTime: number;
   problemsSolved: number;
 }
+
+export interface ContestSubmissionSummary {
+  TotalSubmissions: number;
+  SolvedUsers: number;
+  AttemptedUsers: number;
+  AcRate: number;
+}
+
+export interface ContestSubmissionItem {
+  SubmissionID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  ProblemID: number;
+  ProblemTitle: string;
+  Language: string;
+  Result: string;
+  Runtime: number;
+  Memory: number;
+  PassedCases: number;
+  SubmitTime: string | Date;
+  TotalCount: number;
+}
+
+export interface ContestSubmissionsData {
+  summary: ContestSubmissionSummary;
+  items: ContestSubmissionItem[];
+  total: number;
+}

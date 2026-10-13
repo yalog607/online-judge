@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { startContestNowAction } from "@/modules/contest/actions";
+import { Modal } from "@/components/modal";
 
 export function StartContestDialog({
   contestId,
@@ -61,9 +62,8 @@ export function StartContestDialog({
         {getButtonText()}
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-base font-semibold text-fg">
                 {currentStatus === "Upcoming"
@@ -145,8 +145,7 @@ export function StartContestDialog({
               </div>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

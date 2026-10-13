@@ -8,6 +8,9 @@ import {
   ContestOverview,
   ContestProblem,
   ContestLeaderboardEntry,
+  ContestSubmissionsData,
+  ContestSubmissionSummary,
+  ContestSubmissionItem,
 } from "./schema";
 
 interface ContestDbRow {
@@ -86,6 +89,14 @@ export interface IContestRepository {
   listProblems(contestId: number, requesterId: number): Promise<ContestProblem[]>;
   joinContest(contestId: number, userId: number, password?: string | null): Promise<void>;
   getLeaderboard(contestId: number, requesterId: number): Promise<ContestLeaderboardEntry[]>;
+  getContestSubmissions(
+    contestId: number,
+    requesterId: number,
+    page?: number,
+    pageSize?: number,
+    problemId?: number,
+    result?: string
+  ): Promise<ContestSubmissionsData>;
   startContestNow(contestId: number, requesterId: number, durationMinutes: number): Promise<void>;
   checkProblemAccess(contestId: number, problemId: number, userId: number): Promise<boolean>;
   deleteContest(contestId: number, requesterId: number): Promise<void>;
@@ -269,6 +280,35 @@ export class ContestRepository implements IContestRepository {
       ContestID: contestId,
       RequesterID: requesterId,
     });
+  }
+
+  async getContestSubmissions(
+    contestId: number,
+    requesterId: number,
+    page: number = 1,
+    pageSize: number = 20,
+    problemId?: number,
+    result?: string
+  ): Promise<ContestSubmissionsData> {
+    const res = await execProc<unknown>("usp_Contest_GetSubmissions", {
+      ContestID: contestId,
+      ActorID: requesterId,
+      ProblemID: problemId ?? null,
+      Result: result ?? null,
+      Page: page,
+      PageSize: pageSize,
+    });
+
+    const summary = (res.sets[0]?.[0] as ContestSubmissionSummary) ?? {
+      TotalSubmissions: 0,
+      SolvedUsers: 0,
+      AttemptedUsers: 0,
+      AcRate: 0,
+    };
+    const items = (res.sets[1] ?? []) as ContestSubmissionItem[];
+    const total = items[0]?.TotalCount ?? 0;
+
+    return { summary, items, total };
   }
 }
 

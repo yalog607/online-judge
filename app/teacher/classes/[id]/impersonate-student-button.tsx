@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { impersonateAction } from "@/modules/auth/actions";
+import { Modal } from "@/components/modal";
 
 type ImpersonateStudentButtonProps = {
   studentId: number;
@@ -57,14 +58,8 @@ export function ImpersonateStudentButton({
         <span>Mô phỏng</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-            onClick={() => !pending && setIsOpen(false)}
-          />
-
-          <div className="relative w-full max-w-md rounded-xl border border-line bg-surface p-6 text-left shadow-xl animate-in fade-in zoom-in-95 duration-150">
+      <Modal isOpen={isOpen} onClose={() => !pending && setIsOpen(false)}>
+        <div className="relative w-full max-w-md rounded-xl border border-line bg-surface p-6 text-left shadow-xl animate-in fade-in zoom-in-95 duration-150">
             <h3 className="text-lg font-semibold text-fg">
               Xác nhận mô phỏng học viên
             </h3>
@@ -101,8 +96,7 @@ export function ImpersonateStudentButton({
               </button>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
     </>
   );
 }

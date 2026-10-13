@@ -265,3 +265,57 @@ export async function cloneProblem(
   return rows[0];
 }
 
+export type ProblemSubmissionSummary = {
+  TotalSubmissions: number;
+  SolvedUsers: number;
+  AttemptedUsers: number;
+  AcRate: number;
+};
+
+export type ProblemSubmissionItem = {
+  SubmissionID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  Language: string;
+  Result: string;
+  Runtime: number | null;
+  Memory: number | null;
+  PassedCases: number;
+  SubmitTime: string | Date;
+  TotalCount: number;
+};
+
+export type ProblemSubmissionsData = {
+  summary: ProblemSubmissionSummary;
+  items: ProblemSubmissionItem[];
+  total: number;
+};
+
+export async function getProblemSubmissions(
+  problemId: number,
+  actorId: number,
+  page: number = 1,
+  pageSize: number = 20,
+  result?: string,
+): Promise<ProblemSubmissionsData> {
+  const res = await execProc<unknown>("usp_Problem_GetSubmissions", {
+    ProblemID: problemId,
+    ActorID: actorId,
+    Result: result ?? null,
+    Page: page,
+    PageSize: pageSize,
+  });
+
+  const summary = (res.sets[0]?.[0] as ProblemSubmissionSummary) ?? {
+    TotalSubmissions: 0,
+    SolvedUsers: 0,
+    AttemptedUsers: 0,
+    AcRate: 0,
+  };
+  const items = (res.sets[1] ?? []) as ProblemSubmissionItem[];
+  const total = items[0]?.TotalCount ?? 0;
+
+  return { summary, items, total };
+}
+

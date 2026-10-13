@@ -250,7 +250,7 @@ export default async function ProblemListPage({
                   <td className="px-5 py-4"><DifficultyBadge value={p.Difficulty} /></td>
                   <td className="px-5 py-4"><ProblemStatusBadge value={p.Status} /></td>
                   <td className="px-5 py-4 text-right">
-                    <RowActions problemId={p.ProblemID} status={p.Status} proposedStatus={p.ProposedStatus} actorRole={user.role} canManage={p.CanManage} />
+                    <RowActions problemId={p.ProblemID} status={p.Status} proposedStatus={p.ProposedStatus} actorRole={user.role} canManage={user.role === "Admin" || p.CreatorID === user.userId} />
                   </td>
                 </tr>
               ))}
@@ -274,7 +274,7 @@ export default async function ProblemListPage({
               {isStaff && <th className="px-5 py-3">Trạng thái bài</th>}
               <th className="px-5 py-3">Tỉ lệ AC</th>
               <th className="px-5 py-3">Trạng thái giải</th>
-              {sp.view === "mine" && <th className="px-5 py-3 text-right">Thao tác</th>}
+              {(isStaff || sp.view === "mine") && <th className="px-5 py-3 text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody>
@@ -326,21 +326,25 @@ export default async function ProblemListPage({
                 <td className="px-5 py-3">
                   <UserStatusBadge value={p.UserStatus} />
                 </td>
-                {sp.view === "mine" && (
+                {(isStaff || sp.view === "mine") && (
                   <td className="px-5 py-3 text-right">
-                    <Link
-                      href={`/user/problems/${p.ProblemID}/edit`}
-                      className="text-primary hover:underline text-sm font-medium"
-                    >
-                      Chi tiết
-                    </Link>
+                    {p.CreatorID === user.userId ? (
+                      <Link
+                        href={`/user/problems/${p.ProblemID}/edit`}
+                        className="text-primary hover:underline text-sm font-medium"
+                      >
+                        Sửa
+                      </Link>
+                    ) : (
+                      <span className="text-fg-muted text-xs">-</span>
+                    )}
                   </td>
                 )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={sp.view === "mine" ? (isStaff ? 9 : 8) : (isStaff ? 8 : 7)} className="px-5 py-12 text-center text-fg-muted">
+                <td colSpan={isStaff ? 9 : 8} className="px-5 py-12 text-center text-fg-muted">
                   Không có bài tập nào khớp bộ lọc.
                 </td>
               </tr>

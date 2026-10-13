@@ -39,6 +39,7 @@ export default async function ProblemDetailPage({
   const contestId = sParams?.contestId ? Number(sParams.contestId) : undefined;
   const problem = await getProblem(problemId);
   if (!problem) notFound();
+  const canEdit = user.role === "Admin" || (problem.CreatorID === user.userId && (user.role === "TA" || user.role === "Teacher"));
 
   let canAccessContest = false;
   let contestStatus: "Upcoming" | "Ongoing" | "Ended" | null = null;
@@ -188,9 +189,19 @@ export default async function ProblemDetailPage({
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <div className="card">
           <div className="border-b border-line px-5 py-4">
-            <h1 className="text-[22px] font-semibold tracking-tight">
-              {problem.ProblemID}. {problem.Title}
-            </h1>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-[22px] font-semibold tracking-tight">
+                {problem.ProblemID}. {problem.Title}
+              </h1>
+              {canEdit && (
+                <Link
+                  href={user.role === "Teacher" || user.role === "Admin" ? `/teacher/problems/${problem.ProblemID}/edit` : `/user/problems/${problem.ProblemID}/edit`}
+                  className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  Chỉnh sửa bài
+                </Link>
+              )}
+            </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
               <DifficultyBadge value={problem.Difficulty} />
               <span>

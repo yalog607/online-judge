@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { leaveClassAction } from "@/modules/class/actions";
+import { Modal } from "@/components/modal";
 
 export default function LeaveClassDialog({
   classId,
@@ -42,9 +43,8 @@ export default function LeaveClassDialog({
         Rời lớp học
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-rose-500 font-semibold">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,9 +99,8 @@ export default function LeaveClassDialog({
                 {isPending ? "Đang rời..." : "Xác nhận rời lớp"}
               </button>
             </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }
