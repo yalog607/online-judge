@@ -7,6 +7,7 @@ import { RemoveStudentButton } from "./remove-student-button";
 import { ImportStudentsDialog } from "./import-students-dialog";
 import { ExportStudentsButton } from "./export-students-button";
 import { StudentProgressModal } from "./student-progress-modal";
+import { Modal } from "@/components/modal";
 import type { StudentItem } from "@/modules/class/repo";
 
 type TeacherClassStudentsManagerProps = {
@@ -267,6 +268,7 @@ export function TeacherClassStudentsManager({
                             <RequestTAUpgradeButton
                               classId={classId}
                               studentId={s.UserID}
+                              studentName={s.FullName}
                             />
                           )}
                           <RemoveStudentButton
@@ -285,8 +287,11 @@ export function TeacherClassStudentsManager({
         </div>
       </div>
 
-      {isImpersonateModalOpen && selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Modal
+        isOpen={Boolean(isImpersonateModalOpen && selectedStudent)}
+        onClose={() => setIsImpersonateModalOpen(false)}
+      >
+        {selectedStudent && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-primary font-semibold">
@@ -359,8 +364,8 @@ export function TeacherClassStudentsManager({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {progressStudent && (
         <StudentProgressModal

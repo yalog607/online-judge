@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cloneProblemAction, deleteProblemAction, setProblemStatusAction } from "@/modules/problem/actions";
+import { Modal } from "@/components/modal";
 import type { ProblemStatus } from "@/modules/problem/repo";
 
 export function RowActions({ 
@@ -79,12 +80,8 @@ export function RowActions({
         <button disabled={pending} type="button" onClick={() => setRejectOpen(true)} className="inline-flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border border-bad/30 bg-bad-soft px-2 py-2 text-[11px] font-semibold text-bad transition-colors hover:bg-bad-soft/70 disabled:cursor-wait disabled:opacity-60">
           Từ chối
         </button>
-        {rejectOpen && (
-          <div
-            className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
-            onMouseDown={(event) => { if (event.target === event.currentTarget) setRejectOpen(false); }}
-          >
-            <section role="dialog" aria-modal="true" aria-labelledby={`reject-title-${problemId}`} className="w-full max-w-md rounded-2xl border border-line bg-surface p-5 text-left shadow-2xl">
+        <Modal isOpen={rejectOpen} onClose={() => setRejectOpen(false)}>
+          <section role="dialog" aria-modal="true" aria-labelledby={`reject-title-${problemId}`} className="w-full max-w-md rounded-2xl border border-line bg-surface p-5 text-left shadow-2xl">
               <h2 id={`reject-title-${problemId}`} className="text-lg font-semibold text-fg">Từ chối bài tập</h2>
               <p className="mt-1 text-sm text-fg-muted">Ghi rõ nội dung cần chỉnh sửa để trợ giảng có thể gửi lại bài.</p>
               <label htmlFor={`reject-reason-${problemId}`} className="mt-4 block text-sm font-medium text-fg">Lý do từ chối</label>
@@ -115,8 +112,7 @@ export function RowActions({
                 </button>
               </div>
             </section>
-          </div>
-        )}
+        </Modal>
       </div>
     );
   }
@@ -154,12 +150,8 @@ export function RowActions({
           Xem bài
         </Link>
       )}
-      {cloneOpen && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
-          onMouseDown={(event) => { if (event.target === event.currentTarget) setCloneOpen(false); }}
-        >
-          <section role="dialog" aria-modal="true" aria-labelledby={`clone-title-${problemId}`} className="w-full max-w-md rounded-2xl border border-line bg-surface p-5 text-left shadow-2xl">
+      <Modal isOpen={cloneOpen} onClose={() => setCloneOpen(false)}>
+        <section role="dialog" aria-modal="true" aria-labelledby={`clone-title-${problemId}`} className="w-full max-w-md rounded-2xl border border-line bg-surface p-5 text-left shadow-2xl">
             <h2 id={`clone-title-${problemId}`} className="text-lg font-semibold text-fg">Nhân bản bài tập</h2>
             <p className="mt-1 text-sm text-fg-muted">Tạo một bản sao độc lập của bài tập này (bao gồm toàn bộ đề bài, giới hạn và testcase) để đưa vào ngân hàng bài tập của bạn.</p>
             <label htmlFor={`clone-name-${problemId}`} className="mt-4 block text-sm font-medium text-fg">Tên bài tập mới</label>
@@ -192,8 +184,7 @@ export function RowActions({
               </button>
             </div>
           </section>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

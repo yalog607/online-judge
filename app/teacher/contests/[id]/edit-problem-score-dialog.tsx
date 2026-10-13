@@ -3,6 +3,7 @@
 import { useState, useTransition, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { updateContestProblemScoreAction } from "@/modules/contest/actions";
+import { Modal } from "@/components/modal";
 
 export function EditProblemScoreDialog({
   contestId,
@@ -56,9 +57,8 @@ export function EditProblemScoreDialog({
         <span>Sửa điểm</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-2xl">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="text-base font-semibold text-fg">Đổi điểm bài tập</h3>
               <button
@@ -124,8 +124,7 @@ export function EditProblemScoreDialog({
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

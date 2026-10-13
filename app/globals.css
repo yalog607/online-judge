@@ -173,6 +173,10 @@ body {
     opacity: 0;
     transform: translateY(6px);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .rise {
@@ -310,13 +314,21 @@ body {
     opacity: 0;
     transform: translateY(-6px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Modal: lớp phủ mờ dần, hộp thoại bật lên; menu/popover trượt xuống */
-div.fixed.inset-0.z-50 {
+div.fixed.inset-0.z-50,
+div.fixed.inset-0.z-\[100\],
+[role="dialog"].fixed.inset-0 {
   animation: fade-in 0.18s ease-out both;
 }
-div.fixed.inset-0.z-50 > div:not(.fixed) {
+div.fixed.inset-0.z-50 > div:not(.fixed),
+div.fixed.inset-0.z-\[100\] > div:not(.fixed),
+[role="dialog"].fixed.inset-0 > div:not(.fixed) {
   animation: pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 [role="menu"],
@@ -328,7 +340,7 @@ div.fixed.inset-0.z-50 > div:not(.fixed) {
 
 /* Nội dung trang xuất hiện nhẹ nhàng */
 main {
-  animation: rise 0.35s both;
+  animation: rise 0.35s ease-out;
 }
 
 /* Thông báo/toast, badge trạng thái */

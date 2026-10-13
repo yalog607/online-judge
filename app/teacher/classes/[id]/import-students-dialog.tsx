@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ImportStudentsSummary } from "@/modules/class/repo";
+import { Modal } from "@/components/modal";
 
 export function ImportStudentsDialog({
   classId,
@@ -107,9 +108,8 @@ export function ImportStudentsDialog({
         <span>Import Excel</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-xl rounded-2xl border border-line bg-surface p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <Modal isOpen={isOpen} onClose={handleClose}>
+        <div className="w-full max-w-xl rounded-2xl border border-line bg-surface p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -391,9 +391,8 @@ export function ImportStudentsDialog({
                 </div>
               </div>
             )}
-          </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

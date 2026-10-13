@@ -11,6 +11,7 @@ import {
   setUserRoleAction,
   impersonateAction,
 } from "@/modules/auth/actions";
+import { Modal } from "@/components/modal";
 import type { Role } from "@/lib/session";
 
 export type AdminUserRow = {
@@ -447,8 +448,11 @@ export function AdminUsersManager({
         </div>
       </div>
 
-      {isImpersonateModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Modal
+        isOpen={Boolean(isImpersonateModalOpen && selectedUser)}
+        onClose={() => setIsImpersonateModalOpen(false)}
+      >
+        {selectedUser && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-primary font-semibold">
@@ -514,11 +518,14 @@ export function AdminUsersManager({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {isLockModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Modal
+        isOpen={Boolean(isLockModalOpen && selectedUser)}
+        onClose={() => setIsLockModalOpen(false)}
+      >
+        {selectedUser && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-rose-600 font-semibold">
@@ -577,11 +584,14 @@ export function AdminUsersManager({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {isUnlockModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Modal
+        isOpen={Boolean(isUnlockModalOpen && selectedUser)}
+        onClose={() => setIsUnlockModalOpen(false)}
+      >
+        {selectedUser && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-emerald-600 font-semibold">
@@ -640,11 +650,14 @@ export function AdminUsersManager({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {isRoleModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Modal
+        isOpen={Boolean(isRoleModalOpen && selectedUser)}
+        onClose={() => setIsRoleModalOpen(false)}
+      >
+        {selectedUser && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-fg font-semibold">
@@ -725,8 +738,8 @@ export function AdminUsersManager({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

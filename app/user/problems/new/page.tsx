@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { ProblemForm } from "../../../teacher/problems/problem-form";
@@ -33,6 +34,12 @@ export default async function NewProblemPage({
 
   return (
     <div className="max-w-3xl pt-8">
+      <Link
+        href="/user/problems"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-fg mb-4"
+      >
+        ← Quay lại tất cả bài tập
+      </Link>
       <h1 className="mb-6 text-2xl font-semibold">Thêm bài tập {isTA ? "(Bản nháp)" : ""}</h1>
       {isTA && (
         <p className="mb-4 text-sm text-fg-muted">

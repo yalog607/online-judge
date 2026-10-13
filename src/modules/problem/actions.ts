@@ -153,7 +153,7 @@ export async function updateProblemAction(
   const titleParam = encodeURIComponent(parsed.data.title);
   if (actor.role === "TA") {
     revalidatePath("/user/problems");
-    redirect(`/user/problems?view=mine&success=updated&name=${titleParam}`);
+    redirect(`/user/problems?success=updated&name=${titleParam}`);
   } else {
     redirect(`/teacher/problems?success=updated&name=${titleParam}`);
   }

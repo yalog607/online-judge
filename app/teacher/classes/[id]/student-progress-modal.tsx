@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DifficultyBadge } from "@/components/badge";
+import { Modal } from "@/components/modal";
 import type { StudentProgressDetailData } from "@/modules/class/repo";
 
 const AVATAR_COLORS = [
@@ -76,14 +77,7 @@ export function StudentProgressModal({
   const avatarColor = getAvatarColor(student.UserID);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <Modal isOpen={Boolean(student)} onClose={onClose}>
       <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-line bg-surface shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div className="flex items-center gap-3.5">
@@ -404,6 +398,6 @@ export function StudentProgressModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -4,6 +4,7 @@ import { Select } from "@/components/select";
 import { useState, useTransition, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { addContestProblemAction } from "@/modules/contest/actions";
+import { Modal } from "@/components/modal";
 
 interface AvailableProblem {
   problemId: number;
@@ -54,9 +55,8 @@ export function AddProblemDialog({
         <span>+ Thêm bài tập</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-lg font-semibold text-fg">Thêm bài tập vào kỳ thi</h3>
               <button
@@ -141,8 +141,7 @@ export function AddProblemDialog({
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

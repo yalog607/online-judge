@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Select } from "@/components/select";
 import { useActionState, useState } from "react";
 import { Field, FormError, SubmitButton } from "@/components/form";
@@ -442,7 +443,15 @@ export function ProblemForm({
         <p className="rounded-lg bg-ok-soft px-3 py-2 text-sm text-ok">Đã lưu bài tập.</p>
       )}
       <FormError message={state.error} />
-      {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+      <div className="flex items-center gap-3">
+        {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+        <Link
+          href={isTA ? "/user/problems" : "/teacher/problems"}
+          className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors text-fg-muted hover:text-fg"
+        >
+          Hủy / Quay lại
+        </Link>
+      </div>
       </fieldset>
     </form>
   );
