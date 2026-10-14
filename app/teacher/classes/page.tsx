@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
+import { Pager } from "@/components/pager";
+import { paginate, parsePage } from "@/lib/paginate";
 import { JoinClassForm } from "../../user/classes/join-class-form";
+
+const CLASS_PAGE_SIZE = 9;
 
 export default async function TeacherClassesPage({
   searchParams,
@@ -24,6 +28,13 @@ export default async function TeacherClassesPage({
   const otherClasses = classes.filter(
     (c) => !c.IsJoined && c.TeacherID !== actor.userId && !c.IsTA,
   );
+
+  const hrefFor = (key: string) => (p: number) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (v !== undefined && k !== key) params.set(k, v);
+    params.set(key, String(p));
+    return `?${params.toString()}`;
+  };
 
   return (
     <div className="flex flex-col gap-6 pt-8">
@@ -66,6 +77,9 @@ export default async function TeacherClassesPage({
       <ClassCards
         title={`Lớp tôi quản lý (${ownedClasses.length})`}
         classes={ownedClasses}
+        pageKey="po"
+        sp={sp}
+        buildHref={hrefFor("po")}
         hrefPrefix="/teacher/classes"
         empty="Bạn chưa tạo lớp học nào."
         label="Giảng viên"
@@ -73,14 +87,20 @@ export default async function TeacherClassesPage({
       <ClassCards
         title={`Lớp tôi đã tham gia (${joinedClasses.length})`}
         classes={joinedClasses}
-        hrefPrefix="/user/classes"
+        pageKey="pj"
+        sp={sp}
+        buildHref={hrefFor("pj")}
+        hrefPrefix="/teacher/classes"
         empty="Bạn chưa tham gia lớp học nào."
         label="Đã tham gia"
       />
       <ClassCards
         title={`Lớp công khai khác (${otherClasses.length})`}
         classes={otherClasses}
-        hrefPrefix="/user/classes"
+        pageKey="pc"
+        sp={sp}
+        buildHref={hrefFor("pc")}
+        hrefPrefix="/teacher/classes"
         empty="Không có lớp công khai phù hợp."
         label="Lớp công khai"
       />
@@ -94,13 +114,21 @@ function ClassCards({
   hrefPrefix,
   empty,
   label,
+  pageKey,
+  sp,
+  buildHref,
 }: {
   title: string;
   classes: Awaited<ReturnType<typeof classRepository.listClasses>>["classes"];
   hrefPrefix: string;
   empty: string;
   label: string;
+  pageKey: string;
+  sp: Record<string, string | undefined>;
+  buildHref: (page: number) => string;
 }) {
+  const paged = paginate(classes, parsePage(sp[pageKey]), CLASS_PAGE_SIZE);
+  classes = paged.items;
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">{title}</h2>
@@ -152,7 +180,7 @@ function ClassCards({
                   href={`${hrefPrefix}/${c.ClassID}`}
                   className="flex-1 rounded-lg bg-primary px-4 py-2 text-center text-sm font-medium text-primary-fg"
                 >
-                  {hrefPrefix === "/teacher/classes"
+                  {label === "Giảng viên"
                     ? "Quản lý lớp"
                     : c.IsTA
                       ? "Quản lý lớp"
@@ -164,6 +192,7 @@ function ClassCards({
           ))}
         </div>
       )}
+      <Pager page={paged.page} pageSize={CLASS_PAGE_SIZE} total={paged.total} buildHref={buildHref} />
     </section>
   );
 }

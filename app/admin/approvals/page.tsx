@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
+import { Pager } from "@/components/pager";
+import { paginate, parsePage } from "@/lib/paginate";
 import { ApprovalButtons, ClassApprovalButtons } from "./action-buttons";
 
 export const metadata = { title: "Duyệt yêu cầu" };
+
+const PAGE_SIZE = 20;
 
 export default async function AdminApprovalsPage({
   searchParams,
@@ -15,8 +19,16 @@ export default async function AdminApprovalsPage({
   const sp = await searchParams;
   const tab = sp.tab === "class" ? "class" : "ta";
 
-  const taRequests = await classRepository.listTARequests(admin.userId);
-  const classRequests = await classRepository.listClassRequests();
+  const allTaRequests = await classRepository.listTARequests(admin.userId);
+  const allClassRequests = await classRepository.listClassRequests();
+  const current = paginate<unknown>(
+    tab === "class" ? allClassRequests : allTaRequests,
+    parsePage(sp.page),
+    PAGE_SIZE,
+  ) as { items: any[]; page: number; total: number }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const taRequests = tab === "ta" ? current.items : [];
+  const classRequests = tab === "class" ? current.items : [];
+  const buildHref = (p: number) => `/admin/approvals?${tab === "class" ? "tab=class&" : ""}page=${p}`;
 
   return (
     <div className="flex flex-col gap-5 pt-8">
@@ -89,6 +101,7 @@ export default async function AdminApprovalsPage({
               )}
             </tbody>
           </table>
+          <Pager page={current.page} pageSize={PAGE_SIZE} total={current.total} buildHref={buildHref} />
         </div>
       )}
 
@@ -139,6 +152,7 @@ export default async function AdminApprovalsPage({
               )}
             </tbody>
           </table>
+          <Pager page={current.page} pageSize={PAGE_SIZE} total={current.total} buildHref={buildHref} />
         </div>
       )}
     </div>

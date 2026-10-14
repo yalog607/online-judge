@@ -10,6 +10,8 @@ import { StudentProgressModal } from "./student-progress-modal";
 import { Modal } from "@/components/modal";
 import type { StudentItem } from "@/modules/class/repo";
 
+const STUDENT_PAGE_SIZE = 20;
+
 type TeacherClassStudentsManagerProps = {
   classId: number;
   students: StudentItem[];
@@ -33,6 +35,7 @@ export function TeacherClassStudentsManager({
     students[0]?.UserID ?? null
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [studentPage, setStudentPage] = useState(1);
   const [isImpersonateModalOpen, setIsImpersonateModalOpen] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [progressStudent, setProgressStudent] = useState<StudentItem | null>(null);
@@ -47,6 +50,13 @@ export function TeacherClassStudentsManager({
       s.Email.toLowerCase().includes(q)
     );
   });
+
+  const studentTotalPages = Math.max(1, Math.ceil(filteredStudents.length / STUDENT_PAGE_SIZE));
+  const currentStudentPage = Math.min(studentPage, studentTotalPages);
+  const pagedStudents = filteredStudents.slice(
+    (currentStudentPage - 1) * STUDENT_PAGE_SIZE,
+    currentStudentPage * STUDENT_PAGE_SIZE,
+  );
 
   const selectedStudent =
     students.find((s) => s.UserID === selectedStudentId) ?? null;
@@ -135,7 +145,10 @@ export function TeacherClassStudentsManager({
           </span>
           <input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setStudentPage(1);
+            }}
             placeholder="Tìm theo tên, email, tên đăng nhập..."
             className="w-full rounded-lg border border-line bg-muted/50 py-1.5 pl-9 pr-3 text-sm text-fg placeholder:text-fg-muted focus:border-primary focus:bg-surface focus:outline-none"
           />
@@ -168,7 +181,7 @@ export function TeacherClassStudentsManager({
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((s) => {
+                pagedStudents.map((s) => {
                   const isSelected = selectedStudentId === s.UserID;
                   const initial =
                     s.FullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase() ??
@@ -285,6 +298,33 @@ export function TeacherClassStudentsManager({
             </tbody>
           </table>
         </div>
+        {studentTotalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-line px-4 py-3 text-sm text-fg-muted">
+            <span>
+              Trang {currentStudentPage}/{studentTotalPages} · {filteredStudents.length} học sinh
+            </span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                disabled={currentStudentPage <= 1}
+                onClick={() => setStudentPage(currentStudentPage - 1)}
+                className="grid h-8 min-w-8 place-items-center rounded-lg px-2 hover:bg-muted disabled:opacity-40"
+                aria-label="Trang trước"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                disabled={currentStudentPage >= studentTotalPages}
+                onClick={() => setStudentPage(currentStudentPage + 1)}
+                className="grid h-8 min-w-8 place-items-center rounded-lg px-2 hover:bg-muted disabled:opacity-40"
+                aria-label="Trang sau"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal

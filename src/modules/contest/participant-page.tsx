@@ -7,8 +7,12 @@ import { JoinContestDialog } from "../../../app/user/contests/join-contest-dialo
 import { listComments } from "@/modules/contest-comment/repo";
 import { ContestComments } from "../../../app/user/contests/[id]/comments";
 import { mapToCommentView } from "@/modules/contest-comment/view";
+import { Pager } from "@/components/pager";
+import { paginate, parsePage } from "@/lib/paginate";
 
 import { ContestTimer } from "./contest-timer";
+
+const LEADERBOARD_PAGE_SIZE = 20;
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -52,7 +56,7 @@ export async function ContestParticipantPage({
   listHref = "/user/contests",
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ tab?: string }>;
+  searchParams?: Promise<{ tab?: string; page?: string }>;
   contestBasePath?: string;
   listHref?: string;
 }) {
@@ -72,6 +76,7 @@ export async function ContestParticipantPage({
   if (!contest) notFound();
 
   const activeTab = sParams?.tab || "problems";
+  const leaderboardPage = paginate(leaderboard, parsePage(sParams?.page), LEADERBOARD_PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-6 pt-8">
@@ -313,7 +318,7 @@ export async function ContestParticipantPage({
                     </td>
                   </tr>
                 ) : (
-                  leaderboard.map((row) => (
+                  leaderboardPage.items.map((row) => (
                     <tr
                       key={row.userId}
                       className={`hover:bg-muted/40 transition-colors ${
@@ -364,6 +369,12 @@ export async function ContestParticipantPage({
               </tbody>
             </table>
           </div>
+          <Pager
+            page={leaderboardPage.page}
+            pageSize={LEADERBOARD_PAGE_SIZE}
+            total={leaderboardPage.total}
+            buildHref={(p) => `${contestBasePath}/${contestId}?tab=leaderboard&page=${p}`}
+          />
         </div>
       )}
 
