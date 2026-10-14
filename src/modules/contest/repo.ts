@@ -102,14 +102,23 @@ export interface IContestRepository {
   deleteContest(contestId: number, requesterId: number): Promise<void>;
 }
 
+export function parseContestDate(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  if (dateStr.includes("Z") || /[+-]\d{2}(:\d{2})?$/.test(dateStr)) {
+    return new Date(dateStr);
+  }
+  const clean = dateStr.length === 16 ? `${dateStr}:00` : dateStr;
+  return new Date(`${clean}+07:00`);
+}
+
 export class ContestRepository implements IContestRepository {
   async createContest(creatorId: number, input: CreateContestInput): Promise<{ contestId: number }> {
     const { rows } = await execProc<{ ContestID: number }>("usp_Contest_Create", {
       CreatorID: creatorId,
       ContestName: input.contestName,
       Description: input.description ?? null,
-      StartTime: new Date(input.startTime),
-      EndTime: new Date(input.endTime),
+      StartTime: parseContestDate(input.startTime),
+      EndTime: parseContestDate(input.endTime),
       Password: input.password ?? null,
       ClassID: input.classId ?? null,
     });
@@ -126,8 +135,8 @@ export class ContestRepository implements IContestRepository {
       RequesterID: requesterId,
       ContestName: input.contestName,
       Description: input.description ?? null,
-      StartTime: new Date(input.startTime),
-      EndTime: new Date(input.endTime),
+      StartTime: parseContestDate(input.startTime),
+      EndTime: parseContestDate(input.endTime),
       Password: input.password ?? null,
       ClassID: input.classId ?? null,
     });

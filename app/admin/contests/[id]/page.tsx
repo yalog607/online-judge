@@ -12,6 +12,7 @@ function formatDateTime(iso: string | Date) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
   });
 }
 

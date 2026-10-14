@@ -26,6 +26,7 @@ function formatDateTime(iso: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
   });
 }
 
@@ -572,7 +573,7 @@ export default async function TeacherContestDetailPage({
                         {s.Memory !== null ? `${(s.Memory / 1024).toFixed(1)}MB` : "—"}
                       </td>
                       <td className="px-4 py-3 text-xs text-fg-muted">
-                        {new Date(s.SubmitTime).toLocaleString("vi-VN")}
+                        {new Date(s.SubmitTime).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
