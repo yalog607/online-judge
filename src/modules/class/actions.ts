@@ -37,6 +37,12 @@ export async function createClassAction(_prev: FormState, formData: FormData): P
   }
 }
 
+function classHomePath(role: string, classId: number): string {
+  return role === "Teacher" || role === "Admin"
+    ? `/teacher/classes/${classId}`
+    : `/user/classes/${classId}`;
+}
+
 export async function joinClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireRole("User", "TA", "Teacher", "Admin");
   const rawData = {
@@ -51,7 +57,7 @@ export async function joinClassAction(_prev: FormState, formData: FormData): Pro
   try {
     const classId = await classRepository.joinByInviteCode(user.userId, parsed.data.inviteCode);
     revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
-    redirect(`/user/classes/${classId}`);
+    redirect(classHomePath(user.role, classId));
   } catch (error) {
     if (error instanceof DomainError) {
       return { error: error.message };
@@ -65,7 +71,8 @@ export async function joinPublicClassAction(classId: number): Promise<void> {
   await classRepository.joinPublicClass(user.userId, classId);
   revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
   revalidatePath(`/user/classes/${classId}`);
-  redirect(`/user/classes/${classId}`);
+  revalidatePath(`/teacher/classes/${classId}`);
+  redirect(classHomePath(user.role, classId));
 }
 
 export async function leaveClassAction(classId: number): Promise<{ error?: string; ok?: boolean }> {
