@@ -71,14 +71,14 @@ export default async function UserClassesPage({
             {myClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between card card-hover p-5"
+                className="relative flex flex-col justify-between card card-hover p-5"
               >
                 <div>
                   <span className={`text-xs font-medium ${c.IsCancelled ? "text-bad" : "text-primary"}`}>
                     {c.IsCancelled ? "Đã hủy · chỉ xem lịch sử" : "Đang tham gia"}
                   </span>
                   <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={getHref(c.ClassID)} className="hover:underline">
+                    <Link href={getHref(c.ClassID)} className="hover:underline after:absolute after:inset-0">
                       {c.ClassName}
                     </Link>
                   </h3>
@@ -110,12 +110,12 @@ export default async function UserClassesPage({
             {taClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between rounded-xl border border-primary/30 bg-primary/5 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-pop"
+                className="relative flex flex-col justify-between rounded-xl border border-primary/30 bg-primary/5 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-pop"
               >
                 <div>
                   <span className="text-xs font-medium text-primary uppercase tracking-wider">Trợ giảng</span>
                   <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={getHref(c.ClassID)} className="hover:underline">
+                    <Link href={getHref(c.ClassID)} className="hover:underline after:absolute after:inset-0">
                       {c.ClassName}
                     </Link>
                   </h3>
@@ -147,14 +147,14 @@ export default async function UserClassesPage({
             {otherClasses.map((c) => (
               <div
                 key={c.ClassID}
-                className="flex flex-col justify-between card card-hover p-5"
+                className="relative flex flex-col justify-between card card-hover p-5"
               >
                 <div>
                   <span className="text-xs font-medium text-fg-muted">
                     {c.IsPublic ? "Lớp học công khai" : "Lớp học riêng tư"}
                   </span>
                   <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={`/user/classes/${c.ClassID}`} className="hover:underline">
+                    <Link href={`/user/classes/${c.ClassID}`} className="hover:underline after:absolute after:inset-0">
                       {c.ClassName}
                     </Link>
                   </h3>
