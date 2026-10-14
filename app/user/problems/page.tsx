@@ -250,7 +250,7 @@ export default async function ProblemListPage({
                   <td className="px-5 py-4"><DifficultyBadge value={p.Difficulty} /></td>
                   <td className="px-5 py-4"><ProblemStatusBadge value={p.Status} /></td>
                   <td className="px-5 py-4 text-right">
-                    <RowActions problemId={p.ProblemID} status={p.Status} proposedStatus={p.ProposedStatus} actorRole={user.role} canManage={user.role === "Admin" || p.CreatorID === user.userId} />
+                    <RowActions problemId={p.ProblemID} status={p.Status} proposedStatus={p.ProposedStatus} actorRole={user.role} canManage={p.CanManage} />
                   </td>
                 </tr>
               ))}

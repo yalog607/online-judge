@@ -39,7 +39,10 @@ export default async function ProblemDetailPage({
   const contestId = sParams?.contestId ? Number(sParams.contestId) : undefined;
   const problem = await getProblem(problemId);
   if (!problem) notFound();
-  const canEdit = user.role === "Admin" || (problem.CreatorID === user.userId && (user.role === "TA" || user.role === "Teacher"));
+  const canEdit =
+    user.role === "Admin" ||
+    (user.role === "Teacher" && (problem.CreatorID === user.userId || problem.TeacherID === user.userId)) ||
+    (user.role === "TA" && problem.CreatorID === user.userId);
 
   let canAccessContest = false;
   let contestStatus: "Upcoming" | "Ongoing" | "Ended" | null = null;

@@ -12,7 +12,11 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
   const problemId = Number(id);
   const problem = await getProblem(problemId);
   if (!problem) notFound();
-  if (actor.role !== "Admin" && problem.CreatorID !== actor.userId) notFound();
+  const canManage =
+    actor.role === "Admin" ||
+    problem.CreatorID === actor.userId ||
+    (actor.role === "Teacher" && problem.TeacherID === actor.userId);
+  if (!canManage) notFound();
   if (actor.role === "TA" && !(await canTAEditProblem(problemId, actor.userId))) notFound();
 
   let classes: { ClassID: number; ClassName: string }[] = [];
