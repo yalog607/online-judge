@@ -24,11 +24,18 @@ const submission = {
   Language: "python",
   TimeLimit: 1000,
   MemoryLimit: 128,
-  JudgeMode: "stdin",
-  FunctionSpec: null,
+  FunctionSpec: JSON.stringify({
+    name: "twoSum",
+    params: [
+      { name: "nums", type: "int[]" },
+      { name: "target", type: "int" },
+    ],
+    returns: "int[]",
+  }),
 };
+const marked = (value: string) => `debug\n\n@@ITOJ_RESULT@@\n${value}\n`;
 const run = (over: Record<string, unknown> = {}) => ({
-  stdout: "1\n",
+  stdout: marked("[0,1]"),
   stderr: "",
   exitCode: 0,
   timedOut: false,
@@ -41,7 +48,9 @@ const job = { submissionId: 7, attempt: 1, maxAttempts: 3 };
 beforeEach(() => {
   vi.resetAllMocks();
   repo.claimSubmission.mockResolvedValue(submission);
-  repo.listTestcases.mockResolvedValue([{ TestCaseID: 1, InputData: "", ExpectedOutput: "1" }]);
+  repo.listTestcases.mockResolvedValue([
+    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]" },
+  ]);
   repo.saveResult.mockResolvedValue(undefined);
   repo.releaseSubmission.mockResolvedValue(undefined);
 });
@@ -55,7 +64,7 @@ describe("judgeJob", () => {
 
   it.each([
     ["AC", run()],
-    ["WA", run({ stdout: "2\n" })],
+    ["WA", run({ stdout: marked("[1,0]") })],
     ["TLE", run({ timedOut: true })],
     ["RE", run({ exitCode: 1 })],
     ["MLE", run({ exitCode: 137, oomKilled: true })],
@@ -88,46 +97,17 @@ describe("judgeJob", () => {
   });
 });
 
-describe("function mode", () => {
-  const fnSubmission = {
-    ...submission,
-    JudgeMode: "function",
-    FunctionSpec: JSON.stringify({
-      name: "twoSum",
-      params: [
-        { name: "nums", type: "int[]" },
-        { name: "target", type: "int" },
-      ],
-      returns: "int[]",
-    }),
-  };
-
-  beforeEach(() => {
-    repo.claimSubmission.mockResolvedValue(fnSubmission);
-    repo.listTestcases.mockResolvedValue([
-      { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]" },
-    ]);
-  });
-
-  it("accepts a result printed after the marker and ignores user output", async () => {
-    sandbox.runInSandbox.mockResolvedValue(run({ stdout: "debug\n\n@@ITOJ_RESULT@@\n[0,1]\n" }));
-    await judgeJob(job, "w1");
-    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "AC" }));
-  });
-
-  it("gives WA for a wrong result and for a missing marker", async () => {
-    sandbox.runInSandbox.mockResolvedValue(run({ stdout: "\n@@ITOJ_RESULT@@\n[1,0]\n" }));
-    await judgeJob(job, "w1");
-    expect(repo.saveResult).toHaveBeenLastCalledWith(expect.objectContaining({ result: "WA" }));
-
+describe("function judging", () => {
+  it("gives WA when the result marker is missing", async () => {
     sandbox.runInSandbox.mockResolvedValue(run({ stdout: "[0,1]\n" }));
     await judgeJob(job, "w1");
     expect(repo.saveResult).toHaveBeenLastCalledWith(expect.objectContaining({ result: "WA" }));
   });
 
-  it("stores IE (not RE) when the problem has no valid signature", async () => {
-    repo.claimSubmission.mockResolvedValue({ ...fnSubmission, FunctionSpec: null });
+  it("stores IE (not RE) without running code when the problem has no valid signature", async () => {
+    repo.claimSubmission.mockResolvedValue({ ...submission, FunctionSpec: null });
     await judgeJob(job, "w1");
     expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "IE" }));
+    expect(sandbox.runInSandbox).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { changePasswordAction, type FormState } from "@/modules/auth/actions";
 import { FormError, SubmitButton } from "@/components/form";
 
@@ -14,10 +15,9 @@ export function ChangePasswordForm() {
         <label htmlFor="oldPassword" className="text-xs font-medium text-fg-muted">
           Mật khẩu cũ
         </label>
-        <input
+        <PasswordInput
           id="oldPassword"
           name="oldPassword"
-          type="password"
           required
           autoComplete="current-password"
           className="w-full rounded-lg border border-line bg-muted/40 px-3.5 py-2 text-sm text-fg outline-none focus:border-primary focus:bg-surface transition-colors"
@@ -28,10 +28,9 @@ export function ChangePasswordForm() {
         <label htmlFor="newPassword" className="text-xs font-medium text-fg-muted">
           Mật khẩu mới
         </label>
-        <input
+        <PasswordInput
           id="newPassword"
           name="newPassword"
-          type="password"
           required
           placeholder="Ít nhất 8 ký tự"
           autoComplete="new-password"
@@ -43,10 +42,9 @@ export function ChangePasswordForm() {
         <label htmlFor="confirmPassword" className="text-xs font-medium text-fg-muted">
           Nhập lại mật khẩu mới
         </label>
-        <input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           required
           autoComplete="new-password"
           className="w-full rounded-lg border border-line bg-muted/40 px-3.5 py-2 text-sm text-fg outline-none focus:border-primary focus:bg-surface transition-colors"

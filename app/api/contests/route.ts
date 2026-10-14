@@ -6,6 +6,11 @@ import { contestFilterSchema, createContestSchema } from "@/modules/contest/sche
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await verifySession();
+    if (!session) {
+      return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const filter = contestFilterSchema.parse({
       status: url.searchParams.get("status") || "All",
@@ -15,7 +20,7 @@ export async function GET(req: NextRequest) {
       pageSize: url.searchParams.get("pageSize") || 20,
     });
 
-    const result = await contestRepository.listContests(filter);
+    const result = await contestRepository.listContests({ ...filter, userId: session.userId });
     return NextResponse.json({
       success: true,
       data: result.items,

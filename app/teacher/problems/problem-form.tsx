@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { Select } from "@/components/select";
 import { useActionState, useState } from "react";
 import { Field, FormError, SubmitButton } from "@/components/form";
 import { MathContent } from "@/components/math-content";
 import type { FormState } from "@/modules/auth/actions";
-import type { JudgeMode, ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
+import type { ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
 import { FUNCTION_TYPES, parseFunctionSpec } from "@/modules/problem/function-spec";
 
 type Row = { key: number; input: string; expectedOutput: string; isHidden: boolean };
@@ -27,6 +29,7 @@ export function ProblemForm({
   testcases,
   classes = [],
   isTA = false,
+  defaultClassId,
   disabled = false,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -34,6 +37,7 @@ export function ProblemForm({
   testcases?: TestcaseFull[];
   classes?: Array<{ ClassID: number; ClassName: string }>;
   isTA?: boolean;
+  defaultClassId?: number;
   disabled?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {});
@@ -49,11 +53,12 @@ export function ProblemForm({
   const [outputFormat, setOutputFormat] = useState(problem?.OutputFormat ?? "");
   const [mathTab, setMathTab] = useState<"edit" | "preview">("edit");
   const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>(
-    problem?.Status ?? "Public",
+    isTA
+      ? problem?.ProposedStatus ?? "Private"
+      : problem?.Status ?? "Public",
   );
 
   const initialSpec = parseFunctionSpec(problem?.FunctionSpec);
-  const [judgeMode, setJudgeMode] = useState<JudgeMode>(problem?.JudgeMode ?? "stdin");
   const [fnName, setFnName] = useState(initialSpec?.name ?? "");
   const [fnReturns, setFnReturns] = useState(initialSpec?.returns ?? "int");
   const [params, setParams] = useState<ParamRow[]>(
@@ -90,7 +95,7 @@ export function ProblemForm({
         />
         <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
           <span>Độ khó</span>
-          <select
+          <Select
             name="difficulty"
             defaultValue={problem?.Difficulty ?? "Easy"}
             className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
@@ -98,14 +103,28 @@ export function ProblemForm({
             <option value="Easy">Dễ</option>
             <option value="Medium">Trung bình</option>
             <option value="Hard">Khó</option>
-          </select>
+          </Select>
         </label>
         {isTA ? (
-          <input type="hidden" name="status" value="Pending" />
+          <>
+            <input type="hidden" name="status" value="Pending" />
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
+              <span>Đề xuất trạng thái sau khi được duyệt</span>
+              <Select
+                name="proposedStatus"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as ProblemStatus)}
+                className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+              >
+                <option value="Public">Công khai</option>
+                <option value="Private">Riêng tư</option>
+              </Select>
+            </label>
+          </>
         ) : (
           <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
             <span>Trạng thái bài tập</span>
-            <select
+            <Select
               name="status"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as ProblemStatus)}
@@ -114,27 +133,50 @@ export function ProblemForm({
               <option value="Public">Công khai (Public - Mọi người có thể làm)</option>
               <option value="Private">Riêng tư (Private - Dành cho lớp học &amp; kỳ thi)</option>
               <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
-            </select>
+            </Select>
+          </label>
+        )}
+
+        {isTA && classes.length > 0 && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
+            <span>Lớp học phụ trách <span className="text-bad">*</span></span>
+            <Select
+              name="classId"
+              defaultValue={String(defaultClassId ?? problem?.ClassID ?? classes[0]?.ClassID ?? "")}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+              required
+            >
+              {classes.map((c) => (
+                <option key={c.ClassID} value={c.ClassID}>
+                  {c.ClassName}
+                </option>
+              ))}
+            </Select>
+          </label>
+        )}
+
+        {!isTA && classes.length > 0 && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
+            <span>Gắn vào lớp học (tùy chọn)</span>
+            <Select
+              name="classId"
+              defaultValue={String(problem?.ClassID ?? "")}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+            >
+              <option value="">Không gắn vào lớp</option>
+              {classes.map((c) => (
+                <option key={c.ClassID} value={c.ClassID}>
+                  {c.ClassName}
+                </option>
+              ))}
+            </Select>
           </label>
         )}
       </div>
 
       <div className="flex flex-col gap-3 card p-4">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-          <span>Kiểu chấm bài</span>
-          <select
-            name="judgeMode"
-            value={judgeMode}
-            onChange={(e) => setJudgeMode(e.target.value as JudgeMode)}
-            className={FIELD_CLASS}
-          >
-            <option value="stdin">Đọc stdin / in stdout (truyền thống)</option>
-            <option value="function">Viết hàm (kiểu LeetCode)</option>
-          </select>
-        </label>
-
-        {judgeMode === "function" && (
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-fg">Chữ ký hàm</h3>
             <p className="text-xs text-fg-muted">
               Học viên chỉ viết hàm, hệ thống tự sinh phần đọc input và in kết quả. Mỗi dòng input của
               testcase là một tham số viết dạng JSON theo đúng thứ tự (ví dụ{" "}
@@ -149,12 +191,13 @@ export function ProblemForm({
                   value={fnName}
                   onChange={(e) => setFnName(e.target.value)}
                   placeholder="twoSum"
+                  required
                   className={FIELD_CLASS}
                 />
               </label>
               <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
                 <span>Kiểu trả về</span>
-                <select
+                <Select
                   name="fnReturns"
                   value={fnReturns}
                   onChange={(e) => setFnReturns(e.target.value)}
@@ -165,7 +208,7 @@ export function ProblemForm({
                       {t}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             </div>
             <div className="flex flex-col gap-2">
@@ -192,7 +235,7 @@ export function ProblemForm({
                     aria-label="Tên tham số"
                     className={`${FIELD_CLASS} min-w-0 flex-1`}
                   />
-                  <select
+                  <Select
                     name="fnParamType"
                     value={p.type}
                     onChange={(e) => updateParam(p.key, { type: e.target.value })}
@@ -204,7 +247,7 @@ export function ProblemForm({
                         {t}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <button
                     type="button"
                     className="text-bad hover:underline disabled:opacity-40"
@@ -216,8 +259,7 @@ export function ProblemForm({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {classes.length > 0 && !problem && (
@@ -231,19 +273,20 @@ export function ProblemForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
               <span>Lớp học {isTA && <span className="text-bad">*</span>}</span>
-              <select
+              <Select
                 name="classId"
+                defaultValue={defaultClassId ? String(defaultClassId) : ""}
                 required={isTA}
                 className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg"
               >
                 {!isTA && <option value="">-- Không giao cho lớp học --</option>}
-                {isTA && <option value="" disabled selected>-- Chọn lớp học --</option>}
+                {isTA && <option value="" disabled>-- Chọn lớp học --</option>}
                 {classes.map((c) => (
                   <option key={c.ClassID} value={c.ClassID}>
                     {c.ClassName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
               <span>Hạn nộp bài (Tùy chọn)</span>
@@ -405,7 +448,7 @@ export function ProblemForm({
               <div className="col-span-2 flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2">
                   <span>Ẩn khi chấm</span>
-                  <select
+                  <Select
                     name="tcHidden"
                     value={String(row.isHidden)}
                     onChange={(e) => updateRow(row.key, { isHidden: e.target.value === "true" })}
@@ -413,7 +456,7 @@ export function ProblemForm({
                   >
                     <option value="true">Ẩn</option>
                     <option value="false">Công khai</option>
-                  </select>
+                  </Select>
                 </label>
                 <button
                   type="button"
@@ -436,7 +479,15 @@ export function ProblemForm({
         <p className="rounded-lg bg-ok-soft px-3 py-2 text-sm text-ok">Đã lưu bài tập.</p>
       )}
       <FormError message={state.error} />
-      {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+      <div className="flex items-center gap-3">
+        {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+        <Link
+          href={isTA ? "/user/problems" : "/teacher/problems"}
+          className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors text-fg-muted hover:text-fg"
+        >
+          Hủy / Quay lại
+        </Link>
+      </div>
       </fieldset>
     </form>
   );

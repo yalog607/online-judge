@@ -11,8 +11,8 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Create
     @Status VARCHAR(20) = 'Public',
     @ClassID INT = NULL,
     @DueDate DATETIME2(0) = NULL,
-    @JudgeMode VARCHAR(20) = 'stdin',
-    @FunctionSpec NVARCHAR(MAX) = NULL
+    @FunctionSpec NVARCHAR(MAX) = NULL,
+    @ProposedStatus VARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -23,18 +23,23 @@ BEGIN
 
     DECLARE @CreatorRole VARCHAR(20);
     SELECT @CreatorRole = Role FROM dbo.Users WHERE UserID = @CreatorID;
+
+    IF @CreatorRole = 'TA' AND @ClassID IS NULL
+        THROW 50012, 'Tro giang can chon lop dang duoc phan cong khi tao bai tap.', 1;
     
     IF @CreatorRole = 'TA'
+    BEGIN
         SET @Status = 'Pending';
-
-    IF @JudgeMode IS NULL OR @JudgeMode NOT IN ('stdin', 'function')
-        SET @JudgeMode = 'stdin';
+        IF @ProposedStatus IS NULL OR @ProposedStatus NOT IN ('Public', 'Private') SET @ProposedStatus = 'Private';
+    END
+    ELSE
+        SET @ProposedStatus = NULL;
 
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, JudgeMode, FunctionSpec)
-        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status, @JudgeMode, @FunctionSpec);
+        INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, FunctionSpec, ProposedStatus)
+        VALUES (@CreatorID, @Title, @Statement, @InputFormat, @OutputFormat, @TimeLimit, @MemoryLimit, @Tags, @Difficulty, @Status, @FunctionSpec, @ProposedStatus);
 
         DECLARE @NewProblemID INT = SCOPE_IDENTITY();
 
@@ -43,7 +48,7 @@ BEGIN
             IF NOT EXISTS (
                 SELECT 1 FROM dbo.Classes c
                 LEFT JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @CreatorID
-                WHERE c.ClassID = @ClassID AND (c.TeacherID = @CreatorID OR ta.UserID_TA IS NOT NULL OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
+                WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (c.TeacherID = @CreatorID OR ta.UserID_TA IS NOT NULL OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
             )
                 THROW 50012, 'Lop hoc khong ton tai hoac ban khong co quyen gan bai tap vao lop hoc nay.', 1;
 
@@ -74,8 +79,9 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Update
     @Tags NVARCHAR(200),
     @Difficulty VARCHAR(20),
     @Status VARCHAR(20) = NULL,
-    @JudgeMode VARCHAR(20) = NULL,
-    @FunctionSpec NVARCHAR(MAX) = NULL
+    @FunctionSpec NVARCHAR(MAX) = NULL,
+    @ProposedStatus VARCHAR(20) = NULL,
+    @NeedsReview BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -84,20 +90,64 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @ActorID
-        WHERE p.ProblemID = @ProblemID AND (u.Role = 'Admin' OR p.CreatorID = @ActorID)
+        WHERE p.ProblemID = @ProblemID AND (
+            u.Role = 'Admin' 
+            OR (p.CreatorID = @ActorID AND u.Role = 'Teacher')
+            OR (p.CreatorID = @ActorID AND u.Role = 'TA' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID
+                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0
+            ))
+            OR (u.Role = 'Teacher' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                WHERE cp.ProblemID = p.ProblemID AND c.TeacherID = @ActorID
+            ))
+        )
     )
         THROW 50010, 'Ban khong co quyen sua bai tap nay.', 1;
 
     DECLARE @CurrentStatus VARCHAR(20);
+    DECLARE @CurrentTitle NVARCHAR(200);
+    DECLARE @CurrentStatement NVARCHAR(MAX);
+    DECLARE @CurrentInputFormat NVARCHAR(MAX);
+    DECLARE @CurrentOutputFormat NVARCHAR(MAX);
+    DECLARE @CurrentTimeLimit INT;
+    DECLARE @CurrentMemoryLimit INT;
+    DECLARE @CurrentFunctionSpec NVARCHAR(MAX);
     DECLARE @ActorRole VARCHAR(20);
 
-    SELECT @CurrentStatus = p.Status, @ActorRole = u.Role 
+    SELECT 
+        @CurrentStatus = p.Status, 
+        @CurrentTitle = p.Title,
+        @CurrentStatement = p.Statement,
+        @CurrentInputFormat = p.InputFormat,
+        @CurrentOutputFormat = p.OutputFormat,
+        @CurrentTimeLimit = p.TimeLimit,
+        @CurrentMemoryLimit = p.MemoryLimit,
+        @CurrentFunctionSpec = p.FunctionSpec,
+        @ActorRole = u.Role 
     FROM dbo.Problems p
     JOIN dbo.Users u ON u.UserID = @ActorID
     WHERE p.ProblemID = @ProblemID;
 
-    IF @ActorRole = 'TA' AND @CurrentStatus NOT IN ('Pending', 'Rejected')
-        THROW 50010, 'Ban khong duoc phep sua bai tap da duoc duyet.', 1;
+    -- Nội dung hiển thị và cấu hình chấm cần giảng viên duyệt lại; metadata không cần.
+    DECLARE @IsMajorEdit BIT = 0;
+    IF @ActorRole = 'TA' AND (@CurrentStatus NOT IN ('Pending', 'Rejected') OR @NeedsReview = 1)
+    BEGIN
+        IF @NeedsReview = 1
+           OR (@Title <> @CurrentTitle)
+           OR (@Statement <> @CurrentStatement)
+           OR (COALESCE(@InputFormat, N'') <> COALESCE(@CurrentInputFormat, N''))
+           OR (COALESCE(@OutputFormat, N'') <> COALESCE(@CurrentOutputFormat, N''))
+           OR (@TimeLimit <> @CurrentTimeLimit)
+           OR (@MemoryLimit <> @CurrentMemoryLimit)
+           OR (COALESCE(@FunctionSpec, '') <> COALESCE(@CurrentFunctionSpec, ''))
+        BEGIN
+            SET @IsMajorEdit = 1;
+        END
+    END
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -106,10 +156,23 @@ BEGIN
         SET Title = @Title, Statement = @Statement, InputFormat = @InputFormat,
             OutputFormat = @OutputFormat, TimeLimit = @TimeLimit, MemoryLimit = @MemoryLimit,
             Tags = @Tags, Difficulty = @Difficulty,
-            Status = CASE WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Rejected' THEN 'Pending' ELSE COALESCE(@Status, Status) END,
-            RejectionReason = CASE WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Rejected' THEN NULL ELSE RejectionReason END,
-            JudgeMode = COALESCE(@JudgeMode, JudgeMode),
-            FunctionSpec = CASE WHEN COALESCE(@JudgeMode, JudgeMode) = 'function' THEN COALESCE(@FunctionSpec, FunctionSpec) ELSE NULL END
+            Status = CASE 
+                WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Rejected' THEN 'Pending' 
+                WHEN @ActorRole = 'TA' AND @CurrentStatus = 'Pending' THEN 'Pending'
+                WHEN @ActorRole = 'TA' AND @IsMajorEdit = 1 THEN 'Pending'
+                WHEN @ActorRole = 'TA' THEN Status
+                ELSE COALESCE(@Status, Status) 
+            END,
+            RejectionReason = CASE 
+                WHEN @ActorRole = 'TA' AND (@CurrentStatus = 'Rejected' OR @IsMajorEdit = 1) THEN NULL 
+                ELSE RejectionReason 
+            END,
+            ProposedStatus = CASE
+                WHEN @ActorRole = 'TA' AND (@CurrentStatus IN ('Pending', 'Rejected') OR @IsMajorEdit = 1)
+                    THEN CASE WHEN @ProposedStatus IN ('Public', 'Private') THEN @ProposedStatus ELSE COALESCE(ProposedStatus, 'Private') END
+                ELSE ProposedStatus
+            END,
+            FunctionSpec = COALESCE(@FunctionSpec, FunctionSpec)
         WHERE ProblemID = @ProblemID;
 
         COMMIT TRANSACTION;
@@ -129,12 +192,15 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_SetStatus
 AS
 BEGIN
     SET NOCOUNT ON;
+    IF @Status NOT IN ('Public', 'Private', 'Hidden', 'Pending', 'Rejected')
+        THROW 50013, 'Trang thai bai tap khong hop le.', 1;
+
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @ActorID
         WHERE p.ProblemID = @ProblemID AND (
             u.Role = 'Admin' 
-            OR p.CreatorID = @ActorID
+            OR (p.CreatorID = @ActorID AND u.Role = 'Teacher')
             OR (u.Role = 'Teacher' AND EXISTS (
                 SELECT 1 FROM dbo.Class_Problem cp
                 JOIN dbo.Classes c ON c.ClassID = cp.ClassID
@@ -146,7 +212,8 @@ BEGIN
 
     UPDATE dbo.Problems 
     SET Status = @Status, 
-        RejectionReason = CASE WHEN @Status = 'Rejected' THEN @RejectionReason ELSE NULL END
+        RejectionReason = CASE WHEN @Status = 'Rejected' THEN @RejectionReason ELSE NULL END,
+        ProposedStatus = CASE WHEN @Status IN ('Public', 'Private') THEN NULL ELSE ProposedStatus END
     WHERE ProblemID = @ProblemID;
 END
 GO
@@ -160,7 +227,15 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @ActorID
-        WHERE p.ProblemID = @ProblemID AND (u.Role = 'Admin' OR p.CreatorID = @ActorID)
+        WHERE p.ProblemID = @ProblemID AND (
+            u.Role = 'Admin' 
+            OR (p.CreatorID = @ActorID AND u.Role IN ('Teacher', 'TA'))
+            OR (u.Role = 'Teacher' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                WHERE cp.ProblemID = p.ProblemID AND c.TeacherID = @ActorID
+            ))
+        )
     )
         THROW 50010, 'Ban khong co quyen xoa bai tap nay.', 1;
 
@@ -177,11 +252,40 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Get
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT p.ProblemID, p.CreatorID, u.FullName AS CreatorFullName, p.Title, p.Statement, p.InputFormat, p.OutputFormat,
-           p.TimeLimit, p.MemoryLimit, p.Tags, p.Difficulty, p.Status, p.RejectionReason, p.JudgeMode, p.FunctionSpec
+    SELECT 
+        p.ProblemID, p.CreatorID, u.FullName AS CreatorFullName, 
+        p.Title, p.Statement, p.InputFormat, p.OutputFormat,
+        p.TimeLimit, p.MemoryLimit, p.Tags, p.Difficulty, p.Status, 
+        p.RejectionReason, p.FunctionSpec, p.ProposedStatus,
+        cp.ClassID, c.ClassName, c.TeacherID
     FROM dbo.Problems p
     LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID
+    OUTER APPLY (
+        SELECT TOP (1) cp.ClassID
+        FROM dbo.Class_Problem cp
+        WHERE cp.ProblemID = p.ProblemID
+        ORDER BY cp.AssignedDate DESC, cp.ClassID
+    ) cp
+    LEFT JOIN dbo.Classes c ON c.ClassID = cp.ClassID
     WHERE p.ProblemID = @ProblemID;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_CanTAEdit
+    @ProblemID INT,
+    @TAID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT CAST(CASE WHEN EXISTS (
+        SELECT 1
+        FROM dbo.Problems p
+        JOIN dbo.Users u ON u.UserID = @TAID AND u.Role = 'TA'
+        JOIN dbo.Class_Problem cp ON cp.ProblemID = p.ProblemID
+        JOIN dbo.Classes c ON c.ClassID = cp.ClassID AND c.IsCancelled = 0
+        JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @TAID
+        WHERE p.ProblemID = @ProblemID AND p.CreatorID = @TAID
+    ) THEN 1 ELSE 0 END AS BIT) AS CanEdit;
 END
 GO
 
@@ -212,13 +316,15 @@ BEGIN
         FROM dbo.Problems p
         LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID
         LEFT JOIN dbo.vw_ProblemAcRate r ON r.ProblemID = p.ProblemID
-        LEFT JOIN dbo.Class_Problem cp ON cp.ProblemID = p.ProblemID
-        LEFT JOIN dbo.Classes c ON c.ClassID = cp.ClassID
-        WHERE (
-            @OwnerOnly = 1 AND p.CreatorID = @UserID
-        ) OR (
-            @OwnerOnly = 0 AND (p.Status = 'Public' OR p.CreatorID = @UserID)
-        )
+        OUTER APPLY (
+            SELECT TOP (1) cl.ClassName
+            FROM dbo.Class_Problem cp
+            JOIN dbo.Classes cl ON cl.ClassID = cp.ClassID
+            WHERE cp.ProblemID = p.ProblemID
+            ORDER BY cp.AssignedDate DESC, cp.ClassID
+        ) c
+        WHERE (@OwnerOnly = 0 OR p.CreatorID = @UserID)
+          AND (@OwnerOnly = 1 OR p.Status = 'Public' OR p.CreatorID = @UserID)
           AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
           AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
           AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
@@ -247,24 +353,36 @@ BEGIN
     DECLARE @IsAdmin BIT = (SELECT CASE WHEN Role = 'Admin' THEN 1 ELSE 0 END FROM dbo.Users WHERE UserID = @ActorID);
 
     SELECT 
-        p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.CreatedAt, p.CreatorID,
+        p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.ProposedStatus, p.CreatedAt, p.CreatorID,
         u.FullName AS CreatorFullName,
         c.ClassID, c.ClassName,
+        CAST(CASE WHEN @IsAdmin = 1 OR p.CreatorID = @ActorID OR EXISTS (
+            SELECT 1 FROM dbo.Class_Problem manage_cp
+            JOIN dbo.Classes manage_c ON manage_c.ClassID = manage_cp.ClassID
+            WHERE manage_cp.ProblemID = p.ProblemID AND manage_c.TeacherID = @ActorID
+        ) THEN 1 ELSE 0 END AS BIT) AS CanManage,
         COUNT(*) OVER () AS TotalCount
     FROM dbo.Problems p
     LEFT JOIN dbo.Users u ON u.UserID = p.CreatorID
-    LEFT JOIN dbo.Class_Problem cp ON cp.ProblemID = p.ProblemID
-    LEFT JOIN dbo.Classes c ON c.ClassID = cp.ClassID
-    WHERE (
-        @OwnerOnly = 1 AND p.CreatorID = @ActorID
-    ) OR (
-        @OwnerOnly = 0 AND (
-            @IsAdmin = 1 
-            OR p.CreatorID = @ActorID 
+    OUTER APPLY (
+        SELECT TOP (1) cl.ClassID, cl.ClassName
+        FROM dbo.Class_Problem cp
+        JOIN dbo.Classes cl ON cl.ClassID = cp.ClassID
+        WHERE cp.ProblemID = p.ProblemID
+        ORDER BY cp.AssignedDate DESC, cp.ClassID
+    ) c
+    WHERE (@OwnerOnly = 0 OR p.CreatorID = @ActorID)
+      AND (
+            @OwnerOnly = 1
+            OR @IsAdmin = 1
+            OR p.CreatorID = @ActorID
             OR p.Status = 'Public'
-            OR c.TeacherID = @ActorID
-        )
-    )
+            OR EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes cl ON cl.ClassID = cp.ClassID
+                WHERE cp.ProblemID = p.ProblemID AND cl.TeacherID = @ActorID
+            )
+      )
       AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
       AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
       AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
@@ -294,7 +412,21 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @ActorID
-        WHERE p.ProblemID = @ProblemID AND (u.Role = 'Admin' OR p.CreatorID = @ActorID)
+        WHERE p.ProblemID = @ProblemID AND (
+            u.Role = 'Admin' 
+            OR (p.CreatorID = @ActorID AND u.Role = 'Teacher')
+            OR (p.CreatorID = @ActorID AND u.Role = 'TA' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID
+                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0
+            ))
+            OR (u.Role = 'Teacher' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                WHERE cp.ProblemID = p.ProblemID AND c.TeacherID = @ActorID
+            ))
+        )
     )
         THROW 50010, 'Ban khong co quyen xem testcase cua bai tap nay.', 1;
 
@@ -319,7 +451,21 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @ActorID
-        WHERE p.ProblemID = @ProblemID AND (u.Role = 'Admin' OR p.CreatorID = @ActorID)
+        WHERE p.ProblemID = @ProblemID AND (
+            u.Role = 'Admin' 
+            OR (p.CreatorID = @ActorID AND u.Role = 'Teacher')
+            OR (p.CreatorID = @ActorID AND u.Role = 'TA' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID
+                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0
+            ))
+            OR (u.Role = 'Teacher' AND EXISTS (
+                SELECT 1 FROM dbo.Class_Problem cp
+                JOIN dbo.Classes c ON c.ClassID = cp.ClassID
+                WHERE cp.ProblemID = p.ProblemID AND c.TeacherID = @ActorID
+            ))
+        )
     )
         THROW 50010, 'Ban khong co quyen sua testcase cua bai tap nay.', 1;
 
@@ -328,10 +474,15 @@ BEGIN
     JOIN dbo.Users u ON u.UserID = @ActorID
     WHERE p.ProblemID = @ProblemID;
 
-    IF @ActorRole = 'TA' AND @CurrentStatus NOT IN ('Pending', 'Rejected')
-        THROW 50010, 'Ban khong duoc phep sua testcase cua bai tap da duoc duyet.', 1;
-
     BEGIN TRANSACTION;
+
+    -- Nếu TA sửa testcase của bài tập đã duyệt, chuyển về Pending để duyệt lại.
+    IF @ActorRole = 'TA' AND @CurrentStatus NOT IN ('Pending', 'Rejected')
+    BEGIN
+        UPDATE dbo.Problems 
+        SET Status = 'Pending', RejectionReason = NULL, ProposedStatus = COALESCE(ProposedStatus, 'Private')
+        WHERE ProblemID = @ProblemID;
+    END
 
     DELETE FROM dbo.Testcases WHERE ProblemID = @ProblemID;
 
@@ -357,3 +508,170 @@ BEGIN
     SELECT app.ufn_CanUserAccessProblem(@ProblemID, @UserID) AS CanAccess;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_Clone
+    @ProblemID INT,
+    @ActorID INT,
+    @NewTitle NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.Users 
+            WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin')
+        )
+        BEGIN
+            THROW 50020, 'Chi giang vien hoac quan tri vien moi co the nhan ban bai tap.', 1;
+        END;
+
+        DECLARE @SourceStatus VARCHAR(20), @SourceCreatorID INT, @OrigTitle NVARCHAR(200);
+        SELECT 
+            @SourceStatus = Status,
+            @SourceCreatorID = CreatorID,
+            @OrigTitle = Title
+        FROM dbo.Problems 
+        WHERE ProblemID = @ProblemID;
+
+        IF @SourceStatus IS NULL
+        BEGIN
+            THROW 50021, 'Bai tap nguon khong ton tai.', 1;
+        END;
+
+        IF @SourceStatus <> 'Public' AND @SourceCreatorID <> @ActorID
+           AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        BEGIN
+            THROW 50022, 'Ban khong co quyen nhan ban bai tap nay.', 1;
+        END;
+
+        DECLARE @FinalTitle NVARCHAR(200);
+        IF @NewTitle IS NOT NULL AND LEN(RTRIM(LTRIM(@NewTitle))) > 0
+            SET @FinalTitle = RTRIM(LTRIM(@NewTitle));
+        ELSE
+            SET @FinalTitle = N'[Bản sao] ' + @OrigTitle;
+
+        IF LEN(@FinalTitle) > 200
+            SET @FinalTitle = LEFT(@FinalTitle, 200);
+
+        BEGIN TRANSACTION;
+
+        DECLARE @NewProblemID INT;
+
+        INSERT INTO dbo.Problems (
+            CreatorID,
+            Title,
+            Statement,
+            InputFormat,
+            OutputFormat,
+            TimeLimit,
+            MemoryLimit,
+            Tags,
+            Difficulty,
+            Status,
+            CreatedAt
+        )
+        SELECT 
+            @ActorID,
+            @FinalTitle,
+            Statement,
+            InputFormat,
+            OutputFormat,
+            TimeLimit,
+            MemoryLimit,
+            Tags,
+            Difficulty,
+            'Private',
+            SYSUTCDATETIME()
+        FROM dbo.Problems
+        WHERE ProblemID = @ProblemID;
+
+        SET @NewProblemID = SCOPE_IDENTITY();
+
+        INSERT INTO dbo.Testcases (
+            ProblemID,
+            InputData,
+            ExpectedOutput,
+            IsHidden,
+            OrderIndex
+        )
+        SELECT 
+            @NewProblemID,
+            InputData,
+            ExpectedOutput,
+            IsHidden,
+            OrderIndex
+        FROM dbo.Testcases
+        WHERE ProblemID = @ProblemID;
+
+        COMMIT TRANSACTION;
+
+        SELECT 
+            p.ProblemID,
+            p.Title,
+            p.Difficulty,
+            p.Status,
+            p.CreatedAt
+        FROM dbo.Problems p
+        WHERE p.ProblemID = @NewProblemID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_GetSubmissions
+    @ProblemID INT,
+    @ActorID INT,
+    @Result VARCHAR(10) = NULL,
+    @Page INT = 1,
+    @PageSize INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin', 'TA'))
+        THROW 50027, 'Ban khong co quyen xem danh sach bai nop cua bai tap nay.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID)
+        THROW 50021, 'Bai tap khong ton tai.', 1;
+
+    SELECT
+        COUNT(*) AS TotalSubmissions,
+        COUNT(DISTINCT CASE WHEN s.Result = 'AC' THEN s.UserID END) AS SolvedUsers,
+        COUNT(DISTINCT s.UserID) AS AttemptedUsers,
+        CAST(ROUND(COALESCE(
+            CAST(COUNT(CASE WHEN s.Result = 'AC' THEN 1 END) AS FLOAT) * 100.0 / NULLIF(COUNT(*), 0)
+        , 0), 0) AS INT) AS AcRate
+    FROM dbo.Submissions s
+    WHERE s.ProblemID = @ProblemID;
+
+    WITH Filtered AS (
+        SELECT
+            s.SubmissionID,
+            s.UserID,
+            u.Username,
+            u.FullName,
+            s.Language,
+            s.Result,
+            s.Runtime,
+            s.Memory,
+            s.PassedCases,
+            s.SubmitTime,
+            COUNT(*) OVER () AS TotalCount
+        FROM dbo.Submissions s
+        JOIN dbo.Users u ON u.UserID = s.UserID
+        WHERE s.ProblemID = @ProblemID
+          AND (@Result IS NULL OR @Result = '' OR s.Result = @Result)
+    )
+    SELECT *
+    FROM Filtered
+    ORDER BY SubmitTime DESC
+    OFFSET (@Page - 1) * @PageSize ROWS FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+

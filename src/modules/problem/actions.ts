@@ -8,6 +8,7 @@ import { createSubmission } from "@/modules/submission/repo";
 import { dispatchSubmission } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
+import { notifyProblemStatus } from "@/modules/notification/events";
 import { parseTestcaseZip } from "./testcase-zip";
 import { problemFormSchema, submitCodeSchema } from "./schema";
 import { functionSpecSchema, validateFunctionTestcase } from "./function-spec";
@@ -34,16 +35,10 @@ async function collectTestcases(formData: FormData) {
   }
   return manual;
 }
-
-// Reads the function-mode fields (fnName / fnParamName[] / fnParamType[] / fnReturns) and
-// checks every testcase against the declared signature so mistakes show up when saving.
-function parseFunctionMode(
+function parseFunctionSpec(
   formData: FormData,
-  judgeMode: "stdin" | "function",
   testcases: { input: string; expectedOutput: string }[],
 ): { functionSpec: string | null; error?: string } {
-  if (judgeMode !== "function") return { functionSpec: null };
-
   const names = formData.getAll("fnParamName") as string[];
   const types = formData.getAll("fnParamType") as string[];
   const spec = functionSpecSchema.safeParse({
@@ -64,7 +59,7 @@ export async function createProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "TA");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -74,7 +69,7 @@ export async function createProblemAction(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Không đọc được testcase." };
   }
-  const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
+  const fn = parseFunctionSpec(formData, testcases);
   if (fn.error) return { error: fn.error };
 
   let problemId: number;
@@ -82,6 +77,7 @@ export async function createProblemAction(
     problemId = await repo.createProblem({
       creatorId: actor.userId,
       ...parsed.data,
+      proposedStatus: actor.role === "TA" ? parsed.data.proposedStatus : undefined,
       functionSpec: fn.functionSpec,
     });
   } catch (e) {
@@ -90,12 +86,31 @@ export async function createProblemAction(
 
   if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
 
+  const titleParam = encodeURIComponent(parsed.data.title);
   if (actor.role === "TA") {
-    redirect(`/user/problems/${problemId}/edit`);
+    revalidatePath("/user/problems");
+    redirect(`/user/problems?success=created&name=${titleParam}`);
   } else {
     revalidatePath("/teacher/problems");
-    redirect("/teacher/problems");
+    redirect(`/teacher/problems?success=created&name=${titleParam}`);
   }
+}
+
+function areTestcasesEqual(
+  oldList: { InputData: string; ExpectedOutput: string; IsHidden: boolean }[],
+  newList: { input: string; expectedOutput: string; isHidden: boolean }[],
+) {
+  if (oldList.length !== newList.length) return false;
+  for (let i = 0; i < oldList.length; i++) {
+    if (
+      oldList[i].InputData !== newList[i].input ||
+      oldList[i].ExpectedOutput !== newList[i].expectedOutput ||
+      Boolean(oldList[i].IsHidden) !== Boolean(newList[i].isHidden)
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export async function updateProblemAction(
@@ -103,21 +118,29 @@ export async function updateProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "TA");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   try {
     const testcases = await collectTestcases(formData);
-    const fn = parseFunctionMode(formData, parsed.data.judgeMode, testcases);
+    const fn = parseFunctionSpec(formData, testcases);
     if (fn.error) return { error: fn.error };
+
+    const existingTestcases = await repo.listOwnerTestcases(problemId, actor.userId);
+    const hasTestcaseChanges = !areTestcasesEqual(existingTestcases, testcases);
+
     await repo.updateProblem({
       problemId,
       actorId: actor.userId,
       ...parsed.data,
+      proposedStatus: actor.role === "TA" ? parsed.data.proposedStatus : undefined,
+      needsReview: actor.role === "TA" && hasTestcaseChanges,
       functionSpec: fn.functionSpec,
     });
-    if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
+    if (hasTestcaseChanges) {
+      await repo.replaceTestcases(problemId, actor.userId, testcases);
+    }
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Cập nhật bài tập thất bại." };
   }
@@ -127,17 +150,19 @@ export async function updateProblemAction(
   revalidatePath(`/user/problems/${problemId}`);
   revalidatePath("/user/problems");
 
+  const titleParam = encodeURIComponent(parsed.data.title);
   if (actor.role === "TA") {
     revalidatePath("/user/problems");
-    redirect("/user/problems?view=mine");
+    redirect(`/user/problems?success=updated&name=${titleParam}`);
   } else {
-    redirect("/teacher/problems");
+    redirect(`/teacher/problems?success=updated&name=${titleParam}`);
   }
 }
 
 export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus, rejectionReason?: string) {
-  const actor = await requireRole("Teacher", "TA");
+  const actor = await requireRole("Teacher", "Admin");
   await repo.setProblemStatus(problemId, actor.userId, status, rejectionReason);
+  await notifyProblemStatus(problemId, status, actor.userId);
   revalidatePath("/teacher/problems");
   revalidatePath(`/teacher/problems/${problemId}/edit`);
   revalidatePath(`/user/problems/${problemId}/edit`);
@@ -146,7 +171,7 @@ export async function setProblemStatusAction(problemId: number, status: repo.Pro
 }
 
 export async function deleteProblemAction(problemId: number) {
-  const actor = await requireRole("Teacher", "TA");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   await repo.deleteProblem(problemId, actor.userId);
   revalidatePath("/teacher/problems");
   revalidatePath("/user/problems");
@@ -165,3 +190,11 @@ export async function submitCodeAction(_prev: FormState, formData: FormData): Pr
     return { error: e instanceof DomainError ? e.message : "Nộp bài thất bại." };
   }
 }
+
+export async function cloneProblemAction(problemId: number, newTitle?: string) {
+  const actor = await requireRole("Teacher", "Admin");
+  const result = await repo.cloneProblem(problemId, actor.userId, newTitle);
+  revalidatePath("/teacher/problems");
+  return { ok: true, problem: result };
+}
+

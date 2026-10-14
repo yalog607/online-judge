@@ -8,9 +8,9 @@
   --line: #ececef;
   --fg: #0b0f19;
   --fg-muted: #6b7280;
-  --primary: #2563eb;
-  --primary-soft: #dbeafe;
-  --indigo: #4f46e5;
+  --primary: #5b21b6;
+  --primary-soft: #ede9fe;
+  --indigo: #7c3aed;
   --ok: #16a34a;
   --ok-soft: #dcfce7;
   --bad: #dc2626;
@@ -20,6 +20,22 @@
   --neutral-soft: #e8eaee;
   --code-bg: #fafafb;
   --primary-fg: #ffffff;
+  --vsc-bg: #ffffff;
+  --vsc-fg: #1f1f1f;
+  --vsc-gutter: #6e7681;
+  --vsc-gutter-active: #0b216f;
+  --vsc-line: #f0f0f0;
+  --vsc-select: #add6ff;
+  --vsc-cursor: #000000;
+  --vsc-keyword: #0000ff;
+  --vsc-control: #af00db;
+  --vsc-string: #a31515;
+  --vsc-number: #098658;
+  --vsc-comment: #008000;
+  --vsc-type: #267f99;
+  --vsc-function: #795e26;
+  --vsc-variable: #001080;
+  --vsc-meta: #0000ff;
   --sh: 0 1px 2px rgba(11, 15, 25, 0.04), 0 4px 14px rgba(11, 15, 25, 0.04);
   --sh-pop: 0 2px 4px rgba(11, 15, 25, 0.05), 0 14px 36px rgba(11, 15, 25, 0.1);
   --grid-line: rgba(11, 15, 25, 0.045);
@@ -33,9 +49,9 @@
     --line: #26314a;
     --fg: #f1f3f8;
     --fg-muted: #9aa5bb;
-    --primary: #4c8dff;
-    --primary-soft: #1b2f5e;
-    --indigo: #7c83ff;
+    --primary: #a78bfa;
+    --primary-soft: #2e2257;
+    --indigo: #c4b5fd;
     --ok: #3dd16f;
     --ok-soft: #123524;
     --bad: #ff6b6b;
@@ -44,7 +60,23 @@
     --warn-soft: #402c0e;
     --neutral-soft: #232c40;
     --code-bg: #0e1420;
-    --primary-fg: #06122b;
+    --primary-fg: #1a0b3d;
+    --vsc-bg: #1e1e1e;
+    --vsc-fg: #d4d4d4;
+    --vsc-gutter: #858585;
+    --vsc-gutter-active: #c6c6c6;
+    --vsc-line: #2a2d2e;
+    --vsc-select: #264f78;
+    --vsc-cursor: #aeafad;
+    --vsc-keyword: #569cd6;
+    --vsc-control: #c586c0;
+    --vsc-string: #ce9178;
+    --vsc-number: #b5cea8;
+    --vsc-comment: #6a9955;
+    --vsc-type: #4ec9b0;
+    --vsc-function: #dcdcaa;
+    --vsc-variable: #9cdcfe;
+    --vsc-meta: #569cd6;
     --sh: 0 1px 2px rgba(0, 0, 0, 0.35);
     --sh-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
     --grid-line: rgba(255, 255, 255, 0.045);
@@ -58,9 +90,9 @@
   --line: #26314a;
   --fg: #f1f3f8;
   --fg-muted: #9aa5bb;
-  --primary: #4c8dff;
-  --primary-soft: #1b2f5e;
-  --indigo: #7c83ff;
+  --primary: #a78bfa;
+  --primary-soft: #2e2257;
+  --indigo: #c4b5fd;
   --ok: #3dd16f;
   --ok-soft: #123524;
   --bad: #ff6b6b;
@@ -69,8 +101,24 @@
   --warn-soft: #402c0e;
   --neutral-soft: #232c40;
   --code-bg: #0e1420;
-  --primary-fg: #06122b;
-  --sh: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --primary-fg: #1a0b3d;
+  --vsc-bg: #1e1e1e;
+  --vsc-fg: #d4d4d4;
+  --vsc-gutter: #858585;
+  --vsc-gutter-active: #c6c6c6;
+  --vsc-line: #2a2d2e;
+  --vsc-select: #264f78;
+  --vsc-cursor: #aeafad;
+  --vsc-keyword: #569cd6;
+  --vsc-control: #c586c0;
+  --vsc-string: #ce9178;
+  --vsc-number: #b5cea8;
+  --vsc-comment: #6a9955;
+  --vsc-type: #4ec9b0;
+  --vsc-function: #dcdcaa;
+  --vsc-variable: #9cdcfe;
+  --vsc-meta: #569cd6;
+  --sh:0 1px 2px rgba(0, 0, 0, 0.35);
   --sh-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
   --grid-line: rgba(255, 255, 255, 0.045);
 }
@@ -125,6 +173,10 @@ body {
     opacity: 0;
     transform: translateY(6px);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .rise {
@@ -156,9 +208,337 @@ body {
   outline-offset: 2px;
 }
 
+/* Tương tác chung: con trỏ, chuyển động mượt, hiệu ứng nhấn. Class Tailwind cụ thể vẫn ghi đè. */
+@layer base {
+  a,
+  button,
+  summary,
+  select,
+  label[for],
+  [role="button"],
+  [role="tab"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="submit"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"],
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  textarea {
+    cursor: text;
+  }
+
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"] {
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      box-shadow 0.15s ease,
+      opacity 0.15s ease,
+      transform 0.12s ease;
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  input[type="submit"]:not(:disabled):active {
+    transform: scale(0.97);
+  }
+  button:not(:disabled):hover,
+  [role="button"]:not([aria-disabled="true"]):hover {
+    box-shadow: var(--sh);
+  }
+
+  tbody tr {
+    transition: background-color 0.15s ease;
+  }
+  tbody tr:hover {
+    background: color-mix(in srgb, var(--primary) 5%, transparent);
+  }
+}
+
+@layer components {
+  a.card,
+  button.card,
+  [role="button"].card {
+    cursor: pointer;
+  }
+  /* Card dạng thẻ có tiêu đề là liên kết: tự có hiệu ứng hover như card-hover */
+  .card:not(.overflow-hidden):has(> div > h2 > a, > div > h3 > a, > h2 > a, > h3 > a) {
+    transition:
+      transform 0.15s,
+      box-shadow 0.15s,
+      border-color 0.15s;
+  }
+  .card:not(.overflow-hidden):has(> div > h2 > a, > div > h3 > a, > h2 > a, > h3 > a):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sh-pop);
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--line));
+  }
+  .card-hover:active {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal: lớp phủ mờ dần, hộp thoại bật lên; menu/popover trượt xuống */
+div.fixed.inset-0.z-50,
+div.fixed.inset-0.z-\[100\],
+[role="dialog"].fixed.inset-0 {
+  animation: fade-in 0.18s ease-out both;
+}
+div.fixed.inset-0.z-50 > div:not(.fixed),
+div.fixed.inset-0.z-\[100\] > div:not(.fixed),
+[role="dialog"].fixed.inset-0 > div:not(.fixed) {
+  animation: pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[role="menu"],
+[role="listbox"],
+[role="dialog"]:not(.fixed),
+.popover {
+  animation: slide-down 0.16s ease-out both;
+}
+
+/* Nội dung trang xuất hiện nhẹ nhàng */
+main {
+  animation: rise 0.35s ease-out;
+}
+
+/* Thông báo/toast, badge trạng thái */
+[role="alert"],
+[role="status"] {
+  animation: slide-down 0.25s ease-out both;
+}
+
+html {
+  scroll-padding-top: 5rem;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ---- Landing page: chuyển động thu hút ---- */
+@keyframes drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(40px, 30px, 0) scale(1.12);
+  }
+}
+
+@keyframes drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-50px, -24px, 0) scale(1.08);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes grid-pan {
+  to {
+    background-position:
+      0 44px,
+      44px 0;
+  }
+}
+
+@keyframes shine {
+  to {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.hero-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.hero-orb-a {
+  top: -120px;
+  left: -80px;
+  width: 380px;
+  height: 380px;
+  background: var(--primary);
+  animation: drift-a 14s ease-in-out infinite;
+}
+.hero-orb-b {
+  right: -100px;
+  bottom: -140px;
+  width: 420px;
+  height: 420px;
+  background: var(--indigo);
+  animation: drift-b 17s ease-in-out infinite;
+}
+.hero-grid {
+  animation: grid-pan 6s linear infinite;
+}
+.float-slow {
+  animation: float-y 6s ease-in-out infinite;
+}
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--primary);
+  animation: caret 1s steps(1) infinite;
+}
+
+/* Vào trang lần lượt: dùng style --d (giây) */
+.enter {
+  animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0s);
+}
+
+/* Nút chính có vệt sáng quét qua khi hover */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -60%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+.btn-shine:hover::after {
+  animation: shine 0.7s ease;
+}
+.btn-shine:hover {
+  transform: translateY(-1px);
+}
+
+/* Icon trong card nảy nhẹ khi hover card */
+.icon-pop {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s,
+    color 0.2s;
+}
+.group:hover .icon-pop {
+  transform: scale(1.12) rotate(-6deg);
+  background: var(--primary);
+  color: var(--primary-fg);
+}
+
+/* Hiện dần khi cuộn tới (trình duyệt hỗ trợ scroll-driven animation) */
+@supports (animation-timeline: view()) {
+  .reveal,
+  .reveal-stagger > * {
+    animation: reveal-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+  .reveal-stagger > *:nth-child(2) {
+    animation-range: entry 6% entry 51%;
+  }
+  .reveal-stagger > *:nth-child(3) {
+    animation-range: entry 12% entry 57%;
+  }
+  .reveal-stagger > *:nth-child(4) {
+    animation-range: entry 18% entry 63%;
+  }
+  .reveal-stagger > *:nth-child(5) {
+    animation-range: entry 24% entry 69%;
+  }
+  .reveal-stagger > *:nth-child(6) {
+    animation-range: entry 30% entry 75%;
+  }
+}
+
+/* Thanh cuộn mảnh cho danh sách thả xuống */
+[role="listbox"] {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--fg-muted) 40%, transparent) transparent;
+}
+[role="listbox"]::-webkit-scrollbar {
+  width: 6px;
+}
+[role="listbox"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+[role="listbox"]::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--fg-muted) 40%, transparent);
+  border-radius: 9999px;
 }

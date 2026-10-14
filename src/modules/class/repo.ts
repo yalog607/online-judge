@@ -1,6 +1,54 @@
 import "server-only";
-import { execProc } from "@/db/exec";
+import { execProc, DomainError } from "@/db/exec";
 import type { ProblemStatus } from "@/modules/problem/repo";
+
+export interface StudentProgressSummary {
+  UserID: number;
+  FullName: string;
+  Username: string;
+  Email: string;
+  JoinDate: string;
+  ProgressPercent: number;
+  TotalProblems: number;
+  SolvedProblems: number;
+  AttemptedProblems: number;
+  UnattemptedProblems: number;
+  TotalSubmissions: number;
+  TotalAC: number;
+}
+
+export interface StudentProblemProgress {
+  ProblemID: number;
+  Title: string;
+  Difficulty: string;
+  TimeLimit: number;
+  MemoryLimit: number;
+  AssignedDate: string;
+  DueDate: string | null;
+  IsClosed: boolean;
+  Status: "Solved" | "Attempted" | "Unattempted";
+  BestResult: string | null;
+  SubmissionCount: number;
+  LastSubmitTime: string | null;
+}
+
+export interface StudentClassSubmission {
+  SubmissionID: number;
+  ProblemID: number;
+  ProblemTitle: string;
+  Language: string;
+  Result: string;
+  Runtime: number | null;
+  Memory: number | null;
+  PassedCases: number | null;
+  SubmitTime: string;
+}
+
+export interface StudentProgressDetailData {
+  student: StudentProgressSummary;
+  problems: StudentProblemProgress[];
+  submissions: StudentClassSubmission[];
+}
 
 export interface ClassItem {
   ClassID: number;
@@ -12,6 +60,7 @@ export interface ClassItem {
   Description: string | null;
   IsPublic: boolean;
   ApprovalStatus: string;
+  IsCancelled: boolean;
   RejectionReason?: string;
   CreatedAt: string;
   StudentCount: number;
@@ -45,6 +94,55 @@ export interface ClassProblemItem {
   UserStatus: "done" | "tried" | "todo";
 }
 
+export interface TeacherClassView {
+  ClassID: number;
+  TeacherID: number;
+  TeacherName: string;
+  InviteCode: string | null;
+  ClassName: string;
+  Description: string | null;
+  IsPublic: boolean;
+  ApprovalStatus: string;
+  IsCancelled: boolean;
+  CreatedAt: string;
+  CanManage: boolean;
+}
+
+export interface ImportStudentResultItem {
+  rowOrder: number;
+  identifier: string;
+  userId: number | null;
+  username: string | null;
+  fullName: string | null;
+  email: string | null;
+  status: "SUCCESS" | "ALREADY_EXISTS" | "NOT_FOUND" | "CANNOT_ADD_TEACHER" | "DUPLICATE_IN_FILE";
+}
+
+export interface ImportStudentsSummary {
+  total: number;
+  successCount: number;
+  alreadyExistsCount: number;
+  notFoundCount: number;
+  cannotAddTeacherCount: number;
+  duplicateCount: number;
+  results: ImportStudentResultItem[];
+}
+
+export interface ClassSubmissionItem {
+  SubmissionID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  ProblemID: number;
+  ProblemTitle: string;
+  Language: string;
+  Result: "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "Pending" | "Judging";
+  Runtime: number | null;
+  Memory: number | null;
+  SubmitTime: string | Date;
+  TotalCount?: number;
+}
+
 export interface IClassRepository {
   createClass(teacherId: number, input: {
     className: string;
@@ -69,11 +167,17 @@ export interface IClassRepository {
 
   getClassDetail(classId: number, userId?: number): Promise<ClassItem | null>;
 
+  getTeacherClassView(classId: number, actorId: number): Promise<TeacherClassView | null>;
+
   getClassStudents(classId: number, actorId: number): Promise<StudentItem[]>;
 
   getClassProblems(classId: number, userId: number): Promise<ClassProblemItem[]>;
 
+  getPublicClassProblems(classId: number, actorId: number): Promise<ClassProblemItem[]>;
+
   addStudent(classId: number, teacherId: number, identifier: string): Promise<number>;
+
+  importStudents(classId: number, actorId: number, identifiers: string[]): Promise<ImportStudentsSummary>;
 
   removeStudent(classId: number, teacherId: number, studentId: number): Promise<boolean>;
 
@@ -96,6 +200,10 @@ export interface IClassRepository {
     }
   ): Promise<ClassItem>;
 
+  cancelClass(classId: number, teacherId: number): Promise<void>;
+
+  resubmitClass(classId: number, teacherId: number): Promise<void>;
+
   requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<void>;
 
   listTARequests(adminId: number): Promise<any[]>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -104,8 +212,23 @@ export interface IClassRepository {
 
   getClassesForTA(taUserId: number): Promise<ClassItem[]>;
 
+  getClassSubmissions(
+    classId: number,
+    actorId: number,
+    page?: number,
+    pageSize?: number,
+    problemId?: number,
+    result?: string
+  ): Promise<{ items: ClassSubmissionItem[]; total: number }>;
+
   listClassRequests(): Promise<ClassItem[]>;
   approveClassRequest(adminId: number, classId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
+
+  getStudentProgressDetail(
+    classId: number,
+    studentId: number,
+    actorId: number
+  ): Promise<StudentProgressDetailData>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -178,6 +301,14 @@ export class ClassRepository implements IClassRepository {
     return rows[0] ?? null;
   }
 
+  async getTeacherClassView(classId: number, actorId: number): Promise<TeacherClassView | null> {
+    const { rows } = await execProc<TeacherClassView>("usp_Class_GetTeacherView", {
+      ClassID: classId,
+      ActorID: actorId,
+    });
+    return rows[0] ?? null;
+  }
+
   async getClassStudents(classId: number, actorId: number): Promise<StudentItem[]> {
     const { rows } = await execProc<StudentItem>("usp_Class_GetStudents", {
       ClassID: classId,
@@ -194,6 +325,14 @@ export class ClassRepository implements IClassRepository {
     return rows;
   }
 
+  async getPublicClassProblems(classId: number, actorId: number): Promise<ClassProblemItem[]> {
+    const { rows } = await execProc<ClassProblemItem>("usp_Class_GetPublicPreviewProblems", {
+      ClassID: classId,
+      ActorID: actorId,
+    });
+    return rows;
+  }
+
   async addStudent(classId: number, teacherId: number, identifier: string): Promise<number> {
     const { rows } = await execProc<{ StudentID: number }>("usp_Class_AddStudent", {
       ClassID: classId,
@@ -201,6 +340,47 @@ export class ClassRepository implements IClassRepository {
       Identifier: identifier,
     });
     return rows[0].StudentID;
+  }
+
+  async importStudents(
+    classId: number,
+    actorId: number,
+    identifiers: string[]
+  ): Promise<ImportStudentsSummary> {
+    const payload = identifiers.map((identifier) => ({ identifier }));
+    const { rows } = await execProc<{
+      RowOrder: number;
+      Identifier: string;
+      UserID: number | null;
+      Username: string | null;
+      FullName: string | null;
+      Email: string | null;
+      Status: "SUCCESS" | "ALREADY_EXISTS" | "NOT_FOUND" | "CANNOT_ADD_TEACHER" | "DUPLICATE_IN_FILE";
+    }>("usp_Class_ImportStudents", {
+      ClassID: classId,
+      ActorID: actorId,
+      StudentsJson: JSON.stringify(payload),
+    });
+
+    const results: ImportStudentResultItem[] = rows.map((r) => ({
+      rowOrder: r.RowOrder,
+      identifier: r.Identifier,
+      userId: r.UserID,
+      username: r.Username,
+      fullName: r.FullName,
+      email: r.Email,
+      status: r.Status,
+    }));
+
+    return {
+      total: results.length,
+      successCount: results.filter((r) => r.status === "SUCCESS").length,
+      alreadyExistsCount: results.filter((r) => r.status === "ALREADY_EXISTS").length,
+      notFoundCount: results.filter((r) => r.status === "NOT_FOUND").length,
+      cannotAddTeacherCount: results.filter((r) => r.status === "CANNOT_ADD_TEACHER").length,
+      duplicateCount: results.filter((r) => r.status === "DUPLICATE_IN_FILE").length,
+      results,
+    };
   }
 
   async removeStudent(classId: number, teacherId: number, studentId: number): Promise<boolean> {
@@ -229,6 +409,14 @@ export class ClassRepository implements IClassRepository {
       IsPublic: input.isPublic ?? true,
     });
     return rows[0];
+  }
+
+  async cancelClass(classId: number, teacherId: number): Promise<void> {
+    await execProc("usp_Class_Cancel", { ClassID: classId, TeacherID: teacherId });
+  }
+
+  async resubmitClass(classId: number, teacherId: number): Promise<void> {
+    await execProc("usp_Class_Resubmit", { ClassID: classId, TeacherID: teacherId });
   }
 
   async assignProblem(
@@ -284,10 +472,19 @@ export class ClassRepository implements IClassRepository {
     return rows;
   }
 
-  async getClassSubmissions(classId: number, actorId: number, page: number = 1, pageSize: number = 20) {
-    const { rows } = await execProc("usp_Class_GetSubmissions", {
+  async getClassSubmissions(
+    classId: number,
+    actorId: number,
+    page: number = 1,
+    pageSize: number = 20,
+    problemId?: number,
+    result?: string
+  ): Promise<{ items: ClassSubmissionItem[]; total: number }> {
+    const { rows } = await execProc<ClassSubmissionItem>("usp_Class_GetSubmissions", {
       ClassID: classId,
       ActorID: actorId,
+      ProblemID: problemId ?? null,
+      Result: result ?? null,
       Page: page,
       PageSize: pageSize,
     });
@@ -309,6 +506,27 @@ export class ClassRepository implements IClassRepository {
       IsApproved: isApproved,
       RejectionReason: rejectionReason ?? null,
     });
+  }
+
+  async getStudentProgressDetail(
+    classId: number,
+    studentId: number,
+    actorId: number
+  ): Promise<StudentProgressDetailData> {
+    const res = await execProc<unknown>("usp_Class_GetStudentProgressDetail", {
+      ClassID: classId,
+      StudentID: studentId,
+      ActorID: actorId,
+    });
+
+    const student = res.sets[0]?.[0] as StudentProgressSummary | undefined;
+    if (!student) {
+      throw new DomainError(50032, "Không tìm thấy thông tin tiến độ sinh viên.");
+    }
+    const problems = (res.sets[1] as StudentProblemProgress[] | undefined) ?? [];
+    const submissions = (res.sets[2] as StudentClassSubmission[] | undefined) ?? [];
+
+    return { student, problems, submissions };
   }
 }
 

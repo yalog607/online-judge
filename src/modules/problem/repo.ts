@@ -3,7 +3,6 @@ import { execProc } from "@/db/exec";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
 export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejected";
-export type JudgeMode = "stdin" | "function";
 
 export type ProblemListRow = {
   ProblemID: number;
@@ -11,6 +10,7 @@ export type ProblemListRow = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus?: "Public" | "Private" | null;
   CreatorID: number;
   CreatorFullName?: string | null;
   AcRate: number;
@@ -27,9 +27,11 @@ export type ManageProblemRow = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus: "Public" | "Private" | null;
   CreatedAt: string;
   ClassID: number | null;
   ClassName: string | null;
+  CanManage: boolean;
   TotalCount: number;
 };
 
@@ -46,9 +48,13 @@ export type ProblemDetail = {
   Tags: string | null;
   Difficulty: Difficulty;
   Status: ProblemStatus;
+  ProposedStatus: "Public" | "Private" | null;
   RejectionReason: string | null;
-  JudgeMode: JudgeMode;
+  // Signature of the function students implement; null for legacy problems not yet configured.
   FunctionSpec: string | null;
+  ClassID?: number | null;
+  ClassName?: string | null;
+  TeacherID?: number | null;
 };
 
 export type TestcasePublic = { TestCaseID: number; InputData: string; ExpectedOutput: string };
@@ -107,6 +113,14 @@ export async function getProblem(problemId: number): Promise<ProblemDetail | nul
   return rows[0] ?? null;
 }
 
+export async function canTAEditProblem(problemId: number, taId: number): Promise<boolean> {
+  const { rows } = await execProc<{ CanEdit: boolean }>("usp_Problem_CanTAEdit", {
+    ProblemID: problemId,
+    TAID: taId,
+  });
+  return Boolean(rows[0]?.CanEdit);
+}
+
 export async function createProblem(input: {
   creatorId: number;
   title: string;
@@ -118,9 +132,9 @@ export async function createProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
+  proposedStatus?: "Public" | "Private";
   classId?: number;
   dueDate?: string | null;
-  judgeMode?: JudgeMode;
   functionSpec?: string | null;
 }): Promise<number> {
   const { rows } = await execProc<{ ProblemID: number }>("usp_Problem_Create", {
@@ -134,9 +148,9 @@ export async function createProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? "Public",
+    ProposedStatus: input.proposedStatus ?? null,
     ClassID: input.classId ?? null,
     DueDate: input.dueDate ? new Date(input.dueDate) : null,
-    JudgeMode: input.judgeMode ?? "stdin",
     FunctionSpec: input.functionSpec ?? null,
   });
   return rows[0].ProblemID;
@@ -154,7 +168,8 @@ export async function updateProblem(input: {
   tags?: string;
   difficulty: Difficulty;
   status?: ProblemStatus;
-  judgeMode?: JudgeMode;
+  proposedStatus?: "Public" | "Private";
+  needsReview?: boolean;
   functionSpec?: string | null;
 }) {
   await execProc("usp_Problem_Update", {
@@ -169,7 +184,8 @@ export async function updateProblem(input: {
     Tags: input.tags ?? null,
     Difficulty: input.difficulty,
     Status: input.status ?? null,
-    JudgeMode: input.judgeMode ?? null,
+    ProposedStatus: input.proposedStatus ?? null,
+    NeedsReview: input.needsReview ? 1 : 0,
     FunctionSpec: input.functionSpec ?? null,
   });
 }
@@ -224,3 +240,82 @@ export async function checkProblemAccess(problemId: number, userId: number): Pro
   });
   return Boolean(rows[0]?.CanAccess);
 }
+
+export type ClonedProblemResult = {
+  ProblemID: number;
+  Title: string;
+  Difficulty: Difficulty;
+  Status: ProblemStatus;
+  CreatedAt: string;
+};
+
+export async function cloneProblem(
+  problemId: number,
+  actorId: number,
+  newTitle?: string,
+): Promise<ClonedProblemResult> {
+  const { rows } = await execProc<ClonedProblemResult>("usp_Problem_Clone", {
+    ProblemID: problemId,
+    ActorID: actorId,
+    NewTitle: newTitle ?? null,
+  });
+  if (!rows[0]) {
+    throw new Error("Failed to clone problem");
+  }
+  return rows[0];
+}
+
+export type ProblemSubmissionSummary = {
+  TotalSubmissions: number;
+  SolvedUsers: number;
+  AttemptedUsers: number;
+  AcRate: number;
+};
+
+export type ProblemSubmissionItem = {
+  SubmissionID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  Language: string;
+  Result: string;
+  Runtime: number | null;
+  Memory: number | null;
+  PassedCases: number;
+  SubmitTime: string | Date;
+  TotalCount: number;
+};
+
+export type ProblemSubmissionsData = {
+  summary: ProblemSubmissionSummary;
+  items: ProblemSubmissionItem[];
+  total: number;
+};
+
+export async function getProblemSubmissions(
+  problemId: number,
+  actorId: number,
+  page: number = 1,
+  pageSize: number = 20,
+  result?: string,
+): Promise<ProblemSubmissionsData> {
+  const res = await execProc<unknown>("usp_Problem_GetSubmissions", {
+    ProblemID: problemId,
+    ActorID: actorId,
+    Result: result ?? null,
+    Page: page,
+    PageSize: pageSize,
+  });
+
+  const summary = (res.sets[0]?.[0] as ProblemSubmissionSummary) ?? {
+    TotalSubmissions: 0,
+    SolvedUsers: 0,
+    AttemptedUsers: 0,
+    AcRate: 0,
+  };
+  const items = (res.sets[1] ?? []) as ProblemSubmissionItem[];
+  const total = items[0]?.TotalCount ?? 0;
+
+  return { summary, items, total };
+}
+

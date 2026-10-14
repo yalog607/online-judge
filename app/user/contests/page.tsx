@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
 import { Pager } from "@/components/pager";
@@ -46,15 +47,21 @@ export default async function UserContestsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const user = await requireUser();
+  if (user.role === "Teacher") redirect("/teacher/contests");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const statusParam = (sp.status as "Upcoming" | "Ongoing" | "Ended" | "All") || "All";
+  const isMineView = sp.view === "mine";
+  const joinedView = sp.view === "joined";
 
   const { items: contests, total } = await contestRepository.listContests({
     status: statusParam,
     search: sp.q,
     page,
     pageSize: PAGE_SIZE,
+    userId: user.userId,
+    onlyMine: isMineView,
+    onlyJoined: joinedView,
   });
 
   const detailedContests = await Promise.all(
@@ -74,6 +81,22 @@ export default async function UserContestsPage({
     { label: "Sắp diễn ra", value: "Upcoming" },
     { label: "Đã kết thúc", value: "Ended" },
   ];
+  const currentParams = () => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(sp)) {
+      if (value !== undefined) params.set(key, value);
+    }
+    return params;
+  };
+  const joinedParams = currentParams();
+  joinedParams.set("view", "joined");
+  joinedParams.set("status", "All");
+  joinedParams.set("page", "1");
+
+  const mineParams = currentParams();
+  mineParams.set("view", "mine");
+  mineParams.set("status", "All");
+  mineParams.set("page", "1");
 
   return (
     <div className="flex flex-col gap-6 pt-8">
@@ -87,8 +110,11 @@ export default async function UserContestsPage({
       <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
-            const isActive = statusParam === tab.value;
-            const params = new URLSearchParams({ ...sp, status: tab.value, page: "1" } as Record<string, string>);
+            const isActive = !joinedView && !isMineView && statusParam === tab.value;
+            const params = currentParams();
+            params.delete("view");
+            params.set("status", tab.value);
+            params.set("page", "1");
             return (
               <Link
                 key={tab.value}
@@ -103,10 +129,35 @@ export default async function UserContestsPage({
               </Link>
             );
           })}
+          {(user.role === "TA" || user.role === "Admin") && (
+            <Link
+              href={`/user/contests?${mineParams.toString()}`}
+              aria-current={isMineView ? "page" : undefined}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                isMineView
+                  ? "bg-primary text-primary-fg"
+                  : "text-fg-muted hover:bg-muted hover:text-fg"
+              }`}
+            >
+              Kỳ thi của tôi
+            </Link>
+          )}
+          <Link
+            href={`/user/contests?${joinedParams.toString()}`}
+            aria-current={joinedView ? "page" : undefined}
+            className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              joinedView
+                ? "bg-primary text-primary-fg"
+                : "text-fg-muted hover:bg-muted hover:text-fg"
+            }`}
+          >
+            Kỳ thi tôi tham gia
+          </Link>
         </div>
 
         <form className="flex items-center gap-2" method="get">
           <input type="hidden" name="status" value={statusParam} />
+          {sp.view && <input type="hidden" name="view" value={sp.view} />}
           <input
             name="q"
             defaultValue={sp.q}
@@ -125,7 +176,7 @@ export default async function UserContestsPage({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {detailedContests.length === 0 ? (
           <div className="col-span-full card p-12 text-center text-fg-muted">
-            Không tìm thấy kỳ thi nào phù hợp.
+            {joinedView ? "Bạn chưa tham gia kỳ thi nào phù hợp." : "Không tìm thấy kỳ thi nào phù hợp."}
           </div>
         ) : (
           detailedContests.map((c) => (
@@ -220,7 +271,8 @@ export default async function UserContestsPage({
         pageSize={PAGE_SIZE}
         total={total}
         buildHref={(p) => {
-          const params = new URLSearchParams({ ...sp, page: String(p) } as Record<string, string>);
+          const params = currentParams();
+          params.set("page", String(p));
           return `/user/contests?${params.toString()}`;
         }}
       />

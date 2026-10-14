@@ -1,3 +1,4 @@
+import { Select } from "@/components/select";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import {
@@ -100,7 +101,7 @@ export default async function AdminReportsPage({
         <form method="get" className="flex items-center gap-2">
           <input type="hidden" name="type" value={type} />
           <span className="text-xs text-fg-muted">Chọn {type === "class" ? "lớp" : "kỳ thi"}:</span>
-          <select
+          <Select
             name="id"
             defaultValue={selectedId ?? ""}
             className="min-w-[220px] max-w-[340px] truncate rounded-lg border border-line bg-muted px-3 py-1.5 text-sm font-medium text-fg focus:border-primary focus:outline-none"
@@ -125,7 +126,7 @@ export default async function AdminReportsPage({
             ) : (
               <option value="">-- Không có kỳ thi nào --</option>
             )}
-          </select>
+          </Select>
           <button
             type="submit"
             className="rounded-lg bg-muted border border-line px-3 py-1.5 text-xs font-medium text-fg hover:bg-line transition"

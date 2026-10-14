@@ -1,8 +1,11 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useState, useTransition, FormEvent } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { useRouter } from "next/navigation";
 import { createContestAction } from "@/modules/contest/actions";
+import { Modal } from "@/components/modal";
 
 interface ClassOption {
   classId: number;
@@ -50,14 +53,16 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
           setError(null);
           setIsOpen(true);
         }}
-        className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:opacity-90 transition-opacity flex items-center gap-1.5"
+        className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-xs sm:text-sm text-primary-fg hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-sm"
       >
-        <span>+ Tạo kỳ thi</span>
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+        </svg>
+        <span>TẠO KỲ THI MỚI</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-lg font-semibold text-fg">Tạo kỳ thi mới</h3>
               <button
@@ -149,7 +154,7 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
                   <label className="mb-1 block text-xs font-medium text-fg-muted">
                     Gán vào lớp học (Tùy chọn)
                   </label>
-                  <select
+                  <Select
                     name="classId"
                     className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary"
                   >
@@ -159,15 +164,14 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
                         {c.className}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-fg-muted">
                     Mật khẩu tham gia (Tùy chọn)
                   </label>
-                  <input
+                  <PasswordInput
                     name="password"
-                    type="password"
                     defaultValue=""
                     autoComplete="new-password"
                     placeholder="Để trống nếu công khai"
@@ -194,8 +198,7 @@ export function CreateContestDialog({ classes }: { classes: ClassOption[] }) {
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

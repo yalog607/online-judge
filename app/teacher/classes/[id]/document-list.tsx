@@ -55,7 +55,7 @@ export function TeacherDocumentList({
                   <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
                   <td className="px-4 py-3 font-medium text-fg">
                     <a
-                      href={doc.CloudinaryURL}
+                      href={`/api/documents/${doc.DocumentID}`}
                       target="_blank"
                       rel="noreferrer"
                       className="hover:text-primary hover:underline flex items-center gap-2"
@@ -79,7 +79,7 @@ export function TeacherDocumentList({
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <a
-                        href={doc.CloudinaryURL}
+                        href={`/api/documents/${doc.DocumentID}?download=1`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-xs font-medium text-primary hover:underline"

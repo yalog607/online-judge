@@ -10,6 +10,7 @@ SELECT
     c.Description,
     c.IsPublic,
     c.ApprovalStatus,
+    c.IsCancelled,
     c.RejectionReason,
     c.CreatedAt,
     COUNT(cs.UserID) AS StudentCount
@@ -26,6 +27,7 @@ GROUP BY
     c.Description,
     c.IsPublic,
     c.ApprovalStatus,
+    c.IsCancelled,
     c.RejectionReason,
     c.CreatedAt;
 GO

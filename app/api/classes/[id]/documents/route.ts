@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { uploadFile } from "@/lib/storage";
 import { documentRepository } from "@/modules/document/repo";
+import { classRepository } from "@/modules/class/repo";
 import {
   uploadDocumentSchema,
   listDocumentQuerySchema,
@@ -60,17 +62,15 @@ export async function POST(
       return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
     }
 
-    if (session.role !== "Teacher" && session.role !== "Admin") {
-      return NextResponse.json(
-        { error: "Chỉ giáo viên hoặc quản trị viên mới có thể tải lên tài liệu." },
-        { status: 403 }
-      );
-    }
-
     const { id } = await params;
     const classId = parseInt(id, 10);
     if (isNaN(classId)) {
       return NextResponse.json({ error: "Mã lớp học không hợp lệ." }, { status: 400 });
+    }
+
+    const classAccess = await classRepository.getTeacherClassView(classId, session.userId);
+    if (!classAccess?.CanManage || classAccess.IsCancelled) {
+      return NextResponse.json({ error: "Bạn không có quyền tải tài liệu lên lớp này." }, { status: 403 });
     }
 
     const contentType = req.headers.get("content-type") || "";
@@ -123,6 +123,9 @@ export async function POST(
       session.userId,
       parsed.data
     );
+
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath(`/user/classes/${classId}`);
 
     return NextResponse.json(
       {

@@ -5,10 +5,12 @@ import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { contestRepository } from "./repo";
+import { notifyContestJoined, notifyContestStarted } from "@/modules/notification/events";
 import {
   createContestSchema,
   updateContestSchema,
   addContestProblemSchema,
+  updateContestProblemScoreSchema,
   joinContestSchema,
 } from "./schema";
 
@@ -18,7 +20,7 @@ export async function createContestAction(
   _prev: ContestFormState,
   formData: FormData
 ): Promise<ContestFormState> {
-  const actor = await requireRole("Teacher");
+  const actor = await requireRole("Teacher", "Admin");
   const rawData = {
     contestName: formData.get("contestName"),
     description: formData.get("description") || undefined,
@@ -53,7 +55,7 @@ export async function updateContestAction(
   _prev: ContestFormState,
   formData: FormData
 ): Promise<ContestFormState> {
-  const actor = await requireRole("Teacher");
+  const actor = await requireRole("Teacher", "Admin");
   const rawData = {
     contestName: formData.get("contestName"),
     description: formData.get("description") || undefined,
@@ -86,7 +88,7 @@ export async function addContestProblemAction(
   _prev: ContestFormState,
   formData: FormData
 ): Promise<ContestFormState> {
-  const actor = await requireRole("Teacher");
+  const actor = await requireRole("Teacher", "Admin");
   const rawData = {
     problemId: formData.get("problemId"),
     maxScore: formData.get("maxScore") || 100,
@@ -114,10 +116,33 @@ export async function removeContestProblemAction(
   contestId: number,
   problemId: number
 ): Promise<{ error?: string; ok?: boolean }> {
-  const actor = await requireRole("Teacher");
+  const actor = await requireRole("Teacher", "Admin");
 
   try {
     await contestRepository.removeProblem(contestId, problemId, actor.userId);
+    revalidatePath(`/teacher/contests/${contestId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function updateContestProblemScoreAction(
+  contestId: number,
+  problemId: number,
+  maxScore: number
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher", "Admin");
+  const parsed = updateContestProblemScoreSchema.safeParse({ problemId, maxScore });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  try {
+    await contestRepository.updateProblemScore(contestId, problemId, actor.userId, parsed.data.maxScore);
     revalidatePath(`/teacher/contests/${contestId}`);
     return { ok: true };
   } catch (error) {
@@ -145,8 +170,11 @@ export async function joinContestAction(
 
   try {
     await contestRepository.joinContest(contestId, user.userId, parsed.data.password);
+    await notifyContestJoined(contestId, user.userId, user.fullName);
     revalidatePath(`/user/contests/${contestId}`);
     revalidatePath("/user/contests");
+    revalidatePath(`/teacher/contests/${contestId}`);
+    revalidatePath("/teacher/contests");
     return { ok: true, message: "Tham gia kỳ thi thành công" };
   } catch (error) {
     if (error instanceof DomainError) {
@@ -160,10 +188,11 @@ export async function startContestNowAction(
   contestId: number,
   durationMinutes: number = 60
 ): Promise<{ error?: string; ok?: boolean; message?: string }> {
-  const actor = await requireRole("Teacher");
+  const actor = await requireRole("Teacher", "Admin");
 
   try {
     await contestRepository.startContestNow(contestId, actor.userId, durationMinutes);
+    await notifyContestStarted(contestId, actor.userId);
     revalidatePath(`/teacher/contests/${contestId}`);
     revalidatePath(`/user/contests/${contestId}`);
     revalidatePath("/teacher/contests");
@@ -180,7 +209,7 @@ export async function startContestNowAction(
 export async function deleteContestAction(
   contestId: number
 ): Promise<{ error?: string; ok?: boolean; message?: string }> {
-  const actor = await requireRole("Teacher");
+  const actor = await requireRole("Teacher", "Admin");
 
   try {
     await contestRepository.deleteContest(contestId, actor.userId);

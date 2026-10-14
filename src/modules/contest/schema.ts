@@ -34,6 +34,11 @@ export const addContestProblemSchema = z.object({
   orderIndex: z.coerce.number().int().min(0).default(0),
 });
 
+export const updateContestProblemScoreSchema = z.object({
+  problemId: z.coerce.number().int().positive(),
+  maxScore: z.coerce.number().int().min(1, "Điểm tối đa phải lớn hơn 0"),
+});
+
 export const joinContestSchema = z.object({
   password: z.string().trim().optional().nullable(),
 });
@@ -46,11 +51,13 @@ export const contestFilterSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   userId: z.coerce.number().int().positive().optional(),
   onlyMine: z.boolean().optional(),
+  onlyJoined: z.boolean().optional(),
 });
 
 export type CreateContestInput = z.infer<typeof createContestSchema>;
 export type UpdateContestInput = z.infer<typeof updateContestSchema>;
 export type AddContestProblemInput = z.infer<typeof addContestProblemSchema>;
+export type UpdateContestProblemScoreInput = z.infer<typeof updateContestProblemScoreSchema>;
 export type JoinContestInput = z.infer<typeof joinContestSchema>;
 export type ContestFilterInput = z.infer<typeof contestFilterSchema>;
 
@@ -95,4 +102,33 @@ export interface ContestLeaderboardEntry {
   totalScore: number;
   penaltyTime: number;
   problemsSolved: number;
+}
+
+export interface ContestSubmissionSummary {
+  TotalSubmissions: number;
+  SolvedUsers: number;
+  AttemptedUsers: number;
+  AcRate: number;
+}
+
+export interface ContestSubmissionItem {
+  SubmissionID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  ProblemID: number;
+  ProblemTitle: string;
+  Language: string;
+  Result: string;
+  Runtime: number;
+  Memory: number;
+  PassedCases: number;
+  SubmitTime: string | Date;
+  TotalCount: number;
+}
+
+export interface ContestSubmissionsData {
+  summary: ContestSubmissionSummary;
+  items: ContestSubmissionItem[];
+  total: number;
 }

@@ -9,6 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await verifySession();
     const { id } = await params;
     const problemId = parseInt(id, 10);
     if (isNaN(problemId)) {
@@ -18,6 +19,9 @@ export async function GET(
     const problem = await problemRepo.getProblem(problemId);
     if (!problem) {
       return NextResponse.json({ error: "Bài tập không tồn tại." }, { status: 404 });
+    }
+    if (!(await problemRepo.checkProblemAccess(problemId, session?.userId ?? 0))) {
+      return NextResponse.json({ error: "Bạn không có quyền xem bài tập này." }, { status: 404 });
     }
 
     return NextResponse.json({

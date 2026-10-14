@@ -3,26 +3,46 @@ import { notFound } from "next/navigation";
 import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
 import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
+import { listForManage } from "@/modules/problem/repo";
+import { DocumentUploadForm } from "../../../teacher/classes/[id]/document-upload-form";
+import { TeacherDocumentList } from "../../../teacher/classes/[id]/document-list";
+import { AssignProblemDialog } from "../../../teacher/classes/[id]/assign-problem-dialog";
 
 export async function TAClassView({
   classId,
   userId,
+  role,
   activeTab,
 }: {
   classId: number;
   userId: number;
+  role: "User" | "Teacher" | "Admin" | "TA";
   activeTab: string;
 }) {
-
-  const [classDetail, students, documents, problems, submissions] = await Promise.all([
-    classRepository.getClassDetail(classId, userId),
-    classRepository.getClassStudents(classId, userId),
-    documentRepository.listDocuments(classId, userId),
-    classRepository.getClassProblems(classId, userId),
-    activeTab === "submissions" ? classRepository.getClassSubmissions(classId, userId) : Promise.resolve({ items: [], total: 0 }),
-  ]);
+  const [classDetail, students, documents, problems, submissions, manageableProblems] =
+    await Promise.all([
+      classRepository.getClassDetail(classId, userId),
+      classRepository.getClassStudents(classId, userId),
+      documentRepository.listDocuments(classId, userId),
+      classRepository.getClassProblems(classId, userId),
+      activeTab === "submissions"
+        ? classRepository.getClassSubmissions(classId, userId)
+        : Promise.resolve({ items: [], total: 0 }),
+      role === "TA" || role === "Teacher" || role === "Admin"
+        ? listForManage({ actorId: userId, page: 1, pageSize: 100 })
+        : Promise.resolve({ rows: [] }),
+    ]);
 
   if (!classDetail) notFound();
+  const canManage = role === "TA" || role === "Teacher" || role === "Admin";
+  const assignedProblemIds = new Set(problems.map((p) => p.ProblemID));
+  const availableProblems = manageableProblems.rows
+    .filter((problem) => !assignedProblemIds.has(problem.ProblemID) && problem.Status !== "Hidden")
+    .map((problem) => ({
+      problemId: problem.ProblemID,
+      title: problem.Title,
+      difficulty: problem.Difficulty,
+    }));
 
   return (
     <div className="flex flex-col gap-6 pt-8">
@@ -50,6 +70,14 @@ export async function TAClassView({
             {classDetail.Description || "Chưa có mô tả cho lớp học này."}
           </p>
         </div>
+        {canManage && !classDetail.IsCancelled && (
+          <Link
+            href={`/user/problems/new?classId=${classId}`}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg"
+          >
+            + Tạo bài tập
+          </Link>
+        )}
       </div>
 
       <div className="flex border-b border-line gap-4">
@@ -78,151 +106,173 @@ export async function TAClassView({
       {activeTab === "overview" && (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
+            <div className="card p-4">
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+                Mã mời tham gia
+              </span>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="font-mono text-xl font-bold text-primary">
+                  {classDetail.InviteCode}
+                </span>
+              </div>
+            </div>
 
-        <div className="card p-4">
-          <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Mã mời tham gia
-          </span>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="font-mono text-xl font-bold text-primary">
-              {classDetail.InviteCode}
-            </span>
+            <div className="card p-4">
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+                Tổng số học sinh
+              </span>
+              <p className="mt-2 text-xl font-bold text-fg">{students.length} học sinh</p>
+            </div>
+
+            <div className="card p-4">
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+                Bài tập đã giao
+              </span>
+              <p className="mt-2 text-xl font-bold text-fg">{problems.length} bài tập</p>
+            </div>
+
+            <div className="card p-4">
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+                Tài liệu đã đăng
+              </span>
+              <p className="mt-2 text-xl font-bold text-fg">{documents.length} tài liệu</p>
+            </div>
+
+            <div className="card p-4">
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+                Ngày thành lập
+              </span>
+              <p className="mt-2 text-xl font-bold text-fg">
+                {new Date(classDetail.CreatedAt).toLocaleDateString("vi-VN")}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="card p-4">
-          <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Tổng số học sinh
-          </span>
-          <p className="mt-2 text-xl font-bold text-fg">{students.length} học sinh</p>
-        </div>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-fg">
+                  Bài tập của lớp ({problems.length})
+                </h2>
+              </div>
+              {canManage && !classDetail.IsCancelled && (
+                <AssignProblemDialog classId={classId} availableProblems={availableProblems} />
+              )}
+            </div>
 
-        <div className="card p-4">
-          <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Bài tập đã giao
-          </span>
-          <p className="mt-2 text-xl font-bold text-fg">{problems.length} bài tập</p>
-        </div>
-
-        <div className="card p-4">
-          <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Tài liệu đã đăng
-          </span>
-          <p className="mt-2 text-xl font-bold text-fg">{documents.length} tài liệu</p>
-        </div>
-
-        <div className="card p-4">
-          <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Ngày thành lập
-          </span>
-          <p className="mt-2 text-xl font-bold text-fg">
-            {new Date(classDetail.CreatedAt).toLocaleDateString("vi-VN")}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-fg">Bài tập của lớp ({problems.length})</h2>
+            <div className="card overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-line bg-muted font-medium text-fg-muted">
+                  <tr>
+                    <th className="px-4 py-3">STT</th>
+                    <th className="px-4 py-3">Tên bài tập</th>
+                    <th className="px-4 py-3">Độ khó</th>
+                    <th className="px-4 py-3">Phạm vi</th>
+                    <th className="px-4 py-3">Ngày giao</th>
+                    <th className="px-4 py-3">Hạn nộp</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {problems.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
+                        Chưa có bài tập nào được giao cho lớp này.
+                      </td>
+                    </tr>
+                  ) : (
+                    problems.map((p, idx) => (
+                      <tr key={p.ProblemID} className="hover:bg-muted/50">
+                        <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
+                        <td className="px-4 py-3 font-medium text-fg">
+                          <Link
+                            href={`/user/problems/${p.ProblemID}`}
+                            className="hover:text-primary hover:underline"
+                            target="_blank"
+                          >
+                            {p.Title}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <DifficultyBadge difficulty={p.Difficulty} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <ProblemStatusBadge status={p.Status} />
+                        </td>
+                        <td className="px-4 py-3 text-fg-muted">
+                          {new Date(p.AssignedDate).toLocaleDateString("vi-VN")}
+                        </td>
+                        <td className="px-4 py-3 text-fg-muted">
+                          {p.DueDate
+                            ? new Date(p.DueDate).toLocaleString("vi-VN")
+                            : "Không thời hạn"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        <div className="card overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line bg-muted font-medium text-fg-muted">
-              <tr>
-                <th className="px-4 py-3">STT</th>
-                <th className="px-4 py-3">Tên bài tập</th>
-                <th className="px-4 py-3">Độ khó</th>
-                <th className="px-4 py-3">Phạm vi</th>
-                <th className="px-4 py-3">Ngày giao</th>
-                <th className="px-4 py-3">Hạn nộp</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {problems.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
-                    Chưa có bài tập nào được giao cho lớp này.
-                  </td>
-                </tr>
-              ) : (
-                problems.map((p, idx) => (
-                  <tr key={p.ProblemID} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
-                    <td className="px-4 py-3 font-medium text-fg">
-                      <Link
-                        href={`/user/problems/${p.ProblemID}`}
-                        className="hover:text-primary hover:underline"
-                        target="_blank"
-                      >
-                        {p.Title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <DifficultyBadge difficulty={p.Difficulty} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <ProblemStatusBadge status={p.Status} />
-                    </td>
-                    <td className="px-4 py-3 text-fg-muted">
-                      {new Date(p.AssignedDate).toLocaleDateString("vi-VN")}
-                    </td>
-                    <td className="px-4 py-3 text-fg-muted">
-                      {p.DueDate
-                        ? new Date(p.DueDate).toLocaleString("vi-VN")
-                        : "Không thời hạn"}
-                    </td>
-                  </tr>
-                ))
+          {canManage && activeTab === "overview" && (
+            <section className="flex flex-col gap-4">
+              {!classDetail.IsCancelled && (
+                <div className="card p-5">
+                  <h2 className="mb-2 text-base font-semibold text-fg">
+                    Đăng tải tài liệu học tập
+                  </h2>
+                  <p className="mb-4 text-xs text-fg-muted">
+                    Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học sinh trong lớp.
+                  </p>
+                  <DocumentUploadForm classId={classId} />
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              <h2 className="text-lg font-semibold">Tài liệu học tập ({documents.length})</h2>
+              <TeacherDocumentList classId={classId} documents={documents} />
+            </section>
+          )}
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
-        <div className="card overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line bg-muted font-medium text-fg-muted">
-              <tr>
-                <th className="px-4 py-3">STT</th>
-                <th className="px-4 py-3">Họ và tên</th>
-                <th className="px-4 py-3">Tên đăng nhập</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Ngày tham gia</th>
-                <th className="px-4 py-3 text-center">Tiến độ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {students.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
-                    Chưa có học sinh nào tham gia lớp học này.
-                  </td>
-                </tr>
-              ) : (
-                students.map((s, idx) => (
-                  <tr key={s.UserID} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
-                    <td className="px-4 py-3 font-medium text-fg">{s.FullName}</td>
-                    <td className="px-4 py-3 font-mono text-fg-muted">{s.Username}</td>
-                    <td className="px-4 py-3 text-fg-muted">{s.Email}</td>
-                    <td className="px-4 py-3 text-fg-muted">
-                      {new Date(s.JoinDate).toLocaleDateString("vi-VN")}
-                    </td>
-                    <td className="px-4 py-3 text-center font-medium text-ok">
-                      {s.ProgressPercent}%
-                    </td>
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
+            <div className="card overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-line bg-muted font-medium text-fg-muted">
+                  <tr>
+                    <th className="px-4 py-3">STT</th>
+                    <th className="px-4 py-3">Họ và tên</th>
+                    <th className="px-4 py-3">Tên đăng nhập</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Ngày tham gia</th>
+                    <th className="px-4 py-3 text-center">Tiến độ</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {students.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
+                        Chưa có học sinh nào tham gia lớp học này.
+                      </td>
+                    </tr>
+                  ) : (
+                    students.map((s, idx) => (
+                      <tr key={s.UserID} className="hover:bg-muted/50">
+                        <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
+                        <td className="px-4 py-3 font-medium text-fg">{s.FullName}</td>
+                        <td className="px-4 py-3 font-mono text-fg-muted">{s.Username}</td>
+                        <td className="px-4 py-3 text-fg-muted">{s.Email}</td>
+                        <td className="px-4 py-3 text-fg-muted">
+                          {new Date(s.JoinDate).toLocaleDateString("vi-VN")}
+                        </td>
+                        <td className="px-4 py-3 text-center font-medium text-ok">
+                          {s.ProgressPercent}%
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -249,43 +299,51 @@ export async function TAClassView({
                     </td>
                   </tr>
                 ) : (
-                  submissions.items.map((s: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
-                    <tr key={s.SubmissionID} className="hover:bg-muted/50">
-                      <td className="px-4 py-3 font-mono text-xs text-fg-muted">#{s.SubmissionID}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-fg">{s.FullName}</div>
-                        <div className="text-xs text-fg-muted">@{s.Username}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/ta/problems/${s.ProblemID}`}
-                          className="font-medium text-fg hover:text-primary hover:underline"
-                        >
-                          {s.ProblemTitle}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          s.Result === "AC" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : 
-                          s.Result === "Pending" || s.Result === "Judging" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                          "bg-red-500/10 text-red-500 border border-red-500/20"
-                        }`}>
-                          {s.Result}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-fg-muted">
-                        {new Date(s.SubmitTime).toLocaleString("vi-VN")}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/submissions/${s.SubmissionID}`}
-                          className="text-xs font-semibold text-primary hover:underline"
-                        >
-                          Xem mã nguồn →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                  submissions.items.map(
+                    (s: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
+                      <tr key={s.SubmissionID} className="hover:bg-muted/50">
+                        <td className="px-4 py-3 font-mono text-xs text-fg-muted">
+                          #{s.SubmissionID}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-fg">{s.FullName}</div>
+                          <div className="text-xs text-fg-muted">@{s.Username}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/ta/problems/${s.ProblemID}`}
+                            className="font-medium text-fg hover:text-primary hover:underline"
+                          >
+                            {s.ProblemTitle}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              s.Result === "AC"
+                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                : s.Result === "Pending" || s.Result === "Judging"
+                                  ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                                  : "bg-red-500/10 text-red-500 border border-red-500/20"
+                            }`}
+                          >
+                            {s.Result}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-fg-muted">
+                          {new Date(s.SubmitTime).toLocaleString("vi-VN")}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link
+                            href={`/submissions/${s.SubmissionID}`}
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
+                            Xem mã nguồn →
+                          </Link>
+                        </td>
+                      </tr>
+                    ),
+                  )
                 )}
               </tbody>
             </table>

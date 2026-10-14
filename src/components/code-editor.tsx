@@ -34,44 +34,49 @@ function languageExtension(language: EditorLanguage): Extension {
   }
 }
 
-// Màu lấy từ CSS variable trong globals.css nên tự đổi theo light/dark.
+// Theme VS Code (Light+ / Dark+): màu lấy từ biến --vsc-* trong globals.css nên tự đổi theo light/dark.
 const theme = EditorView.theme({
   "&": {
-    backgroundColor: "var(--muted)",
-    color: "var(--fg)",
+    backgroundColor: "var(--vsc-bg)",
+    color: "var(--vsc-fg)",
     fontSize: "13px",
     minHeight: "320px",
   },
   "&.cm-focused": { outline: "none" },
-  ".cm-scroller": { fontFamily: "var(--font-mono), ui-monospace, monospace", lineHeight: "1.6" },
-  ".cm-content": { caretColor: "var(--fg)", padding: "12px 0" },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--fg)" },
+  ".cm-scroller": {
+    fontFamily: "var(--font-mono), Consolas, 'Courier New', monospace",
+    lineHeight: "1.6",
+    overflow: "auto",
+  },
+  ".cm-content": { caretColor: "var(--vsc-cursor)", padding: "12px 0" },
+  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--vsc-cursor)" },
   ".cm-gutters": {
-    backgroundColor: "var(--muted)",
-    color: "var(--fg-muted)",
+    backgroundColor: "var(--vsc-bg)",
+    color: "var(--vsc-gutter)",
     border: "none",
-    borderRight: "1px solid var(--line)",
   },
-  ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--primary) 6%, transparent)" },
-  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--fg)" },
+  ".cm-activeLine": { backgroundColor: "var(--vsc-line)" },
+  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--vsc-gutter-active)" },
   "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
-    backgroundColor: "var(--primary-soft)",
+    backgroundColor: "var(--vsc-select)",
   },
-  ".cm-matchingBracket": {
-    backgroundColor: "var(--primary-soft)",
-    outline: "1px solid var(--primary)",
+  ".cm-matchingBracket, &.cm-focused .cm-matchingBracket": {
+    backgroundColor: "color-mix(in srgb, var(--vsc-fg) 15%, transparent)",
+    outline: "1px solid color-mix(in srgb, var(--vsc-fg) 40%, transparent)",
   },
-  ".cm-placeholder": { color: "var(--fg-muted)" },
+  ".cm-placeholder": { color: "var(--vsc-gutter)" },
 });
 
 const highlight = HighlightStyle.define([
-  { tag: [t.keyword, t.controlKeyword, t.modifier, t.operatorKeyword], color: "var(--indigo)" },
-  { tag: [t.string, t.special(t.string), t.regexp], color: "var(--ok)" },
-  { tag: [t.number, t.bool, t.null, t.atom], color: "var(--warn)" },
-  { tag: [t.comment, t.lineComment, t.blockComment], color: "var(--fg-muted)", fontStyle: "italic" },
-  { tag: [t.typeName, t.className, t.namespace], color: "var(--primary)" },
-  { tag: [t.function(t.variableName), t.function(t.propertyName)], color: "var(--primary)" },
-  { tag: [t.meta, t.processingInstruction], color: "var(--bad)" },
+  { tag: [t.keyword, t.modifier, t.operatorKeyword, t.definitionKeyword], color: "var(--vsc-keyword)" },
+  { tag: [t.controlKeyword, t.moduleKeyword], color: "var(--vsc-control)" },
+  { tag: [t.string, t.special(t.string), t.regexp], color: "var(--vsc-string)" },
+  { tag: [t.number, t.bool, t.null, t.atom], color: "var(--vsc-number)" },
+  { tag: [t.comment, t.lineComment, t.blockComment], color: "var(--vsc-comment)", fontStyle: "italic" },
+  { tag: [t.typeName, t.className, t.namespace], color: "var(--vsc-type)" },
+  { tag: [t.function(t.variableName), t.function(t.propertyName)], color: "var(--vsc-function)" },
+  { tag: [t.variableName, t.propertyName, t.definition(t.variableName)], color: "var(--vsc-variable)" },
+  { tag: [t.meta, t.processingInstruction], color: "var(--vsc-meta)" },
 ]);
 
 const baseExtensions: Extension[] = [
@@ -86,11 +91,14 @@ export function CodeEditor({
   onChange,
   language,
   placeholder,
+  height = "min(65vh, 560px)",
 }: {
   value: string;
   onChange: (value: string) => void;
   language: EditorLanguage;
   placeholder?: string;
+  // Chiều cao cố định: nội dung dài sẽ cuộn bên trong editor thay vì kéo dài trang.
+  height?: string;
 }) {
   const extensions = useMemo(
     () => [
@@ -105,6 +113,7 @@ export function CodeEditor({
     <CodeMirror
       value={value}
       onChange={onChange}
+      height={height}
       extensions={extensions}
       theme="none"
       indentWithTab={false}

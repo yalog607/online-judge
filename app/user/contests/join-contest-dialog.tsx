@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useTransition, FormEvent } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { useRouter } from "next/navigation";
 import { joinContestAction } from "@/modules/contest/actions";
+import { Modal } from "@/components/modal";
 
 export function JoinContestDialog({
   contestId,
   contestName,
   isProtected,
+  redirectHref = "/user/contests",
 }: {
   contestId: number;
   contestName: string;
   isProtected: boolean;
+  redirectHref?: string;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +33,7 @@ export function JoinContestDialog({
         setError(result.error);
       } else {
         setIsOpen(false);
-        router.push(`/user/contests/${contestId}`);
+        router.push(`${redirectHref}/${contestId}`);
         router.refresh();
       }
     });
@@ -42,7 +46,7 @@ export function JoinContestDialog({
         if (result?.error) {
           alert(result.error);
         } else {
-          router.push(`/user/contests/${contestId}`);
+          router.push(`${redirectHref}/${contestId}`);
           router.refresh();
         }
       });
@@ -63,9 +67,8 @@ export function JoinContestDialog({
         {isPending ? "Đang xử lý..." : "Tham gia kỳ thi"}
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-2xl">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-base font-semibold text-fg">Nhập mật khẩu kỳ thi</h3>
               <button
@@ -92,9 +95,8 @@ export function JoinContestDialog({
                 <label className="mb-1 block text-xs font-medium text-fg-muted">
                   Mật khẩu kỳ thi <span className="text-danger">*</span>
                 </label>
-                <input
+                <PasswordInput
                   name="password"
-                  type="password"
                   required
                   placeholder="Nhập mật khẩu..."
                   className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary"
@@ -119,8 +121,7 @@ export function JoinContestDialog({
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

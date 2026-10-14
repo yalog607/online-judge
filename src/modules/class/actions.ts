@@ -2,17 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireRole, requireUser } from "@/lib/dal";
+import { requireRole } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { classRepository } from "./repo";
+import { notifyStudentAdded, notifyStudentRemoved } from "@/modules/notification/events";
 import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
 
 export type FormState = { error?: string; ok?: boolean; message?: string };
 
-export async function createClassAction(
-  _prev: FormState,
-  formData: FormData
-): Promise<FormState> {
+export async function createClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const actor = await requireRole("Teacher", "Admin");
   const rawData = {
     className: formData.get("className"),
@@ -38,11 +36,8 @@ export async function createClassAction(
   }
 }
 
-export async function joinClassAction(
-  _prev: FormState,
-  formData: FormData
-): Promise<FormState> {
-  const user = await requireUser();
+export async function joinClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
   const rawData = {
     inviteCode: formData.get("inviteCode"),
   };
@@ -53,11 +48,8 @@ export async function joinClassAction(
   }
 
   try {
-    const classId = await classRepository.joinByInviteCode(
-      user.userId,
-      parsed.data.inviteCode
-    );
-    revalidatePath("/user/classes");
+    const classId = await classRepository.joinByInviteCode(user.userId, parsed.data.inviteCode);
+    revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
     redirect(`/user/classes/${classId}`);
   } catch (error) {
     if (error instanceof DomainError) {
@@ -68,23 +60,31 @@ export async function joinClassAction(
 }
 
 export async function joinPublicClassAction(classId: number): Promise<void> {
-  const user = await requireUser();
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
   await classRepository.joinPublicClass(user.userId, classId);
+  revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
   revalidatePath(`/user/classes/${classId}`);
   redirect(`/user/classes/${classId}`);
 }
 
-export async function leaveClassAction(classId: number): Promise<void> {
-  const user = await requireUser();
-  await classRepository.leaveClass(user.userId, classId);
-  revalidatePath("/user/classes");
-  redirect("/user/classes");
+export async function leaveClassAction(classId: number): Promise<{ error?: string; ok?: boolean }> {
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
+  try {
+    await classRepository.leaveClass(user.userId, classId);
+    revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
 }
 
 export async function addStudentAction(
   classId: number,
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const actor = await requireRole("Teacher", "Admin");
   const identifier = String(formData.get("identifier") || "").trim();
@@ -93,7 +93,8 @@ export async function addStudentAction(
   }
 
   try {
-    await classRepository.addStudent(classId, actor.userId, identifier);
+    const studentId = await classRepository.addStudent(classId, actor.userId, identifier);
+    await notifyStudentAdded(classId, studentId);
     revalidatePath(`/teacher/classes/${classId}`);
     return { ok: true, message: "Thêm học sinh vào lớp thành công!" };
   } catch (error) {
@@ -104,19 +105,17 @@ export async function addStudentAction(
   }
 }
 
-export async function removeStudentAction(
-  classId: number,
-  studentId: number
-): Promise<void> {
+export async function removeStudentAction(classId: number, studentId: number): Promise<void> {
   const actor = await requireRole("Teacher", "Admin");
   await classRepository.removeStudent(classId, actor.userId, studentId);
+  await notifyStudentRemoved(classId, studentId);
   revalidatePath(`/teacher/classes/${classId}`);
 }
 
 export async function updateClassAction(
   classId: number,
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const actor = await requireRole("Teacher", "Admin");
   const rawData = {
@@ -144,12 +143,45 @@ export async function updateClassAction(
   }
 }
 
+export async function cancelClassAction(
+  classId: number,
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher", "Admin");
+  try {
+    await classRepository.cancelClass(classId, actor.userId);
+    revalidatePath("/teacher/classes");
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath("/user/classes");
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
+  }
+}
+
+export async function resubmitClassAction(
+  classId: number,
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher", "Admin");
+  try {
+    await classRepository.resubmitClass(classId, actor.userId);
+    revalidatePath("/teacher/classes");
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath("/admin/approvals");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
+  }
+}
+
 export async function assignClassProblemAction(
   classId: number,
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher", "TA", "Admin");
   const problemId = Number(formData.get("problemId"));
   const dueDate = formData.get("dueDate") as string | null;
 
@@ -158,12 +190,7 @@ export async function assignClassProblemAction(
   }
 
   try {
-    await classRepository.assignProblem(
-      classId,
-      actor.userId,
-      problemId,
-      dueDate || null
-    );
+    await classRepository.assignProblem(classId, actor.userId, problemId, dueDate || null);
     revalidatePath(`/teacher/classes/${classId}`);
     revalidatePath(`/user/classes/${classId}`);
     return { ok: true, message: "Giao bài tập cho lớp thành công!" };
@@ -177,9 +204,9 @@ export async function assignClassProblemAction(
 
 export async function removeClassProblemAction(
   classId: number,
-  problemId: number
+  problemId: number,
 ): Promise<{ ok?: boolean; error?: string }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher", "TA", "Admin");
 
   try {
     await classRepository.removeProblem(classId, actor.userId, problemId);
@@ -196,7 +223,7 @@ export async function removeClassProblemAction(
 
 export async function requestTAUpgradeAction(
   classId: number,
-  studentId: number
+  studentId: number,
 ): Promise<{ ok?: boolean; error?: string }> {
   const actor = await requireRole("Teacher", "Admin");
 
@@ -215,7 +242,7 @@ export async function requestTAUpgradeAction(
 export async function approveTARequestAction(
   requestId: number,
   isApproved: boolean,
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<{ ok?: boolean; error?: string }> {
   const actor = await requireRole("Admin");
 
@@ -234,7 +261,7 @@ export async function approveTARequestAction(
 export async function approveClassRequestAction(
   classId: number,
   isApproved: boolean,
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<{ ok?: boolean; error?: string }> {
   const actor = await requireRole("Admin");
 

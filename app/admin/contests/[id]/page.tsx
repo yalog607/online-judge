@@ -54,7 +54,7 @@ export default async function AdminContestDetailPage({
   const [contest, problems, leaderboard] = await Promise.all([
     contestRepository.getContest(contestId, actor.userId),
     contestRepository.listProblems(contestId, actor.userId).catch(() => []),
-    contestRepository.getLeaderboard(contestId).catch(() => []),
+    contestRepository.getLeaderboard(contestId, actor.userId).catch(() => []),
   ]);
 
   if (!contest) notFound();

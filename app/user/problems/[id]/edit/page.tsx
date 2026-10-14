@@ -1,8 +1,8 @@
-
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
-import { getProblem, listOwnerTestcases } from "@/modules/problem/repo";
+import { canTAEditProblem, getProblem, listOwnerTestcases } from "@/modules/problem/repo";
 import { updateProblemAction } from "@/modules/problem/actions";
 import { ProblemForm } from "../../../../teacher/problems/problem-form";
 
@@ -12,7 +12,12 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
   const problemId = Number(id);
   const problem = await getProblem(problemId);
   if (!problem) notFound();
-  if (problem.CreatorID !== actor.userId) notFound();
+  const canManage =
+    actor.role === "Admin" ||
+    problem.CreatorID === actor.userId ||
+    (actor.role === "Teacher" && problem.TeacherID === actor.userId);
+  if (!canManage) notFound();
+  if (actor.role === "TA" && !(await canTAEditProblem(problemId, actor.userId))) notFound();
 
   let classes: { ClassID: number; ClassName: string }[] = [];
   if (actor.role === "TA") {
@@ -24,10 +29,16 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
 
   const testcases = await listOwnerTestcases(problemId, actor.userId);
   const isTA = actor.role === "TA";
-  const isDisabled = isTA && problem.Status !== "Pending" && problem.Status !== "Rejected";
+  const isApproved = isTA && problem.Status !== "Pending" && problem.Status !== "Rejected";
 
   return (
     <div className="max-w-3xl pt-8">
+      <Link
+        href="/user/problems"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-fg mb-4"
+      >
+        ← Quay lại tất cả bài tập
+      </Link>
       <h1 className="mb-6 text-2xl font-semibold">Sửa bài tập {isTA ? "(Bản nháp)" : ""}</h1>
       
       {isTA && problem.Status === "Pending" && (
@@ -44,10 +55,12 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
         </div>
       )}
 
-      {isDisabled && (
-        <div className="mb-4 rounded-lg bg-warn-soft p-4 text-sm text-warn">
-          <p className="font-semibold mb-1">Không thể sửa bài tập này</p>
-          <p>Bài tập đã được duyệt hoặc không còn ở trạng thái chờ. Bạn chỉ có thể xem nội dung.</p>
+      {isApproved && (
+        <div className="mb-4 rounded-lg border border-line bg-muted p-4 text-sm text-fg">
+          <p className="font-semibold mb-1">Bài tập đã được duyệt ({problem.Status})</p>
+          <p className="text-fg-muted">
+            Bạn có thể đổi thẻ và độ khó mà không cần duyệt lại. Thay đổi tiêu đề, đề bài, định dạng vào/ra, giới hạn, kiểu chấm hoặc testcase sẽ chuyển bài về trạng thái &quot;Chờ duyệt&quot; để giảng viên kiểm tra.
+          </p>
         </div>
       )}
 
@@ -57,7 +70,7 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
         testcases={testcases}
         classes={classes}
         isTA={isTA}
-        disabled={isDisabled}
+        disabled={false}
       />
     </div>
   );

@@ -21,6 +21,9 @@ export async function GET(
     }
 
     const session = await verifySession();
+    if (!(await problemRepo.checkProblemAccess(problemId, session?.userId ?? 0))) {
+      return NextResponse.json({ error: "Bạn không có quyền xem bài tập này." }, { status: 404 });
+    }
     if (session && (session.role === "Teacher" || session.role === "Admin")) {
       try {
         const fullTestcases = await problemRepo.listOwnerTestcases(problemId, session.userId);

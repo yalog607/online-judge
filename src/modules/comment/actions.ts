@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
+import { notifyCommentLike, notifyCommentReply } from "@/modules/notification/events";
 import { addCommentSchema } from "./schema";
 
 export async function addCommentAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -18,6 +19,9 @@ export async function addCommentAction(_prev: FormState, formData: FormData): Pr
 
   try {
     await repo.addComment({ userId: user.userId, ...parsed.data });
+    if (parsed.data.parentId) {
+      await notifyCommentReply(parsed.data.parentId, user.userId, user.fullName);
+    }
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Không đăng được bình luận." };
   }
@@ -28,6 +32,7 @@ export async function addCommentAction(_prev: FormState, formData: FormData): Pr
 export async function toggleLikeAction(problemId: number, commentId: number) {
   const user = await requireUser();
   await repo.toggleLike(commentId, user.userId);
+  await notifyCommentLike(commentId, user.userId, user.fullName);
   revalidatePath(`/user/problems/${problemId}`);
 }
 

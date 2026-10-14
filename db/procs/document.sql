@@ -16,8 +16,9 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @UserID
-            WHERE c.ClassID = @ClassID 
-              AND (c.TeacherID = @UserID OR u.Role = 'Admin')
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0
+              AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+                   OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
             THROW 50030, 'Nguoi dung khong co quyen tai tai lieu len lop hoc.', 1;
@@ -74,8 +75,9 @@ BEGIN
             FROM dbo.Documents d
             JOIN dbo.Classes c ON d.ClassID = c.ClassID
             JOIN dbo.Users u ON u.UserID = @UserID
-            WHERE d.DocumentID = @DocumentID 
-              AND (c.TeacherID = @UserID OR u.Role = 'Admin')
+        WHERE d.DocumentID = @DocumentID AND c.IsCancelled = 0
+              AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+                   OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
             THROW 50032, 'Nguoi dung khong co quyen xoa tai lieu nay.', 1;
@@ -129,3 +131,36 @@ BEGIN
     END CATCH
 END;
 GO
+
+CREATE OR ALTER PROCEDURE app.usp_Document_Get
+    @DocumentID INT,
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ClassID INT;
+    SELECT @ClassID = ClassID FROM dbo.Documents WHERE DocumentID = @DocumentID;
+
+    IF @ClassID IS NULL
+    BEGIN
+        THROW 50031, 'Tai lieu khong ton tai.', 1;
+    END;
+
+    IF app.ufn_CanAccessClassDocuments(@ClassID, @UserID) = 0
+    BEGIN
+        THROW 50033, 'Nguoi dung khong co quyen xem tai lieu cua lop hoc.', 1;
+    END;
+
+    SELECT 
+        DocumentID,
+        ClassID,
+        FileName,
+        CloudinaryURL,
+        Category,
+        UploadDate
+    FROM dbo.Documents
+    WHERE DocumentID = @DocumentID;
+END;
+GO
+

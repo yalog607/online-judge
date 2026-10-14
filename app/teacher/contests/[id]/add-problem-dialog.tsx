@@ -1,8 +1,10 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useState, useTransition, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { addContestProblemAction } from "@/modules/contest/actions";
+import { Modal } from "@/components/modal";
 
 interface AvailableProblem {
   problemId: number;
@@ -53,9 +55,8 @@ export function AddProblemDialog({
         <span>+ Thêm bài tập</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="text-lg font-semibold text-fg">Thêm bài tập vào kỳ thi</h3>
               <button
@@ -78,7 +79,7 @@ export function AddProblemDialog({
                 <label className="mb-1 block text-xs font-medium text-fg-muted">
                   Chọn bài tập <span className="text-danger">*</span>
                 </label>
-                <select
+                <Select
                   name="problemId"
                   required
                   className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary"
@@ -89,7 +90,7 @@ export function AddProblemDialog({
                       #{p.problemId} - {p.title} ({p.difficulty})
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -140,8 +141,7 @@ export function AddProblemDialog({
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }
