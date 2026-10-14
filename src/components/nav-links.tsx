@@ -13,6 +13,12 @@ const ROOTS = ["/user", "/teacher", "/admin"];
 // Mục gốc của từng vai trò (vd /user) chỉ sáng khi đúng trang đó, các mục khác sáng cả trang con.
 function isActive(pathname: string, href: string) {
   if (ROOTS.includes(href)) return pathname === href;
+  if (pathname.startsWith("/user/problems") && (href === "/teacher/problems" || href === "/admin/problems")) {
+    return true;
+  }
+  if (pathname.startsWith("/user/contests") && (href === "/teacher/contests" || href === "/admin/contests")) {
+    return true;
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

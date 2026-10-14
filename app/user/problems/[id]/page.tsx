@@ -40,9 +40,9 @@ export default async function ProblemDetailPage({
   const problem = await getProblem(problemId);
   if (!problem) notFound();
   const canEdit =
-    user.role === "Admin" ||
-    (user.role === "Teacher" && (problem.CreatorID === user.userId || problem.TeacherID === user.userId)) ||
-    (user.role === "TA" && problem.CreatorID === user.userId);
+    user.role !== "Admin" &&
+    ((user.role === "Teacher" && (problem.CreatorID === user.userId || problem.TeacherID === user.userId)) ||
+      (user.role === "TA" && problem.CreatorID === user.userId));
 
   let canAccessContest = false;
   let contestStatus: "Upcoming" | "Ongoing" | "Ended" | null = null;
@@ -164,17 +164,33 @@ export default async function ProblemDetailPage({
     </div>
   );
 
-  const isTeacherOrAdmin = user.role === "Teacher" || user.role === "Admin";
   const backHref = contestId
-    ? (isTeacherOrAdmin ? `/teacher/contests/${contestId}` : `/user/contests/${contestId}`)
-    : (sParams?.from === "preview"
-        ? `/teacher/problems/${problemId}`
-        : (isTeacherOrAdmin ? "/teacher/problems" : "/user/problems"));
+    ? (user.role === "Admin"
+        ? `/admin/contests/${contestId}`
+        : user.role === "Teacher"
+          ? `/teacher/contests/${contestId}`
+          : `/user/contests/${contestId}`)
+    : sParams?.from === "preview"
+      ? (user.role === "Admin"
+          ? `/admin/problems/${problemId}`
+          : user.role === "Teacher"
+            ? `/teacher/problems/${problemId}`
+            : `/user/problems/${problemId}`)
+      : (user.role === "Admin"
+          ? "/admin/problems"
+          : user.role === "Teacher"
+            ? "/teacher/problems"
+            : "/user/problems");
+
   const backText = contestId
     ? "Quay lại kỳ thi"
-    : (sParams?.from === "preview"
-        ? "Quay lại chi tiết bài tập"
-        : (isTeacherOrAdmin ? "Quay lại ngân hàng bài tập" : "Quay lại danh sách"));
+    : sParams?.from === "preview"
+      ? "Quay lại chi tiết bài tập"
+      : user.role === "Admin"
+        ? "Quay lại danh sách bài tập"
+        : user.role === "Teacher"
+          ? "Quay lại ngân hàng bài tập"
+          : "Quay lại danh sách";
 
   return (
     <div className="flex flex-col gap-4 pt-6">

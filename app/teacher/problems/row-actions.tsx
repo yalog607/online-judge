@@ -48,7 +48,7 @@ export function RowActions({
     });
   };
 
-  if (status === "Pending" && (actorRole === "Teacher" || actorRole === "Admin")) {
+  if (status === "Pending" && actorRole === "Teacher") {
     return (
       <div className="grid grid-cols-[112px_112px_86px] items-center justify-end gap-2">
         {(["Private", "Public"] as const).map((nextStatus) => {
