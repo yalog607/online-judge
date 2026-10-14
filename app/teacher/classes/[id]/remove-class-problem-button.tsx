@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useDialog } from "@/components/dialog-provider";
 import { useRouter } from "next/navigation";
 import { removeClassProblemAction } from "@/modules/class/actions";
 
@@ -15,9 +16,16 @@ export function RemoveClassProblemButton({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const dialog = useDialog();
 
-  const handleRemove = () => {
-    if (!confirm(`Bạn có chắc muốn gỡ bài tập "${problemTitle}" khỏi lớp học này?`)) return;
+  const handleRemove = async () => {
+    const ok = await dialog.confirm({
+      title: "Gỡ bài tập",
+      message: `Bạn có chắc muốn gỡ bài tập "${problemTitle}" khỏi lớp học này?`,
+      confirmText: "Gỡ bài",
+      danger: true,
+    });
+    if (!ok) return;
 
     startTransition(async () => {
       await removeClassProblemAction(classId, problemId);

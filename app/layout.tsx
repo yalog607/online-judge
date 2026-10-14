@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { DialogProvider } from "@/components/dialog-provider";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "vietnamese"] });
 const jetbrainsMono = JetBrains_Mono({
@@ -36,7 +37,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <DialogProvider>{children}</DialogProvider>
+      </body>
     </html>
   );
 }

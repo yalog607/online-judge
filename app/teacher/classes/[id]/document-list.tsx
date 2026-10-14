@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useDialog } from "@/components/dialog-provider";
 import { deleteDocumentAction } from "@/modules/document/actions";
 import type { DocumentItem } from "@/modules/document/repo";
 
@@ -19,9 +20,16 @@ export function TeacherDocumentList({
   documents: DocumentItem[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const dialog = useDialog();
 
-  const handleDelete = (documentId: number, fileName: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài liệu "${fileName}"?`)) return;
+  const handleDelete = async (documentId: number, fileName: string) => {
+    const ok = await dialog.confirm({
+      title: "Xóa tài liệu",
+      message: `Bạn có chắc chắn muốn xóa tài liệu "${fileName}"?`,
+      confirmText: "Xóa",
+      danger: true,
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteDocumentAction(documentId, classId);
     });

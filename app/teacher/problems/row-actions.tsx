@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cloneProblemAction, deleteProblemAction, setProblemStatusAction } from "@/modules/problem/actions";
 import { Modal } from "@/components/modal";
+import { useDialog } from "@/components/dialog-provider";
 import type { ProblemStatus } from "@/modules/problem/repo";
 
 export function RowActions({ 
@@ -28,6 +29,7 @@ export function RowActions({
   const [cloneOpen, setCloneOpen] = useState(false);
   const [cloneTitle, setCloneTitle] = useState("");
   const router = useRouter();
+  const dialog = useDialog();
 
   const isHidden = status === "Hidden";
   const canEdit = canManage;
@@ -40,8 +42,14 @@ export function RowActions({
       router.refresh();
     });
 
-  const remove = () => {
-    if (!confirm("Xóa bài tập này? Hành động không thể hoàn tác.")) return;
+  const remove = async () => {
+    const ok = await dialog.confirm({
+      title: "Xóa bài tập",
+      message: "Xóa bài tập này? Hành động không thể hoàn tác.",
+      confirmText: "Xóa",
+      danger: true,
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteProblemAction(problemId);
       router.refresh();

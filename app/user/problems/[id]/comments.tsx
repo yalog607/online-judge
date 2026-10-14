@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
+import { useDialog } from "@/components/dialog-provider";
 import {
   addCommentAction,
   deleteCommentAction,
@@ -92,6 +93,7 @@ function CommentItem({
 }) {
   const [replying, setReplying] = useState(false);
   const [pending, start] = useTransition();
+  const dialog = useDialog();
   const canDelete = c.userId === currentUserId || canModerate;
 
   return (
@@ -137,9 +139,14 @@ function CommentItem({
             <button
               type="button"
               disabled={pending}
-              onClick={() => {
-                if (confirm("Xóa bình luận này?"))
-                  start(() => deleteCommentAction(problemId, c.id));
+              onClick={async () => {
+                const ok = await dialog.confirm({
+                  title: "Xóa bình luận",
+                  message: "Xóa bình luận này?",
+                  confirmText: "Xóa",
+                  danger: true,
+                });
+                if (ok) start(() => deleteCommentAction(problemId, c.id));
               }}
               className="ml-auto hover:text-bad"
             >

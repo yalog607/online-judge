@@ -2,6 +2,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useDialog } from "@/components/dialog-provider";
 import { useRouter } from "next/navigation";
 import { setProblemStatusAction } from "@/modules/problem/actions";
 
@@ -12,6 +13,7 @@ export function ApproveProblemButton({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const dialog = useDialog();
 
   const handleApprove = () => {
     startTransition(async () => {
@@ -45,8 +47,14 @@ export function ApproveProblemButton({
       </button>
       <button
         type="button"
-        onClick={() => {
-          const reason = window.prompt("Nhập lý do từ chối (bắt buộc):");
+        onClick={async () => {
+          const reason = await dialog.prompt({
+            title: "Từ chối bài tập",
+            message: "Ghi rõ nội dung cần chỉnh sửa để người gửi có thể nộp lại.",
+            label: "Lý do từ chối (bắt buộc)",
+            confirmText: "Từ chối",
+            danger: true,
+          });
           if (!reason?.trim()) return;
           startTransition(async () => {
             await setProblemStatusAction(problemId, "Rejected", reason.trim());
