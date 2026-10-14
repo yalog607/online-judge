@@ -3,7 +3,7 @@ ON dbo.Submissions
 INSTEAD OF DELETE
 AS
 BEGIN
-    RAISERROR('Khong duoc phep xoa bai nop cua sinh vien!', 16, 1);
+    RAISERROR(N'Không được phép xóa bài nộp của sinh viên!', 16, 1);
     ROLLBACK TRANSACTION;
 END;
 GO

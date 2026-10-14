@@ -12,10 +12,10 @@ BEGIN
         SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
 
     IF @Status IS NULL
-        THROW 50020, 'Bai tap khong ton tai.', 1;
+        THROW 50020, N'Bài tập không tồn tại.', 1;
 
     IF @Status = 'Hidden'
-        THROW 50026, 'Bai tap da bi khoa.', 1;
+        THROW 50026, N'Bài tập đã bị khóa.', 1;
 
     IF @ContestID IS NOT NULL
     BEGIN
@@ -23,28 +23,28 @@ BEGIN
             SELECT 1 FROM dbo.Contest_Problem 
             WHERE ContestID = @ContestID AND ProblemID = @ProblemID
         )
-            THROW 50022, 'Bai tap khong thuoc ky thi nay.', 1;
+            THROW 50022, N'Bài tập không thuộc kỳ thi này.', 1;
 
         DECLARE @ContestStatus VARCHAR(20);
         SELECT @ContestStatus = app.ufn_GetContestStatus(StartTime, EndTime)
         FROM dbo.Contests WHERE ContestID = @ContestID;
 
         IF @ContestStatus = 'Upcoming'
-            THROW 50023, 'Ky thi chua bat dau.', 1;
+            THROW 50023, N'Kỳ thi chưa bắt đầu.', 1;
         IF @ContestStatus = 'Ended'
-            THROW 50024, 'Ky thi da ket thuc.', 1;
+            THROW 50024, N'Kỳ thi đã kết thúc.', 1;
 
         IF @Status NOT IN ('Public', 'Private')
-            THROW 50025, 'Bai tap khong o trang thai hop le cho ky thi.', 1;
+            THROW 50025, N'Bài tập không ở trạng thái hợp lệ cho kỳ thi.', 1;
 
         IF app.ufn_CanUserAccessContestProblem(@ContestID, @ProblemID, @UserID) = 0
-            THROW 50025, 'Ban khong co quyen tham gia ky thi nay.', 1;
+            THROW 50025, N'Bạn không có quyền tham gia kỳ thi này.', 1;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher'))
-            THROW 50027, 'Tai khoan nay khong the nop bai trong ky thi.', 1;
+            THROW 50027, N'Tài khoản này không thể nộp bài trong kỳ thi.', 1;
 
         IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
-            THROW 50027, 'Ban dang co quyen quan ly ky thi nay nen khong the nop bai nhu thi sinh.', 1;
+            THROW 50027, N'Bạn đang có quyền quản lý kỳ thi này nên không thể nộp bài như thí sinh.', 1;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         BEGIN
@@ -61,10 +61,10 @@ BEGIN
             JOIN dbo.Class_Student cs ON cs.ClassID = c.ClassID AND cs.UserID = @UserID
             WHERE c.IsCancelled = 1 AND cp.ProblemID = @ProblemID
         )
-            THROW 50041, 'Lop hoc da duoc huy; khong the nop bai moi cho bai tap cua lop.', 1;
+            THROW 50041, N'Lớp học đã được hủy; không thể nộp bài mới cho bài tập của lớp.', 1;
 
         IF app.ufn_CanUserAccessProblem(@ProblemID, @UserID) = 0
-            THROW 50021, 'Ban khong co quyen nop bai cho bai tap nay.', 1;
+            THROW 50021, N'Bạn không có quyền nộp bài cho bài tập này.', 1;
     END;
 
         BEGIN TRANSACTION;
@@ -108,10 +108,10 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @OwnerID INT = (SELECT UserID FROM dbo.Submissions WHERE SubmissionID = @SubmissionID);
     IF @OwnerID IS NULL
-        THROW 50022, 'Bai nop khong ton tai.', 1;
+        THROW 50022, N'Bài nộp không tồn tại.', 1;
     IF @OwnerID <> @RequesterID
        AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @RequesterID AND Role IN ('Teacher', 'Admin'))
-        THROW 50023, 'Ban khong co quyen xem bai nop nay.', 1;
+        THROW 50023, N'Bạn không có quyền xem bài nộp này.', 1;
 
     SELECT s.SubmissionID, s.UserID, s.ProblemID, p.Title AS ProblemTitle, s.SourceCode,
            s.Language, s.SubmitTime, s.Result, s.Runtime, s.Memory, s.PassedCases
@@ -136,11 +136,11 @@ BEGIN
     
     -- Check permissions
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin', 'TA'))
-        THROW 50050, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+        THROW 50050, N'Bạn không có quyền thực hiện thao tác này.', 1;
 
     -- Check if submission exists
     IF NOT EXISTS (SELECT 1 FROM dbo.Submissions WHERE SubmissionID = @SubmissionID)
-        THROW 50051, 'Bai nop khong ton tai.', 1;
+        THROW 50051, N'Bài nộp không tồn tại.', 1;
 
     BEGIN TRANSACTION;
 

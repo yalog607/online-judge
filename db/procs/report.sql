@@ -13,10 +13,10 @@ BEGIN
         UNION ALL
         SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @ActorID
     )
-        THROW 50030, 'Ban khong co quyen xem thong ke cua lop nay.', 1;
+        THROW 50030, N'Bạn không có quyền xem thống kê của lớp này.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID)
-        THROW 50025, 'Lop hoc khong ton tai.', 1;
+        THROW 50025, N'Lớp học không tồn tại.', 1;
 
     -- 1. Tổng quan lớp học & tỉ lệ đạt/trượt chung
     SELECT
@@ -107,10 +107,10 @@ BEGIN
         UNION ALL
         SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID AND CreatorID = @ActorID
     )
-        THROW 50030, 'Ban khong co quyen xem thong ke cua ky thi nay.', 1;
+        THROW 50030, N'Bạn không có quyền xem thống kê của kỳ thi này.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID)
-        THROW 50027, 'Ky thi khong ton tai.', 1;
+        THROW 50027, N'Kỳ thi không tồn tại.', 1;
 
     -- 1. Tổng quan kỳ thi & tỉ lệ đạt/trượt chung
     SELECT

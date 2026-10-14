@@ -25,7 +25,7 @@ BEGIN
     SELECT @CreatorRole = Role FROM dbo.Users WHERE UserID = @CreatorID;
 
     IF @CreatorRole = 'TA' AND @ClassID IS NULL
-        THROW 50012, 'Tro giang can chon lop dang duoc phan cong khi tao bai tap.', 1;
+        THROW 50012, N'Trợ giảng cần chọn lớp đang được phân công khi tạo bài tập.', 1;
     
     IF @CreatorRole = 'TA'
     BEGIN
@@ -50,7 +50,7 @@ BEGIN
                 LEFT JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @CreatorID
                 WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (c.TeacherID = @CreatorID OR ta.UserID_TA IS NOT NULL OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
             )
-                THROW 50012, 'Lop hoc khong ton tai hoac ban khong co quyen gan bai tap vao lop hoc nay.', 1;
+                THROW 50012, N'Lớp học không tồn tại hoặc bạn không có quyền gán bài tập vào lớp học này.', 1;
 
             INSERT dbo.Class_Problem (ClassID, ProblemID, AssignedDate, DueDate, IsClosed)
             VALUES (@ClassID, @NewProblemID, SYSUTCDATETIME(), @DueDate, 0);
@@ -106,7 +106,7 @@ BEGIN
             ))
         )
     )
-        THROW 50010, 'Ban khong co quyen sua bai tap nay.', 1;
+        THROW 50010, N'Bạn không có quyền sửa bài tập này.', 1;
 
     DECLARE @CurrentStatus VARCHAR(20);
     DECLARE @CurrentTitle NVARCHAR(200);
@@ -193,7 +193,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     IF @Status NOT IN ('Public', 'Private', 'Hidden', 'Pending', 'Rejected')
-        THROW 50013, 'Trang thai bai tap khong hop le.', 1;
+        THROW 50013, N'Trạng thái bài tập không hợp lệ.', 1;
 
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
@@ -208,7 +208,7 @@ BEGIN
             ))
         )
     )
-        THROW 50010, 'Ban khong co quyen thay doi bai tap nay.', 1;
+        THROW 50010, N'Bạn không có quyền thay đổi bài tập này.', 1;
 
     UPDATE dbo.Problems 
     SET Status = @Status, 
@@ -237,10 +237,10 @@ BEGIN
             ))
         )
     )
-        THROW 50010, 'Ban khong co quyen xoa bai tap nay.', 1;
+        THROW 50010, N'Bạn không có quyền xóa bài tập này.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Submissions WHERE ProblemID = @ProblemID)
-        THROW 50011, 'Bai tap da co bai nop, hay khoa thay vi xoa.', 1;
+        THROW 50011, N'Bài tập đã có bài nộp, hãy khóa thay vì xóa.', 1;
 
     DELETE FROM dbo.Testcases WHERE ProblemID = @ProblemID;
     DELETE FROM dbo.Problems WHERE ProblemID = @ProblemID;
@@ -428,7 +428,7 @@ BEGIN
             ))
         )
     )
-        THROW 50010, 'Ban khong co quyen xem testcase cua bai tap nay.', 1;
+        THROW 50010, N'Bạn không có quyền xem testcase của bài tập này.', 1;
 
     SELECT TestCaseID, InputData, ExpectedOutput, IsHidden, OrderIndex
     FROM dbo.Testcases WHERE ProblemID = @ProblemID
@@ -467,7 +467,7 @@ BEGIN
             ))
         )
     )
-        THROW 50010, 'Ban khong co quyen sua testcase cua bai tap nay.', 1;
+        THROW 50010, N'Bạn không có quyền sửa testcase của bài tập này.', 1;
 
     SELECT @CurrentStatus = p.Status, @ActorRole = u.Role 
     FROM dbo.Problems p

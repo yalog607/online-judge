@@ -11,7 +11,7 @@ BEGIN
 
     SET @Title = LTRIM(RTRIM(ISNULL(@Title, N'')));
     IF LEN(@Title) = 0
-        THROW 50180, 'Tieu de thong bao khong duoc de trong.', 1;
+        THROW 50180, N'Tiêu đề thông báo không được để trống.', 1;
 
     IF @Link IS NOT NULL AND (
            @Link NOT LIKE N'/%'
@@ -20,7 +20,7 @@ BEGIN
         OR @Link LIKE N'%\%'
         OR @Link LIKE N'%[<>"]%'
     )
-        THROW 50180, 'Duong dan thong bao khong hop le.', 1;
+        THROW 50180, N'Đường dẫn thông báo không hợp lệ.', 1;
 
     -- Recipients are existing users only; an identical unread notification is not repeated.
     INSERT dbo.Notifications (UserID, Type, Title, Body, Link)
@@ -79,7 +79,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Notifications WHERE NotificationID = @NotificationID AND UserID = @UserID)
-        THROW 50181, 'Thong bao khong ton tai.', 1;
+        THROW 50181, N'Thông báo không tồn tại.', 1;
 
     UPDATE dbo.Notifications
     SET IsRead = 1, ReadAt = SYSUTCDATETIME()
@@ -190,13 +190,13 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF @TitleTemplate IS NULL OR CHARINDEX(N'{n}', @TitleTemplate) = 0
-        THROW 50180, 'Mau tieu de thong bao phai chua {n}.', 1;
+        THROW 50180, N'Mẫu tiêu đề thông báo phải chứa {n}.', 1;
     IF LEN(REPLACE(@TitleTemplate, N'{n}', N'2147483647')) > 200
-        THROW 50180, 'Tieu de thong bao qua dai.', 1;
+        THROW 50180, N'Tiêu đề thông báo quá dài.', 1;
 
     IF @Link IS NULL OR @Link NOT LIKE N'/%' OR @Link LIKE N'//%' OR @Link LIKE N'%://%'
        OR @Link LIKE N'%\%' OR @Link LIKE N'%[<>"]%'
-        THROW 50180, 'Duong dan thong bao khong hop le.', 1;
+        THROW 50180, N'Đường dẫn thông báo không hợp lệ.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID) RETURN;
 

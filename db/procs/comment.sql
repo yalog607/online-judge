@@ -44,7 +44,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF LEN(RTRIM(LTRIM(ISNULL(@Content, N'')))) = 0
-        THROW 50070, 'Noi dung binh luan khong duoc de trong.', 1;
+        THROW 50070, N'Nội dung bình luận không được để trống.', 1;
 
     IF NOT EXISTS (
         SELECT 1 FROM dbo.Problems p
@@ -71,13 +71,13 @@ BEGIN
             )
           )
     )
-        THROW 50071, 'Bai tap khong ton tai hoac ban khong co quyen binh luan.', 1;
+        THROW 50071, N'Bài tập không tồn tại hoặc bạn không có quyền bình luận.', 1;
 
     IF @ParentID IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM dbo.ProblemComments
         WHERE CommentID = @ParentID AND ProblemID = @ProblemID AND ParentID IS NULL
     )
-        THROW 50072, 'Binh luan goc khong hop le.', 1;
+        THROW 50072, N'Bình luận gốc không hợp lệ.', 1;
 
     INSERT dbo.ProblemComments (ProblemID, UserID, ParentID, Content)
     VALUES (@ProblemID, @UserID, @ParentID, LTRIM(RTRIM(@Content)));
@@ -95,7 +95,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.ProblemComments WHERE CommentID = @CommentID)
-        THROW 50073, 'Binh luan khong ton tai.', 1;
+        THROW 50073, N'Bình luận không tồn tại.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.ProblemCommentLikes WHERE CommentID = @CommentID AND UserID = @UserID)
         DELETE dbo.ProblemCommentLikes WHERE CommentID = @CommentID AND UserID = @UserID;
@@ -118,9 +118,9 @@ BEGIN
     SELECT @Role = Role FROM dbo.Users WHERE UserID = @UserID;
 
     IF @Owner IS NULL
-        THROW 50073, 'Binh luan khong ton tai.', 1;
+        THROW 50073, N'Bình luận không tồn tại.', 1;
     IF @Owner <> @UserID AND ISNULL(@Role, 'User') NOT IN ('Teacher', 'Admin', 'TA')
-        THROW 50074, 'Khong co quyen xoa binh luan nay.', 1;
+        THROW 50074, N'Không có quyền xóa bình luận này.', 1;
 
     BEGIN TRANSACTION;
     DELETE dbo.ProblemComments WHERE ParentID = @CommentID;
