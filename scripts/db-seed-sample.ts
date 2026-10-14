@@ -460,7 +460,7 @@ async function main() {
           `IF NOT EXISTS (SELECT 1 FROM dbo.Class_Problem WHERE ClassID = @id AND ProblemID = @p)
              INSERT dbo.Class_Problem (ClassID, ProblemID, AssignedDate, DueDate)
              VALUES (@id, @p, DATEADD(DAY, -14, SYSUTCDATETIME()),
-                     CASE WHEN @due IS NULL THEN NULL ELSE DATEADD(MINUTE, @due, SYSUTCDATETIME()) END)`,
+                     CASE WHEN @due IS NULL THEN NULL ELSE DATEADD(MINUTE, CAST(@due AS INT), SYSUTCDATETIME()) END)`,
           { id, p: problemId[cp.key], due: cp.due },
         );
       }
@@ -530,7 +530,7 @@ async function main() {
         id = await scalar(
           `INSERT dbo.Contests (CreatorID, ContestName, Description, StartTime, EndTime, [Password], ClassID)
            VALUES (@teacher, @name, @description,
-                   DATEADD(MINUTE, @start, SYSUTCDATETIME()), DATEADD(MINUTE, @end, SYSUTCDATETIME()),
+                   DATEADD(MINUTE, CAST(@start AS INT), SYSUTCDATETIME()), DATEADD(MINUTE, CAST(@end AS INT), SYSUTCDATETIME()),
                    @password, @classId);
            SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
@@ -598,7 +598,7 @@ async function main() {
 
         const id = (await scalar(
           `INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language, SubmitTime, Result)
-           VALUES (@u, @p, @c, @code, @lang, DATEADD(MINUTE, @at, SYSUTCDATETIME()), 'Pending');
+           VALUES (@u, @p, @c, @code, @lang, DATEADD(MINUTE, CAST(@at AS INT), SYSUTCDATETIME()), 'Pending');
            SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
             u: student(s.student),
