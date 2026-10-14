@@ -23,7 +23,7 @@ export function RowActions({
   const router = useRouter();
 
   const isHidden = status === "Hidden";
-  const canEdit = actorRole === "Admin" || creatorId === actorId;
+  const canEdit = creatorId === actorId;
 
   const toggleLock = () =>
     startTransition(async () => {
@@ -39,7 +39,7 @@ export function RowActions({
     });
   };
 
-  if (status === "Pending" && (actorRole === "Teacher" || actorRole === "Admin")) {
+  if (status === "Pending" && actorRole === "Teacher") {
     return (
       <div className="flex gap-3 text-sm">
         <button disabled={pending} onClick={() => startTransition(async () => {

@@ -18,7 +18,7 @@ export async function createContestAction(
   _prev: ContestFormState,
   formData: FormData
 ): Promise<ContestFormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   const rawData = {
     contestName: formData.get("contestName"),
     description: formData.get("description") || undefined,
@@ -53,7 +53,7 @@ export async function updateContestAction(
   _prev: ContestFormState,
   formData: FormData
 ): Promise<ContestFormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   const rawData = {
     contestName: formData.get("contestName"),
     description: formData.get("description") || undefined,
@@ -86,7 +86,7 @@ export async function addContestProblemAction(
   _prev: ContestFormState,
   formData: FormData
 ): Promise<ContestFormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   const rawData = {
     problemId: formData.get("problemId"),
     maxScore: formData.get("maxScore") || 100,
@@ -114,7 +114,7 @@ export async function removeContestProblemAction(
   contestId: number,
   problemId: number
 ): Promise<{ error?: string; ok?: boolean }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
 
   try {
     await contestRepository.removeProblem(contestId, problemId, actor.userId);
@@ -160,7 +160,7 @@ export async function startContestNowAction(
   contestId: number,
   durationMinutes: number = 60
 ): Promise<{ error?: string; ok?: boolean; message?: string }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
 
   try {
     await contestRepository.startContestNow(contestId, actor.userId, durationMinutes);
@@ -180,7 +180,7 @@ export async function startContestNowAction(
 export async function deleteContestAction(
   contestId: number
 ): Promise<{ error?: string; ok?: boolean; message?: string }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
 
   try {
     await contestRepository.deleteContest(contestId, actor.userId);

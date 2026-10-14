@@ -10,10 +10,10 @@ const NAV: NavItem[] = [
 ];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireRole("Teacher", "Admin");
+  const user = await requireRole("Teacher");
   return (
     <AppShell
-      roleLabel={user.role === "Admin" ? "Quản trị" : "Giảng viên"}
+      roleLabel="Giảng viên"
       fullName={user.fullName}
       avatar={user.avatar}
       nav={NAV}

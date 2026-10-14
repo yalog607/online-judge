@@ -7,21 +7,18 @@ import { updateProblemAction } from "@/modules/problem/actions";
 import { ProblemForm } from "../../../../teacher/problems/problem-form";
 
 export default async function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
-  const actor = await requireRole("TA", "Teacher", "Admin");
+  const actor = await requireRole("TA", "Teacher");
   const { id } = await params;
   const problemId = Number(id);
   const problem = await getProblem(problemId);
   if (!problem) notFound();
-  if (actor.role !== "Admin" && problem.CreatorID !== actor.userId) notFound();
+  if (problem.CreatorID !== actor.userId) notFound();
 
   let classes: { ClassID: number; ClassName: string }[] = [];
   if (actor.role === "TA") {
     classes = await classRepository.getClassesForTA(actor.userId);
   } else if (actor.role === "Teacher") {
     const res = await classRepository.listClasses({ userId: actor.userId, onlyMine: true, page: 1, pageSize: 100 });
-    classes = res.classes.map(c => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
-  } else if (actor.role === "Admin") {
-    const res = await classRepository.listClasses({ page: 1, pageSize: 100 });
     classes = res.classes.map(c => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
   }
 

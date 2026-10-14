@@ -64,7 +64,7 @@ export async function createProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -103,7 +103,7 @@ export async function updateProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -136,7 +136,7 @@ export async function updateProblemAction(
 }
 
 export async function setProblemStatusAction(problemId: number, status: repo.ProblemStatus, rejectionReason?: string) {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
   await repo.setProblemStatus(problemId, actor.userId, status, rejectionReason);
   revalidatePath("/teacher/problems");
   revalidatePath(`/teacher/problems/${problemId}/edit`);
@@ -146,7 +146,7 @@ export async function setProblemStatusAction(problemId: number, status: repo.Pro
 }
 
 export async function deleteProblemAction(problemId: number) {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
   await repo.deleteProblem(problemId, actor.userId);
   revalidatePath("/teacher/problems");
   revalidatePath("/user/problems");

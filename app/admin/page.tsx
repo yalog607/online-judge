@@ -51,6 +51,50 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
+          href="/admin/problems"
+          className="card group flex flex-col justify-between p-5 transition hover:border-primary/50 hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-soft text-primary transition group-hover:bg-primary group-hover:text-primary-fg">
+              <Icon name="code" size={20} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-fg">Bài tập</h2>
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">Chỉ xem</span>
+              </div>
+              <p className="text-xs text-fg-muted">Tra cứu danh sách & xem chi tiết đề bài</p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-xs font-medium text-primary">
+            <span>Xem danh sách</span>
+            <span className="transition group-hover:translate-x-0.5">→</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/contests"
+          className="card group flex flex-col justify-between p-5 transition hover:border-primary/50 hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-warn-soft text-warn transition group-hover:bg-warn group-hover:text-white">
+              <Icon name="trophy" size={20} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-fg">Kỳ thi</h2>
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">Chỉ xem</span>
+              </div>
+              <p className="text-xs text-fg-muted">Theo dõi kỳ thi, đề thi & bảng xếp hạng</p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-xs font-medium text-primary">
+            <span>Xem kỳ thi</span>
+            <span className="transition group-hover:translate-x-0.5">→</span>
+          </div>
+        </Link>
+
+        <Link
           href="/admin/reports"
           className="card group flex flex-col justify-between p-5 transition hover:border-primary/50 hover:shadow-md"
         >
