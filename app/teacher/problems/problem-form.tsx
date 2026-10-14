@@ -136,6 +136,42 @@ export function ProblemForm({
             </Select>
           </label>
         )}
+
+        {isTA && classes.length > 0 && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
+            <span>Lớp học phụ trách <span className="text-bad">*</span></span>
+            <Select
+              name="classId"
+              defaultValue={String(defaultClassId ?? problem?.ClassID ?? classes[0]?.ClassID ?? "")}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+              required
+            >
+              {classes.map((c) => (
+                <option key={c.ClassID} value={c.ClassID}>
+                  {c.ClassName}
+                </option>
+              ))}
+            </Select>
+          </label>
+        )}
+
+        {!isTA && classes.length > 0 && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
+            <span>Gắn vào lớp học (tùy chọn)</span>
+            <Select
+              name="classId"
+              defaultValue={String(problem?.ClassID ?? "")}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+            >
+              <option value="">Không gắn vào lớp</option>
+              {classes.map((c) => (
+                <option key={c.ClassID} value={c.ClassID}>
+                  {c.ClassName}
+                </option>
+              ))}
+            </Select>
+          </label>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 card p-4">

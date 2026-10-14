@@ -36,7 +36,10 @@ export default async function TeacherProblemPreviewPage({
   const problem = await getProblem(problemId);
   if (!problem) notFound();
   if (!(await checkProblemAccess(problemId, user.userId))) notFound();
-  const canEdit = user.role === "Admin" || problem.CreatorID === user.userId;
+  const canEdit =
+    user.role === "Admin" ||
+    problem.CreatorID === user.userId ||
+    (user.role === "Teacher" && problem.TeacherID === user.userId);
 
   const page = Math.max(1, Number(sParams?.page) || 1);
   const selectedResult = sParams?.result || undefined;

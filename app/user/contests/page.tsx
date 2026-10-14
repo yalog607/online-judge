@@ -51,6 +51,7 @@ export default async function UserContestsPage({
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const statusParam = (sp.status as "Upcoming" | "Ongoing" | "Ended" | "All") || "All";
+  const isMineView = sp.view === "mine";
   const joinedView = sp.view === "joined";
 
   const { items: contests, total } = await contestRepository.listContests({
@@ -59,6 +60,7 @@ export default async function UserContestsPage({
     page,
     pageSize: PAGE_SIZE,
     userId: user.userId,
+    onlyMine: isMineView,
     onlyJoined: joinedView,
   });
 
@@ -91,6 +93,11 @@ export default async function UserContestsPage({
   joinedParams.set("status", "All");
   joinedParams.set("page", "1");
 
+  const mineParams = currentParams();
+  mineParams.set("view", "mine");
+  mineParams.set("status", "All");
+  mineParams.set("page", "1");
+
   return (
     <div className="flex flex-col gap-6 pt-8">
       <div>
@@ -103,7 +110,7 @@ export default async function UserContestsPage({
       <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
-            const isActive = !joinedView && statusParam === tab.value;
+            const isActive = !joinedView && !isMineView && statusParam === tab.value;
             const params = currentParams();
             params.delete("view");
             params.set("status", tab.value);
@@ -122,6 +129,19 @@ export default async function UserContestsPage({
               </Link>
             );
           })}
+          {(user.role === "TA" || user.role === "Admin") && (
+            <Link
+              href={`/user/contests?${mineParams.toString()}`}
+              aria-current={isMineView ? "page" : undefined}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                isMineView
+                  ? "bg-primary text-primary-fg"
+                  : "text-fg-muted hover:bg-muted hover:text-fg"
+              }`}
+            >
+              Kỳ thi của tôi
+            </Link>
+          )}
           <Link
             href={`/user/contests?${joinedParams.toString()}`}
             aria-current={joinedView ? "page" : undefined}
@@ -137,7 +157,7 @@ export default async function UserContestsPage({
 
         <form className="flex items-center gap-2" method="get">
           <input type="hidden" name="status" value={statusParam} />
-          {joinedView && <input type="hidden" name="view" value="joined" />}
+          {sp.view && <input type="hidden" name="view" value={sp.view} />}
           <input
             name="q"
             defaultValue={sp.q}

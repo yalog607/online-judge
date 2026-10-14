@@ -246,7 +246,7 @@ export default async function ManageProblemsPage({
                       status={p.Status} 
                       proposedStatus={p.ProposedStatus}
                       actorRole={actor.role}
-                      canManage={actor.role === "Admin" || p.CreatorID === actor.userId}
+                      canManage={p.CanManage}
                     />
                   </div>
                 </td>

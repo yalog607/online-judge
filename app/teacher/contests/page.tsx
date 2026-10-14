@@ -83,6 +83,16 @@ export default async function TeacherContestsPage({
   const startRecord = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endRecord = Math.min(page * PAGE_SIZE, total);
 
+  const buildTabHref = (view?: string) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(sp)) {
+      if (value && key !== "page" && key !== "view") params.set(key, value);
+    }
+    if (view) params.set("view", view);
+    const qs = params.toString();
+    return `/teacher/contests${qs ? `?${qs}` : ""}`;
+  };
+
   return (
     <div className="flex flex-col gap-6 pt-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -94,6 +104,39 @@ export default async function TeacherContestsPage({
         </div>
         <CreateContestDialog classes={classOptions} />
       </div>
+
+      <nav aria-label="Lọc danh sách kỳ thi" className="flex gap-5 border-b border-line pb-2">
+        <Link
+          href={buildTabHref()}
+          className={`whitespace-nowrap pb-2 -mb-[9px] font-medium transition-colors ${
+            !sp.view
+              ? "border-b-2 border-primary text-primary"
+              : "text-fg-muted hover:text-fg"
+          }`}
+        >
+          Tất cả
+        </Link>
+        <Link
+          href={buildTabHref("mine")}
+          className={`whitespace-nowrap pb-2 -mb-[9px] font-medium transition-colors ${
+            sp.view === "mine"
+              ? "border-b-2 border-primary text-primary"
+              : "text-fg-muted hover:text-fg"
+          }`}
+        >
+          Kỳ thi của tôi
+        </Link>
+        <Link
+          href={buildTabHref("joined")}
+          className={`whitespace-nowrap pb-2 -mb-[9px] font-medium transition-colors ${
+            sp.view === "joined"
+              ? "border-b-2 border-primary text-primary"
+              : "text-fg-muted hover:text-fg"
+          }`}
+        >
+          Kỳ thi đã tham gia
+        </Link>
+      </nav>
 
       <form className="card p-3 sm:p-4 flex flex-col md:flex-row items-center gap-3" method="get">
         {sp.view && <input type="hidden" name="view" value={sp.view} />}
@@ -173,7 +216,8 @@ export default async function TeacherContestsPage({
               <th className="px-4 py-3 w-14">STT</th>
               <th className="px-4 py-3 w-24">MÃ</th>
               <th className="px-4 py-3">TÊN KỲ THI</th>
-              <th className="px-4 py-3 w-48">MÔN</th>
+              <th className="px-4 py-3 w-40">NGƯỜI TẠO</th>
+              <th className="px-4 py-3 w-40">MÔN</th>
               <th className="px-4 py-3 w-36">NGÀY THI</th>
               <th className="px-4 py-3 w-32">TRẠNG THÁI</th>
               <th className="px-4 py-3 w-24 text-right">HÀNH ĐỘNG</th>
@@ -182,7 +226,7 @@ export default async function TeacherContestsPage({
           <tbody className="divide-y divide-line">
             {contests.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-fg-muted">
+                <td colSpan={8} className="px-4 py-12 text-center text-fg-muted">
                   Không tìm thấy kỳ thi nào phù hợp.
                 </td>
               </tr>
@@ -214,14 +258,20 @@ export default async function TeacherContestsPage({
                           </span>
                         )}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-muted">
-                        {c.creatorId !== actor.userId && (
-                          <span>Bởi {c.creatorName}</span>
-                        )}
-                        {c.description && (
-                          <span className="line-clamp-1">{c.description}</span>
+                      {c.description && (
+                        <div className="mt-0.5 text-xs text-fg-muted line-clamp-1">{c.description}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-fg">
+                      <div className="font-medium flex items-center gap-1.5">
+                        <span>{c.creatorName}</span>
+                        {c.creatorId === actor.userId && (
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
+                            Tôi
+                          </span>
                         )}
                       </div>
+                      <div className="text-[11px] text-fg-muted">@{c.creatorUsername}</div>
                     </td>
                     <td className="px-4 py-3 text-xs font-medium text-fg">
                       {c.className ? (
