@@ -11,14 +11,21 @@ const PAGE_SIZE = 20;
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  return d.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
 }
 
 function formatTime(iso: string) {
   const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return d.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
 }
 
 function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {

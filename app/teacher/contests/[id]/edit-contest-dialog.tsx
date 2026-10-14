@@ -35,6 +35,10 @@ export function EditContestDialog({
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
+    const startVal = formData.get("startTime") as string;
+    const endVal = formData.get("endTime") as string;
+    if (startVal) formData.set("startTime", new Date(startVal).toISOString());
+    if (endVal) formData.set("endTime", new Date(endVal).toISOString());
 
     startTransition(async () => {
       const result = await updateContestAction(contest.contestId, {}, formData);
