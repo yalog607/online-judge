@@ -18,8 +18,9 @@ import {
 import * as service from "./service";
 import { AuthError } from "./service";
 import { createDbSession, getUserById, revokeDbSession, validateImpersonate } from "./repo";
+import { firstIssue } from "@/lib/form-errors";
 
-export type FormState = { error?: string; ok?: boolean; submissionId?: number };
+export type FormState = { error?: string; field?: string; ok?: boolean; submissionId?: number };
 
 async function startSession(userId: number, actorId?: number) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
@@ -32,7 +33,7 @@ export async function requestRegisterOtpAction(
   formData: FormData,
 ): Promise<FormState> {
   const parsed = requestRegisterOtpSchema.safeParse({ email: formData.get("email") });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
   try {
     await service.requestRegisterOtp(parsed.data.email);
     return { ok: true };
@@ -43,7 +44,7 @@ export async function requestRegisterOtpAction(
 
 export async function registerAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = registerSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
   try {
     await service.register(parsed.data);
   } catch (e) {
@@ -54,7 +55,7 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
   let user;
   try {
     user = await service.login(parsed.data.email, parsed.data.password);
@@ -77,7 +78,7 @@ export async function requestResetOtpAction(
   formData: FormData,
 ): Promise<FormState> {
   const parsed = requestResetOtpSchema.safeParse({ email: formData.get("email") });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
   try {
     await service.requestResetOtp(parsed.data.email);
     return { ok: true };
@@ -91,7 +92,7 @@ export async function resetPasswordAction(
   formData: FormData,
 ): Promise<FormState> {
   const parsed = resetPasswordSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
   try {
     await service.resetPassword(parsed.data);
   } catch (e) {
@@ -106,7 +107,7 @@ export async function updateProfileAction(
 ): Promise<FormState> {
   const user = await requireUser();
   const parsed = updateProfileSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
 
   let avatarUrl: string | undefined;
   const avatar = formData.get("avatar");
@@ -128,7 +129,7 @@ export async function changePasswordAction(
 ): Promise<FormState> {
   const user = await requireUser();
   const parsed = changePasswordSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
   try {
     await service.changePassword(user.userId, parsed.data.oldPassword, parsed.data.newPassword);
     revalidatePath("/profile");
@@ -170,7 +171,7 @@ export async function setUserStatusAction(
 ): Promise<FormState> {
   const admin = await requireRole("Admin");
   const parsed = setUserStatusSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
 
   if (admin.userId === parsed.data.userId && parsed.data.status === "Locked") {
     return { error: "Không thể tự khóa tài khoản của chính mình." };
@@ -191,7 +192,7 @@ export async function setUserRoleAction(
 ): Promise<FormState> {
   const admin = await requireRole("Admin");
   const parsed = setUserRoleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
 
   if (admin.userId === parsed.data.userId) {
     return { error: "Không thể tự thay đổi vai trò của chính mình." };

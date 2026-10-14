@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { addStudentAction, type FormState } from "@/modules/class/actions";
-import { FormError, SubmitButton } from "@/components/form";
+import { Form, FormError, SubmitButton } from "@/components/form";
 
 const initial: FormState = {};
 
@@ -11,7 +11,13 @@ export function AddStudentForm({ classId }: { classId: number }) {
   const [state, action] = useActionState(addActionWithId, initial);
 
   return (
-    <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <Form
+      action={action}
+      state={state}
+      resetOnSuccess
+      errorField="identifier"
+      className="flex flex-col gap-3 sm:flex-row sm:items-center"
+    >
       <input
         type="text"
         name="identifier"
@@ -29,6 +35,6 @@ export function AddStudentForm({ classId }: { classId: number }) {
           {state.message}
         </span>
       )}
-    </form>
+    </Form>
   );
 }

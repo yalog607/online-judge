@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Select } from "@/components/select";
 import { useActionState, useState } from "react";
-import { Field, FormError, SubmitButton } from "@/components/form";
+import { Field, Form, FormError, SubmitButton } from "@/components/form";
 import { MathContent } from "@/components/math-content";
 import type { FormState } from "@/modules/auth/actions";
 import type { ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
@@ -74,7 +74,7 @@ export function ProblemForm({
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <Form action={formAction} state={state} className="flex flex-col gap-6">
       <fieldset disabled={disabled} className="flex flex-col gap-6 group">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field id="title" label="Tên bài tập" defaultValue={problem?.Title} required />
@@ -137,7 +137,8 @@ export function ProblemForm({
           </label>
         )}
 
-        {isTA && classes.length > 0 && (
+        {/* Khi tạo mới, lớp học được chọn ở thẻ "Giao cho lớp học ngay" bên dưới. */}
+        {isTA && classes.length > 0 && problem && (
           <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
             <span>Lớp học phụ trách <span className="text-bad">*</span></span>
             <Select
@@ -155,7 +156,7 @@ export function ProblemForm({
           </label>
         )}
 
-        {!isTA && classes.length > 0 && (
+        {!isTA && classes.length > 0 && problem && (
           <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
             <span>Gắn vào lớp học (tùy chọn)</span>
             <Select
@@ -489,6 +490,6 @@ export function ProblemForm({
         </Link>
       </div>
       </fieldset>
-    </form>
+    </Form>
   );
 }

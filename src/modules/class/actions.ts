@@ -7,8 +7,9 @@ import { DomainError } from "@/db/exec";
 import { classRepository } from "./repo";
 import { notifyStudentAdded, notifyStudentRemoved } from "@/modules/notification/events";
 import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
+import { firstIssue } from "@/lib/form-errors";
 
-export type FormState = { error?: string; ok?: boolean; message?: string };
+export type FormState = { error?: string; field?: string; ok?: boolean; message?: string };
 
 export async function createClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const actor = await requireRole("Teacher", "Admin");
@@ -21,7 +22,7 @@ export async function createClassAction(_prev: FormState, formData: FormData): P
 
   const parsed = createClassSchema.safeParse(rawData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return firstIssue(parsed.error);
   }
 
   try {
@@ -44,7 +45,7 @@ export async function joinClassAction(_prev: FormState, formData: FormData): Pro
 
   const parsed = joinClassSchema.safeParse(rawData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return firstIssue(parsed.error);
   }
 
   try {
@@ -126,7 +127,7 @@ export async function updateClassAction(
 
   const parsed = updateClassSchema.safeParse(rawData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return firstIssue(parsed.error);
   }
 
   try {

@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { requestResetOtpAction, resetPasswordAction, type FormState } from "@/modules/auth/actions";
-import { Field, FormError, SubmitButton } from "@/components/form";
+import { Field, Form, FormError, SubmitButton } from "@/components/form";
 import { digitsOnly, OtpButton, useOtpRequest } from "@/components/otp-request";
 
 const initial: FormState = {};
@@ -13,7 +13,7 @@ export function ForgotPasswordForm() {
   const [values, setValues] = useState({ email: "", otp: "", password: "" });
 
   return (
-    <form action={action} className="mt-6 flex flex-col gap-4">
+    <Form action={action} state={resetState} className="mt-6 flex flex-col gap-4">
       <Field
         id="email"
         label="Email"
@@ -59,6 +59,6 @@ export function ForgotPasswordForm() {
       />
       <FormError message={otp.state.error ?? resetState.error} />
       <SubmitButton className="w-full justify-center">Đổi mật khẩu</SubmitButton>
-    </form>
+    </Form>
   );
 }

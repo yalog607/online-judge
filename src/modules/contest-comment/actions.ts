@@ -6,6 +6,7 @@ import { DomainError } from "@/db/exec";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
 import { addContestCommentSchema } from "./schema";
+import { firstIssue } from "@/lib/form-errors";
 
 export async function addContestCommentAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
@@ -14,7 +15,7 @@ export async function addContestCommentAction(_prev: FormState, formData: FormDa
     parentId: formData.get("parentId") || undefined,
     content: formData.get("content"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
 
   try {
     await repo.addComment({ userId: user.userId, ...parsed.data });
