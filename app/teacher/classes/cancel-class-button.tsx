@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cancelClassAction } from "@/modules/class/actions";
+import { useDialog } from "@/components/dialog-provider";
 
 export function CancelClassButton({
   classId,
@@ -14,9 +15,17 @@ export function CancelClassButton({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const dialog = useDialog();
 
-  const cancel = () => {
-    if (!window.confirm(`Hủy lớp “${className}”? Học sinh sẽ chỉ xem được lịch sử và không thể nộp bài mới.`)) return;
+  const cancel = async () => {
+    const ok = await dialog.confirm({
+      title: "Hủy lớp học",
+      message: `Hủy lớp “${className}”? Học sinh sẽ chỉ xem được lịch sử và không thể nộp bài mới.`,
+      confirmText: "Hủy lớp",
+      cancelText: "Giữ lại",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     startTransition(async () => {
       const result = await cancelClassAction(classId);

@@ -16,17 +16,17 @@ BEGIN
         FROM dbo.Users 
         WHERE UserID = @CreatorID AND Role IN ('Teacher', 'Admin')
     )
-        THROW 50030, 'Chi giao vien hoac quan tri vien moi co the tao ky thi.', 1;
+        THROW 50030, N'Chỉ giảng viên hoặc quản trị viên mới có thể tạo kỳ thi.', 1;
 
     IF @EndTime <= @StartTime
-        THROW 50031, 'Thoi gian ket thuc phai sau thoi gian bat dau.', 1;
+        THROW 50031, N'Thời gian kết thúc phải sau thời gian bắt đầu.', 1;
 
     IF @ClassID IS NOT NULL AND NOT EXISTS (
         SELECT 1 
         FROM dbo.Classes 
         WHERE ClassID = @ClassID AND (TeacherID = @CreatorID OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
     )
-        THROW 50032, 'Lop hoc khong ton tai hoac ban khong co quyen gan ky thi vao lop hoc nay.', 1;
+        THROW 50032, N'Lớp học không tồn tại hoặc bạn không có quyền gán kỳ thi vào lớp học này.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -68,10 +68,10 @@ BEGIN
         WHERE c.ContestID = @ContestID 
           AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
     )
-        THROW 50033, 'Ban khong co quyen cap nhat ky thi nay.', 1;
+        THROW 50033, N'Bạn không có quyền cập nhật kỳ thi này.', 1;
 
     IF @EndTime <= @StartTime
-        THROW 50034, 'Thoi gian ket thuc phai sau thoi gian bat dau.', 1;
+        THROW 50034, N'Thời gian kết thúc phải sau thời gian bắt đầu.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -196,7 +196,7 @@ BEGIN
             WHERE c.ContestID = @ContestID
               AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
         )
-            THROW 50035, 'Ban khong co quyen them bai tap vao ky thi nay.', 1;
+            THROW 50035, N'Bạn không có quyền thêm bài tập vào kỳ thi này.', 1;
 
         DECLARE @ProblemStatus VARCHAR(20), @ProblemCreatorID INT, @RequesterRole VARCHAR(20);
         SELECT @ProblemStatus = Status, @ProblemCreatorID = CreatorID
@@ -206,10 +206,10 @@ BEGIN
         SELECT @RequesterRole = Role FROM dbo.Users WHERE UserID = @RequesterID;
 
         IF @ProblemStatus IS NULL
-            THROW 50036, 'Bai tap khong ton tai.', 1;
+            THROW 50036, N'Bài tập không tồn tại.', 1;
 
         IF @ProblemStatus NOT IN ('Public', 'Private')
-            THROW 50037, 'Chi co the them bai Cong khai hoac bai Rieng tu duoc phep quan ly.', 1;
+            THROW 50037, N'Chỉ có thể thêm bài Công khai hoặc bài Riêng tư được phép quản lý.', 1;
 
         IF @ProblemStatus = 'Private'
            AND @RequesterRole <> 'Admin'
@@ -225,7 +225,7 @@ BEGIN
                    )
                )
            )
-            THROW 50037, 'Ban khong co quyen su dung bai Rieng tu nay trong ky thi.', 1;
+            THROW 50037, N'Bạn không có quyền sử dụng bài Riêng tư này trong kỳ thi.', 1;
 
         IF EXISTS (SELECT 1 FROM dbo.Contest_Problem WHERE ContestID = @ContestID AND ProblemID = @ProblemID)
         BEGIN
@@ -277,13 +277,13 @@ BEGIN
         WHERE c.ContestID = @ContestID
           AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
     )
-        THROW 50035, 'Ban khong co quyen cap nhat diem bai tap trong ky thi nay.', 1;
+        THROW 50035, N'Bạn không có quyền cập nhật điểm bài tập trong kỳ thi này.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Contest_Problem WHERE ContestID = @ContestID AND ProblemID = @ProblemID)
-        THROW 50036, 'Bai tap khong thuoc ky thi nay.', 1;
+        THROW 50036, N'Bài tập không thuộc kỳ thi này.', 1;
 
     IF @MaxScore <= 0
-        THROW 50037, 'Diem toi da phai lon hon 0.', 1;
+        THROW 50037, N'Điểm tối đa phải lớn hơn 0.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -328,7 +328,7 @@ BEGIN
         WHERE c.ContestID = @ContestID 
           AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
     )
-        THROW 50037, 'Ban khong co quyen xoa bai tap khoi ky thi nay.', 1;
+        THROW 50037, N'Bạn không có quyền xóa bài tập khỏi kỳ thi này.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -387,7 +387,7 @@ BEGIN
     WHERE ContestID = @ContestID;
 
     IF @Status IS NULL
-        THROW 50038, 'Ky thi khong ton tai.', 1;
+        THROW 50038, N'Kỳ thi không tồn tại.', 1;
 
     IF @CreatorID <> @RequesterID AND @IsAdmin = 0
        AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @RequesterID)
@@ -399,10 +399,10 @@ BEGIN
                  AND (c.ClassID IS NULL OR app.ufn_CanUserAccessContest(@ContestID, @RequesterID) = 1)
            )
        )
-        THROW 50039, 'Ban can tham gia ky thi truoc khi xem danh sach de.', 1;
+        THROW 50039, N'Bạn cần tham gia kỳ thi trước khi xem danh sách đề.', 1;
 
     IF @Status = 'Upcoming' AND @CreatorID <> @RequesterID AND @IsAdmin = 0
-        THROW 50039, 'Ky thi chua bat dau.', 1;
+        THROW 50039, N'Kỳ thi chưa bắt đầu.', 1;
 
     SELECT
         cp.ProblemID,
@@ -453,16 +453,16 @@ BEGIN
     WHERE ContestID = @ContestID;
 
     IF @CreatorID IS NULL
-        THROW 50040, 'Ky thi khong ton tai.', 1;
+        THROW 50040, N'Kỳ thi không tồn tại.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher'))
-        THROW 50043, 'Tai khoan nay khong the tham gia ky thi.', 1;
+        THROW 50043, N'Tài khoản này không thể tham gia kỳ thi.', 1;
 
     IF @CreatorID = @UserID
-        THROW 50043, 'Nguoi tao ky thi quan ly ky thi va khong the tham gia nhu thi sinh.', 1;
+        THROW 50043, N'Người tạo kỳ thi quản lý kỳ thi và không thể tham gia như thí sinh.', 1;
 
     IF @Status = 'Ended'
-        THROW 50043, 'Ky thi da ket thuc.', 1;
+        THROW 50043, N'Kỳ thi đã kết thúc.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)
         RETURN;
@@ -473,7 +473,7 @@ BEGIN
            AND NOT EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID AND TeacherID = @UserID)
            AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
         BEGIN
-            THROW 50042, 'Ban khong thuoc lop hoc cua ky thi nay.', 1;
+            THROW 50042, N'Bạn không thuộc lớp học của kỳ thi này.', 1;
         END;
     END
     ELSE IF @ExpectedPassword IS NOT NULL AND LEN(@ExpectedPassword) > 0
@@ -482,7 +482,7 @@ BEGIN
            AND @CreatorID <> @UserID
            AND ISNULL(@Password, '') <> @ExpectedPassword
         BEGIN
-            THROW 50041, 'Mat khau ky thi khong dung.', 1;
+            THROW 50041, N'Mật khẩu kỳ thi không đúng.', 1;
         END;
     END;
 
@@ -522,7 +522,7 @@ BEGIN
               OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @RequesterID)
           )
     )
-        THROW 50045, 'Ban khong co quyen xem bang xep hang ky thi nay.', 1;
+        THROW 50045, N'Bạn không có quyền xem bảng xếp hạng kỳ thi này.', 1;
 
     SELECT 
         [Rank],
@@ -554,7 +554,7 @@ BEGIN
         WHERE c.ContestID = @ContestID 
           AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
     )
-        THROW 50033, 'Ban khong co quyen bat dau ky thi nay.', 1;
+        THROW 50033, N'Bạn không có quyền bắt đầu kỳ thi này.', 1;
 
     IF @DurationMinutes <= 0
         SET @DurationMinutes = 60;
@@ -599,7 +599,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID)
-        THROW 50038, 'Ky thi khong ton tai.', 1;
+        THROW 50038, N'Kỳ thi không tồn tại.', 1;
 
     IF NOT EXISTS (
         SELECT 1 
@@ -608,7 +608,7 @@ BEGIN
         WHERE c.ContestID = @ContestID 
           AND (c.CreatorID = @RequesterID OR u.Role = 'Admin')
     )
-        THROW 50033, 'Ban khong co quyen xoa ky thi nay.', 1;
+        THROW 50033, N'Bạn không có quyền xóa kỳ thi này.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;

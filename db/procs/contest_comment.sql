@@ -17,7 +17,7 @@ BEGIN
               OR EXISTS (SELECT 1 FROM dbo.Class_Student cs WHERE cs.ClassID = c.ClassID AND cs.UserID = @UserID)
               OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID)
           )
-    ) THROW 50071, 'Ban khong co quyen xem binh luan ky thi nay.', 1;
+    ) THROW 50071, N'Bạn không có quyền xem bình luận kỳ thi này.', 1;
 
     SELECT
         c.CommentID,
@@ -59,7 +59,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF LEN(RTRIM(LTRIM(ISNULL(@Content, N'')))) = 0
-        THROW 50070, 'Noi dung binh luan khong duoc de trong.', 1;
+        THROW 50070, N'Nội dung bình luận không được để trống.', 1;
 
     -- Người tạo, Admin, người đã tham gia và TA được phân công mới được bình luận.
     IF NOT EXISTS (
@@ -76,13 +76,13 @@ BEGIN
             )
           )
     )
-        THROW 50071, 'Ban chua tham gia ky thi hoac khong co quyen binh luan.', 1;
+        THROW 50071, N'Bạn chưa tham gia kỳ thi hoặc không có quyền bình luận.', 1;
 
     IF @ParentID IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM dbo.ContestComments
         WHERE CommentID = @ParentID AND ContestID = @ContestID AND ParentID IS NULL
     )
-        THROW 50072, 'Binh luan goc khong hop le.', 1;
+        THROW 50072, N'Bình luận gốc không hợp lệ.', 1;
 
     INSERT dbo.ContestComments (ContestID, UserID, ParentID, Content)
     VALUES (@ContestID, @UserID, @ParentID, LTRIM(RTRIM(@Content)));
@@ -100,7 +100,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.ContestComments WHERE CommentID = @CommentID)
-        THROW 50073, 'Binh luan khong ton tai.', 1;
+        THROW 50073, N'Bình luận không tồn tại.', 1;
 
     IF NOT EXISTS (
         SELECT 1
@@ -116,7 +116,7 @@ BEGIN
               OR EXISTS (SELECT 1 FROM dbo.Class_Student cs WHERE cs.ClassID = c.ClassID AND cs.UserID = @UserID)
               OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID)
           )
-    ) THROW 50071, 'Ban khong co quyen thao tac binh luan ky thi nay.', 1;
+    ) THROW 50071, N'Bạn không có quyền thao tác bình luận kỳ thi này.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.ContestCommentLikes WHERE CommentID = @CommentID AND UserID = @UserID)
         DELETE dbo.ContestCommentLikes WHERE CommentID = @CommentID AND UserID = @UserID;
@@ -139,9 +139,9 @@ BEGIN
     SELECT @CreatorID = CreatorID FROM dbo.Contests WHERE ContestID = @ContestID;
 
     IF @Owner IS NULL
-        THROW 50073, 'Binh luan khong ton tai.', 1;
+        THROW 50073, N'Bình luận không tồn tại.', 1;
     IF @Owner <> @UserID AND @CreatorID <> @UserID AND ISNULL(@Role, 'User') <> 'Admin'
-        THROW 50074, 'Khong co quyen xoa binh luan nay.', 1;
+        THROW 50074, N'Không có quyền xóa bình luận này.', 1;
 
     BEGIN TRANSACTION;
     DELETE dbo.ContestComments WHERE ParentID = @CommentID;

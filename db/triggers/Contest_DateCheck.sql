@@ -5,7 +5,7 @@ AS
 BEGIN
     IF EXISTS (SELECT 1 FROM inserted WHERE EndTime <= StartTime)
     BEGIN
-        RAISERROR('Thoi gian ket thuc phai sau thoi gian bat dau!', 16, 1);
+        RAISERROR(N'Thời gian kết thúc phải sau thời gian bắt đầu!', 16, 1);
         ROLLBACK TRANSACTION;
     END
 END;

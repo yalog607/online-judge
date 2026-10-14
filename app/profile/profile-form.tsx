@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Image from "next/image";
 import { updateProfileAction, type FormState } from "@/modules/auth/actions";
-import { FormError, SubmitButton } from "@/components/form";
+import { Form, FormError, SubmitButton } from "@/components/form";
 
 const initial: FormState = {};
 
@@ -27,7 +27,7 @@ export function ProfileForm({
   const initialLetter = fullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase() ?? "A";
 
   return (
-    <form action={action} className="mt-4 flex flex-col gap-4">
+    <Form action={action} state={state} className="mt-4 flex flex-col gap-4">
       <div className="flex items-center gap-4 py-2">
         <div className="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-full bg-primary text-xl font-bold text-primary-fg shadow-inner">
           {previewUrl ? (
@@ -137,6 +137,6 @@ export function ProfileForm({
       <SubmitButton className="self-start rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-opacity">
         Lưu thay đổi
       </SubmitButton>
-    </form>
+    </Form>
   );
 }

@@ -8,9 +8,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
     IF @Purpose = 'Register' AND EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
-        THROW 50001, 'Email da duoc dang ky.', 1;
+        THROW 50001, N'Email đã được đăng ký.', 1;
     IF @Purpose = 'Reset' AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
-        THROW 50002, 'Email chua duoc dang ky.', 1;
+        THROW 50002, N'Email chưa được đăng ký.', 1;
 
     UPDATE dbo.OtpCodes SET ConsumedAt = SYSUTCDATETIME()
     WHERE Email = @Email AND Purpose = @Purpose AND ConsumedAt IS NULL;
@@ -62,7 +62,7 @@ BEGIN
     )
     BEGIN
         ROLLBACK TRANSACTION;
-        THROW 50003, 'Ma OTP khong hop le hoac da het han.', 1;
+        THROW 50003, N'Mã OTP không hợp lệ hoặc đã hết hạn.', 1;
     END
 
     UPDATE dbo.OtpCodes SET ConsumedAt = SYSUTCDATETIME() WHERE OtpID = @OtpID;
@@ -92,7 +92,7 @@ BEGIN
     )
     BEGIN
         ROLLBACK TRANSACTION;
-        THROW 50003, 'Ma OTP khong hop le hoac da het han.', 1;
+        THROW 50003, N'Mã OTP không hợp lệ hoặc đã hết hạn.', 1;
     END
 
     UPDATE dbo.OtpCodes SET ConsumedAt = SYSUTCDATETIME() WHERE OtpID = @OtpID;
@@ -168,16 +168,16 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
-        THROW 50030, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+        THROW 50030, N'Bạn không có quyền thực hiện thao tác này.', 1;
 
     IF @Status NOT IN ('Active', 'Locked')
-        THROW 50031, 'Trang thai nguoi dung khong hop le.', 1;
+        THROW 50031, N'Trạng thái người dùng không hợp lệ.', 1;
 
     IF @ActorID = @UserID AND @Status = 'Locked'
-        THROW 50032, 'Khong the tu khoa tai khoan cua chinh minh.', 1;
+        THROW 50032, N'Không thể tự khóa tài khoản của chính mình.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID)
-        THROW 50033, 'Nguoi dung khong ton tai.', 1;
+        THROW 50033, N'Người dùng không tồn tại.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -210,19 +210,19 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
-        THROW 50030, 'Ban khong co quyen thuc hien thao tac nay.', 1;
+        THROW 50030, N'Bạn không có quyền thực hiện thao tác này.', 1;
 
     IF @Role NOT IN ('User', 'TA', 'Teacher')
-        THROW 50035, 'Vai tro khong hop le.', 1;
+        THROW 50035, N'Vai trò không hợp lệ.', 1;
 
     IF @ActorID = @UserID
-        THROW 50034, 'Khong the tu thay doi vai tro cua chinh minh.', 1;
+        THROW 50034, N'Không thể tự thay đổi vai trò của chính mình.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID)
-        THROW 50033, 'Nguoi dung khong ton tai.', 1;
+        THROW 50033, N'Người dùng không tồn tại.', 1;
 
     IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
-        THROW 50036, 'Khong the thay doi vai tro cua quan tri vien.', 1;
+        THROW 50036, N'Không thể thay đổi vai trò của quản trị viên.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -253,7 +253,7 @@ BEGIN
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
-        THROW 50030, 'Ban khong co quyen truy cap.', 1;
+        THROW 50030, N'Bạn không có quyền truy cập.', 1;
 
     IF @Page < 1 SET @Page = 1;
     IF @PageSize < 1 SET @PageSize = 20;
@@ -343,12 +343,12 @@ BEGIN
 
         IF EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
         BEGIN
-            THROW 50001, 'Email da duoc dang ky.', 1;
+            THROW 50001, N'Email đã được đăng ký.', 1;
         END;
 
         IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
         BEGIN
-            THROW 50004, 'Ten dang nhap da duoc su dung.', 1;
+            THROW 50004, N'Tên đăng nhập đã được sử dụng.', 1;
         END;
 
         INSERT dbo.Users (Username, Password, Email, FullName, Role, Status)

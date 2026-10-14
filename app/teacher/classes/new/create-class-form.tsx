@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { createClassAction, type FormState } from "@/modules/class/actions";
-import { Field, FormError, SubmitButton } from "@/components/form";
+import { Field, Form, FormError, SubmitButton } from "@/components/form";
 
 const initial: FormState = {};
 
@@ -11,7 +11,7 @@ export function CreateClassForm() {
   const [state, action] = useActionState(createClassAction, initial);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <Form action={action} state={state} errorField="inviteCode" className="flex flex-col gap-4">
       <Field
         id="className"
         label="Tên lớp học"
@@ -59,6 +59,6 @@ export function CreateClassForm() {
         </Link>
         <SubmitButton>Tạo lớp học</SubmitButton>
       </div>
-    </form>
+    </Form>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
+import { useDialog } from "@/components/dialog-provider";
 import {
   addCommentAction,
   deleteCommentAction,
   toggleLikeAction,
 } from "@/modules/comment/actions";
-import { FormError, SubmitButton } from "@/components/form";
+import { Form, FormError, SubmitButton } from "@/components/form";
 import type { FormState } from "@/modules/auth/actions";
 
 export type CommentView = {
@@ -52,17 +53,13 @@ function CommentForm({
   onDone?: () => void;
 }) {
   const [state, action] = useActionState(addCommentAction, initial);
-  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state.ok) {
-      formRef.current?.reset();
-      onDone?.();
-    }
+    if (state.ok) onDone?.();
   }, [state, onDone]);
 
   return (
-    <form ref={formRef} action={action} className="flex flex-col gap-2">
+    <Form action={action} state={state} resetOnSuccess errorField="content" className="flex flex-col gap-2">
       <input type="hidden" name="problemId" value={problemId} />
       {parentId && <input type="hidden" name="parentId" value={parentId} />}
       <div className="flex gap-2">
@@ -77,7 +74,7 @@ function CommentForm({
         <SubmitButton className="!px-4 !py-2 text-sm">Gửi</SubmitButton>
       </div>
       <FormError message={state.error} />
-    </form>
+    </Form>
   );
 }
 
@@ -96,6 +93,7 @@ function CommentItem({
 }) {
   const [replying, setReplying] = useState(false);
   const [pending, start] = useTransition();
+  const dialog = useDialog();
   const canDelete = c.userId === currentUserId || canModerate;
 
   return (
@@ -141,9 +139,14 @@ function CommentItem({
             <button
               type="button"
               disabled={pending}
-              onClick={() => {
-                if (confirm("Xóa bình luận này?"))
-                  start(() => deleteCommentAction(problemId, c.id));
+              onClick={async () => {
+                const ok = await dialog.confirm({
+                  title: "Xóa bình luận",
+                  message: "Xóa bình luận này?",
+                  confirmText: "Xóa",
+                  danger: true,
+                });
+                if (ok) start(() => deleteCommentAction(problemId, c.id));
               }}
               className="ml-auto hover:text-bad"
             >

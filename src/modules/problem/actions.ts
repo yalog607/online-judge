@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { firstIssue } from "@/lib/form-errors";
 import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
@@ -61,7 +62,7 @@ export async function createProblemAction(
 ): Promise<FormState> {
   const actor = await requireRole("Teacher", "TA", "Admin");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
 
   let testcases;
   try {
@@ -120,7 +121,7 @@ export async function updateProblemAction(
 ): Promise<FormState> {
   const actor = await requireRole("Teacher", "TA", "Admin");
   const parsed = problemFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return firstIssue(parsed.error);
 
   try {
     const testcases = await collectTestcases(formData);

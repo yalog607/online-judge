@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { joinClassAction, type FormState } from "@/modules/class/actions";
-import { FormError, SubmitButton } from "@/components/form";
+import { Form, FormError, SubmitButton } from "@/components/form";
 
 const initial: FormState = {};
 
@@ -10,7 +10,12 @@ export function JoinClassForm() {
   const [state, action] = useActionState(joinClassAction, initial);
 
   return (
-    <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <Form
+      action={action}
+      state={state}
+      errorField="inviteCode"
+      className="flex flex-col gap-3 sm:flex-row sm:items-center"
+    >
       <input
         type="text"
         name="inviteCode"
@@ -24,6 +29,6 @@ export function JoinClassForm() {
       <div className="w-full sm:w-auto">
         <FormError message={state.error} />
       </div>
-    </form>
+    </Form>
   );
 }

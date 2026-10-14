@@ -1,12 +1,14 @@
 "use client";
 
 import { useTransition } from "react";
+import { useDialog } from "@/components/dialog-provider";
 import { useRouter } from "next/navigation";
 import { resubmitClassAction } from "@/modules/class/actions";
 
 export function ResubmitClassButton({ classId }: { classId: number }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const dialog = useDialog();
 
   return (
     <button
@@ -16,7 +18,7 @@ export function ResubmitClassButton({ classId }: { classId: number }) {
         startTransition(async () => {
           const result = await resubmitClassAction(classId);
           if (result.error) {
-            window.alert(result.error);
+            void dialog.alert(result.error);
             return;
           }
           router.refresh();

@@ -18,7 +18,7 @@ BEGIN
             WHERE UserID = @TeacherID AND Role IN ('Teacher', 'Admin')
         )
         BEGIN
-            THROW 50020, 'Nguoi dung khong co quyen tao lop hoc.', 1;
+            THROW 50020, N'Người dùng không có quyền tạo lớp học.', 1;
         END;
 
         IF @InviteCode IS NULL OR LEN(RTRIM(LTRIM(@InviteCode))) = 0
@@ -80,20 +80,20 @@ BEGIN
 
         IF @ClassID IS NULL
         BEGIN
-            THROW 50021, 'Ma tham gia lop hoc khong ton tai.', 1;
+            THROW 50021, N'Mã tham gia lớp học không tồn tại.', 1;
         END;
 
         IF @ApprovalStatus <> 'Approved'
         BEGIN
-            THROW 50022, 'Lop hoc chua duoc phe duyet.', 1;
+            THROW 50022, N'Lớp học chưa được phê duyệt.', 1;
         END;
 
         IF @IsCancelled = 1
-            THROW 50041, 'Lop hoc da duoc huy.', 1;
+            THROW 50041, N'Lớp học đã được hủy.', 1;
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
         BEGIN
-            THROW 50023, 'Ban da tham gia lop hoc nay roi.', 1;
+            THROW 50023, N'Bạn đã tham gia lớp học này rồi.', 1;
         END;
 
         INSERT dbo.Class_Student (ClassID, UserID, JoinDate, ProgressPercent)
@@ -125,7 +125,7 @@ BEGIN
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
         BEGIN
-            THROW 50024, 'Ban chua tham gia lop hoc nay.', 1;
+            THROW 50024, N'Bạn chưa tham gia lớp học này.', 1;
         END;
 
         DELETE FROM dbo.Class_Student
@@ -259,7 +259,7 @@ BEGIN
 
     IF @TeacherID IS NULL
     BEGIN
-        THROW 50025, 'Lop hoc khong ton tai.', 1;
+        THROW 50025, N'Lớp học không tồn tại.', 1;
     END;
 
     IF @TeacherID <> @ActorID 
@@ -267,7 +267,7 @@ BEGIN
        AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @ActorID)
        AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
     BEGIN
-        THROW 50026, 'Ban khong co quyen xem danh sach hoc sinh lop nay.', 1;
+        THROW 50026, N'Bạn không có quyền xem danh sách học sinh lớp này.', 1;
     END;
 
     SELECT 
@@ -344,7 +344,7 @@ BEGIN
           AND c.ApprovalStatus = 'Approved'
           AND c.IsCancelled = 0
     )
-        THROW 50026, 'Ban khong co quyen xem bai tap cong khai cua lop nay.', 1;
+        THROW 50026, N'Bạn không có quyền xem bài tập công khai của lớp này.', 1;
 
     SELECT
         p.ProblemID,
@@ -380,14 +380,14 @@ BEGIN
           AND c.TeacherID = @TeacherID
           AND u.Role IN ('Teacher', 'Admin')
     )
-        THROW 50042, 'Chi giao vien tao lop moi duoc huy lop nay.', 1;
+        THROW 50042, N'Chỉ giảng viên tạo lớp mới được hủy lớp này.', 1;
 
     UPDATE dbo.Classes
     SET IsCancelled = 1
     WHERE ClassID = @ClassID AND IsCancelled = 0;
 
     IF @@ROWCOUNT = 0
-        THROW 50043, 'Lop hoc khong ton tai hoac da duoc huy.', 1;
+        THROW 50043, N'Lớp học không tồn tại hoặc đã được hủy.', 1;
 END;
 GO
 
@@ -410,7 +410,7 @@ BEGIN
       AND u.Role IN ('Teacher', 'Admin');
 
     IF @@ROWCOUNT = 0
-        THROW 50051, 'Chi chu lop co lop bi tu choi moi duoc gui lai don.', 1;
+        THROW 50051, N'Chỉ chủ lớp có lớp bị từ chối mới được gửi lại đơn.', 1;
 END;
 GO
 
@@ -478,7 +478,7 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50027, 'Ban khong co quyen them hoc sinh vao lop nay.', 1;
+            THROW 50027, N'Bạn không có quyền thêm học sinh vào lớp này.', 1;
         END;
 
         DECLARE @StudentID INT;
@@ -488,12 +488,12 @@ BEGIN
 
         IF @StudentID IS NULL
         BEGIN
-            THROW 50028, 'Khong tim thay nguoi dung voi thong tin nay.', 1;
+            THROW 50028, N'Không tìm thấy người dùng với thông tin này.', 1;
         END;
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
         BEGIN
-            THROW 50029, 'Hoc sinh nay da o trong lop hoc roi.', 1;
+            THROW 50029, N'Học sinh này đã ở trong lớp học rồi.', 1;
         END;
 
         INSERT dbo.Class_Student (ClassID, UserID, JoinDate, ProgressPercent)
@@ -535,12 +535,12 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50027, 'Ban khong co quyen xoa hoc sinh khoi lop nay.', 1;
+            THROW 50027, N'Bạn không có quyền xóa học sinh khỏi lớp này.', 1;
         END;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
         BEGIN
-            THROW 50030, 'Hoc sinh khong co trong lop nay.', 1;
+            THROW 50030, N'Học sinh không có trong lớp này.', 1;
         END;
 
         DELETE FROM dbo.Class_Student
@@ -584,7 +584,7 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50035, 'Ban khong co quyen cap nhat thong tin lop hoc nay.', 1;
+            THROW 50035, N'Bạn không có quyền cập nhật thông tin lớp học này.', 1;
         END;
 
         UPDATE dbo.Classes
@@ -636,16 +636,16 @@ BEGIN
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
         )
     )
-        THROW 50027, 'Ban khong co quyen giao bai tap cho lop hoc nay.', 1;
+        THROW 50027, N'Bạn không có quyền giao bài tập cho lớp học này.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID)
-        THROW 50028, 'Bai tap khong ton tai.', 1;
+        THROW 50028, N'Bài tập không tồn tại.', 1;
 
     IF EXISTS (
         SELECT 1 FROM dbo.Problems 
         WHERE ProblemID = @ProblemID AND Status = 'Hidden'
     )
-        THROW 50033, 'Khong the giao bai tap da bi khoa.', 1;
+        THROW 50033, N'Không thể giao bài tập đã bị khóa.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -690,7 +690,7 @@ BEGIN
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
         )
     )
-        THROW 50027, 'Ban khong co quyen go bai tap khoi lop hoc nay.', 1;
+        THROW 50027, N'Bạn không có quyền gỡ bài tập khỏi lớp học này.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -722,10 +722,10 @@ BEGIN
         JOIN dbo.Users u ON u.UserID = @TeacherID
         WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
     )
-        THROW 50027, 'Ban khong co quyen gui yeu cau nang cap cho lop nay.', 1;
+        THROW 50027, N'Bạn không có quyền gửi yêu cầu nâng cấp cho lớp này.', 1;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
-        THROW 50030, 'Nguoi nay khong co trong lop hoc.', 1;
+        THROW 50030, N'Người này không có trong lớp học.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -754,7 +754,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
-        THROW 50031, 'Ban khong co quyen phe duyet.', 1;
+        THROW 50031, N'Bạn không có quyền phê duyệt.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -805,7 +805,7 @@ BEGIN
         JOIN dbo.Users u ON u.UserID = @TeacherID
         WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
     )
-        THROW 50027, 'Ban khong co quyen go bo TA khoi lop nay.', 1;
+        THROW 50027, N'Bạn không có quyền gỡ trợ giảng khỏi lớp này.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -862,7 +862,7 @@ BEGIN
     SET NOCOUNT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
-        THROW 50031, 'Ban khong co quyen truy cap.', 1;
+        THROW 50031, N'Bạn không có quyền truy cập.', 1;
 
     SELECT 
         r.RequestID,
@@ -907,25 +907,25 @@ BEGIN
 
         IF @ApprovalStatus IS NULL
         BEGIN
-            THROW 50021, 'Lop hoc khong ton tai.', 1;
+            THROW 50021, N'Lớp học không tồn tại.', 1;
         END;
 
         IF @ApprovalStatus <> 'Approved'
         BEGIN
-            THROW 50022, 'Lop hoc chua duoc phe duyet.', 1;
+            THROW 50022, N'Lớp học chưa được phê duyệt.', 1;
         END;
 
         IF @IsPublic = 0
         BEGIN
-            THROW 50024, 'Day khong phai la lop hoc cong khai.', 1;
+            THROW 50024, N'Đây không phải là lớp học công khai.', 1;
         END;
 
         IF @IsCancelled = 1
-            THROW 50041, 'Lop hoc da duoc huy.', 1;
+            THROW 50041, N'Lớp học đã được hủy.', 1;
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
         BEGIN
-            THROW 50023, 'Ban da tham gia lop hoc nay roi.', 1;
+            THROW 50023, N'Bạn đã tham gia lớp học này rồi.', 1;
         END;
 
         INSERT dbo.Class_Student (ClassID, UserID, JoinDate, ProgressPercent)
@@ -975,7 +975,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
-        THROW 50020, 'Nguoi dung khong co quyen admin.', 1;
+        THROW 50020, N'Người dùng không có quyền quản trị.', 1;
 
     DECLARE @Status VARCHAR(20) = CASE WHEN @IsApproved = 1 THEN 'Approved' ELSE 'Rejected' END;
 
@@ -985,7 +985,7 @@ BEGIN
     WHERE ClassID = @ClassID AND ApprovalStatus = 'Pending';
 
     IF @@ROWCOUNT = 0
-        THROW 50040, 'Khong tim thay yeu cau hoac da duoc xu ly.', 1;
+        THROW 50040, N'Không tìm thấy yêu cầu hoặc đã được xử lý.', 1;
 END;
 GO
 

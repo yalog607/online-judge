@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { EditorLanguage } from "@/components/code-editor";
 import { submitCodeAction } from "@/modules/problem/actions";
 import { FormError, SubmitButton } from "@/components/form";
+import { useDialog } from "@/components/dialog-provider";
 import type { FormState } from "@/modules/auth/actions";
 
 const initial: FormState = {};
@@ -84,6 +85,7 @@ export function SubmitForm({
 }) {
   const [state, action] = useActionState(submitCodeAction, initial);
   const router = useRouter();
+  const dialog = useDialog();
   const [language, setLanguage] = useState<EditorLanguage>("cpp");
   const [code, setCode] = useState(starters.cpp ?? "");
   const [clientError, setClientError] = useState<string>();
@@ -128,14 +130,17 @@ export function SubmitForm({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               const starter = starters[language] ?? "";
-              if (
-                code.trim() &&
-                code !== starter &&
-                !window.confirm("Đặt lại code mẫu? Code hiện tại sẽ bị thay thế.")
-              )
-                return;
+              if (code.trim() && code !== starter) {
+                const ok = await dialog.confirm({
+                  title: "Đặt lại code mẫu",
+                  message: "Đặt lại code mẫu? Code hiện tại sẽ bị thay thế.",
+                  confirmText: "Đặt lại",
+                  danger: true,
+                });
+                if (!ok) return;
+              }
               setCode(starter);
             }}
             className="rounded-lg bg-muted px-3 py-2 text-sm font-medium text-fg-muted hover:text-fg"

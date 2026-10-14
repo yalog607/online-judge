@@ -183,6 +183,8 @@ npm run typecheck    # Kiểm tra TypeScript
 npm test             # Chạy Vitest
 npm run db:migrate   # Tạo/cập nhật database và stored procedure
 npm run db:seed      # Tạo dữ liệu mẫu
+npm run db:clean:sample # Xóa dữ liệu mẫu (dry-run; thêm -- --yes để xóa thật)
+npm run db:seed:sample # Bài tập/lớp/kỳ thi/bài nộp mẫu (user sample_*, idempotent; chạy bằng sa vào DB trong .env)
 npm run db:test      # Kiểm thử database
 npm run worker:start # Chạy Judge Worker trực tiếp
 ```

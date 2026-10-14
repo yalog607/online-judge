@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
+import { Pager } from "@/components/pager";
+import { paginate, parsePage } from "@/lib/paginate";
 import { JoinClassForm } from "./join-class-form";
+
+const CLASS_PAGE_SIZE = 9;
 
 export default async function UserClassesPage({
   searchParams,
@@ -15,12 +19,25 @@ export default async function UserClassesPage({
     userId: user.userId,
     search: sp.q,
     page: 1,
-    pageSize: 50,
+    pageSize: 500,
   });
 
-  const taClasses = classes.filter((c) => c.IsTA);
-  const myClasses = classes.filter((c) => c.IsJoined && !c.IsTA);
-  const otherClasses = classes.filter((c) => !c.IsJoined && !c.IsTA);
+  const allTa = classes.filter((c) => c.IsTA);
+  const allMine = classes.filter((c) => c.IsJoined && !c.IsTA);
+  const allOther = classes.filter((c) => !c.IsJoined && !c.IsTA);
+  const taPage = paginate(allTa, parsePage(sp.pt), CLASS_PAGE_SIZE);
+  const minePage = paginate(allMine, parsePage(sp.pm), CLASS_PAGE_SIZE);
+  const otherPage = paginate(allOther, parsePage(sp.po), CLASS_PAGE_SIZE);
+  const taClasses = taPage.items;
+  const myClasses = minePage.items;
+  const otherClasses = otherPage.items;
+
+  const hrefFor = (key: string) => (p: number) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (v !== undefined && k !== key) params.set(k, v);
+    params.set(key, String(p));
+    return `?${params.toString()}`;
+  };
 
   const getHref = (classId: number) => {
     return `/user/classes/${classId}`;
@@ -44,7 +61,7 @@ export default async function UserClassesPage({
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Lớp học bạn đã tham gia ({myClasses.length})</h2>
+        <h2 className="text-lg font-semibold">Lớp học bạn đã tham gia ({allMine.length})</h2>
         {myClasses.length === 0 ? (
           <div className="card p-8 text-center text-fg-muted">
             Bạn chưa tham gia lớp học nào. Hãy nhập mã mời phía trên để tham gia lớp.
@@ -83,9 +100,10 @@ export default async function UserClassesPage({
             ))}
           </div>
         )}
+        <Pager page={minePage.page} pageSize={CLASS_PAGE_SIZE} total={minePage.total} buildHref={hrefFor("pm")} />
       </div>
 
-      {taClasses.length > 0 && (
+      {allTa.length > 0 && (
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Lớp học bạn phụ trách (Trợ giảng)</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -117,13 +135,14 @@ export default async function UserClassesPage({
               </div>
             ))}
           </div>
+          <Pager page={taPage.page} pageSize={CLASS_PAGE_SIZE} total={taPage.total} buildHref={hrefFor("pt")} />
         </div>
       )}
 
 
-      {otherClasses.length > 0 && (
+      {allOther.length > 0 && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Các lớp học khác ({otherClasses.length})</h2>
+          <h2 className="text-lg font-semibold">Các lớp học khác ({allOther.length})</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {otherClasses.map((c) => (
               <div
@@ -156,6 +175,7 @@ export default async function UserClassesPage({
               </div>
             ))}
           </div>
+          <Pager page={otherPage.page} pageSize={CLASS_PAGE_SIZE} total={otherPage.total} buildHref={hrefFor("po")} />
         </div>
       )}
     </div>

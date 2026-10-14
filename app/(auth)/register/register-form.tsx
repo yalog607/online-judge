@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { registerAction, requestRegisterOtpAction, type FormState } from "@/modules/auth/actions";
-import { Field, FormError, SubmitButton } from "@/components/form";
+import { Field, Form, FormError, SubmitButton } from "@/components/form";
 import { digitsOnly, OtpButton, useOtpRequest } from "@/components/otp-request";
 
 const initial: FormState = {};
@@ -24,7 +24,7 @@ export function RegisterForm() {
   });
 
   return (
-    <form action={action} className="mt-6 flex flex-col gap-4">
+    <Form action={action} state={regState} className="mt-6 flex flex-col gap-4">
       <Field id="fullName" label="Họ và tên" required autoComplete="name" {...bind("fullName")} />
       <Field
         id="email"
@@ -77,6 +77,6 @@ export function RegisterForm() {
       )}
       <FormError message={otp.state.error ?? regState.error} />
       <SubmitButton className="w-full justify-center">Hoàn tất đăng ký</SubmitButton>
-    </form>
+    </Form>
   );
 }

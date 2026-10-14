@@ -21,7 +21,7 @@ BEGIN
                    OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
-            THROW 50030, 'Nguoi dung khong co quyen tai tai lieu len lop hoc.', 1;
+            THROW 50030, N'Người dùng không có quyền tải tài liệu lên lớp học.', 1;
         END;
 
         INSERT INTO dbo.Documents (ClassID, FileName, CloudinaryURL, Category)
@@ -67,7 +67,7 @@ BEGIN
             WHERE DocumentID = @DocumentID
         )
         BEGIN
-            THROW 50031, 'Tai lieu khong ton tai.', 1;
+            THROW 50031, N'Tài liệu không tồn tại.', 1;
         END;
 
         IF NOT EXISTS (
@@ -80,7 +80,7 @@ BEGIN
                    OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
-            THROW 50032, 'Nguoi dung khong co quyen xoa tai lieu nay.', 1;
+            THROW 50032, N'Người dùng không có quyền xóa tài liệu này.', 1;
         END;
 
         DELETE FROM dbo.Documents
@@ -111,7 +111,7 @@ BEGIN
     BEGIN TRY
         IF app.ufn_CanAccessClassDocuments(@ClassID, @UserID) = 0
         BEGIN
-            THROW 50033, 'Nguoi dung khong co quyen xem tai lieu cua lop hoc.', 1;
+            THROW 50033, N'Người dùng không có quyền xem tài liệu của lớp học.', 1;
         END;
 
         SELECT 

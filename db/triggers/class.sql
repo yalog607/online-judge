@@ -13,7 +13,7 @@ BEGIN
     )
     BEGIN
         ROLLBACK TRANSACTION;
-        THROW 50027, 'Giao vien khong the tham gia lop hoc do chinh minh quan ly.', 1;
+        THROW 50027, N'Giảng viên không thể tham gia lớp học do chính mình quản lý.', 1;
     END;
 END;
 GO

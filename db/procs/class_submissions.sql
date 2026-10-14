@@ -16,7 +16,7 @@ BEGIN
         UNION ALL
         SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @ActorID
     )
-        THROW 50030, 'Ban khong co quyen xem lich su nop bai cua lop nay.', 1;
+        THROW 50030, N'Bạn không có quyền xem lịch sử nộp bài của lớp này.', 1;
 
     WITH Filtered AS (
         SELECT s.SubmissionID, s.UserID, u.Username, u.FullName,

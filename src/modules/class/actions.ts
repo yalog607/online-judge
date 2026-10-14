@@ -7,8 +7,9 @@ import { DomainError } from "@/db/exec";
 import { classRepository } from "./repo";
 import { notifyStudentAdded, notifyStudentRemoved } from "@/modules/notification/events";
 import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
+import { firstIssue } from "@/lib/form-errors";
 
-export type FormState = { error?: string; ok?: boolean; message?: string };
+export type FormState = { error?: string; field?: string; ok?: boolean; message?: string };
 
 export async function createClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const actor = await requireRole("Teacher", "Admin");
@@ -21,7 +22,7 @@ export async function createClassAction(_prev: FormState, formData: FormData): P
 
   const parsed = createClassSchema.safeParse(rawData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return firstIssue(parsed.error);
   }
 
   try {
@@ -36,6 +37,12 @@ export async function createClassAction(_prev: FormState, formData: FormData): P
   }
 }
 
+function classHomePath(role: string, classId: number): string {
+  return role === "Teacher" || role === "Admin"
+    ? `/teacher/classes/${classId}`
+    : `/user/classes/${classId}`;
+}
+
 export async function joinClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireRole("User", "TA", "Teacher", "Admin");
   const rawData = {
@@ -44,13 +51,13 @@ export async function joinClassAction(_prev: FormState, formData: FormData): Pro
 
   const parsed = joinClassSchema.safeParse(rawData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return firstIssue(parsed.error);
   }
 
   try {
     const classId = await classRepository.joinByInviteCode(user.userId, parsed.data.inviteCode);
     revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
-    redirect(`/user/classes/${classId}`);
+    redirect(classHomePath(user.role, classId));
   } catch (error) {
     if (error instanceof DomainError) {
       return { error: error.message };
@@ -64,7 +71,8 @@ export async function joinPublicClassAction(classId: number): Promise<void> {
   await classRepository.joinPublicClass(user.userId, classId);
   revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
   revalidatePath(`/user/classes/${classId}`);
-  redirect(`/user/classes/${classId}`);
+  revalidatePath(`/teacher/classes/${classId}`);
+  redirect(classHomePath(user.role, classId));
 }
 
 export async function leaveClassAction(classId: number): Promise<{ error?: string; ok?: boolean }> {
@@ -126,7 +134,7 @@ export async function updateClassAction(
 
   const parsed = updateClassSchema.safeParse(rawData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return firstIssue(parsed.error);
   }
 
   try {

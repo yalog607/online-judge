@@ -11,6 +11,8 @@
     "test": "vitest run",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:seed": "tsx scripts/db-seed.ts",
+    "db:seed:sample": "tsx scripts/db-seed-sample.ts",
+    "db:clean:sample": "tsx scripts/db-clean-sample.ts",
     "db:test": "tsx scripts/db-test.ts",
     "worker:start": "tsx worker/index.ts",
     "format": "prettier --write .",
