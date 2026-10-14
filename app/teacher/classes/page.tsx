@@ -137,7 +137,7 @@ function ClassCards({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {classes.map((c) => (
-            <article key={c.ClassID} className="card flex flex-col justify-between p-5">
+            <article key={c.ClassID} className="card card-hover relative flex flex-col justify-between p-5">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-medium text-primary">
@@ -167,7 +167,7 @@ function ClassCards({
                   </span>
                 </div>
                 <h3 className="mt-1 text-lg font-semibold">
-                  <Link href={`${hrefPrefix}/${c.ClassID}`} className="hover:underline">
+                  <Link href={`${hrefPrefix}/${c.ClassID}`} className="hover:underline after:absolute after:inset-0">
                     {c.ClassName}
                   </Link>
                 </h3>
