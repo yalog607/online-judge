@@ -4,12 +4,15 @@ import sql from "mssql";
 import { env } from "../src/lib/env";
 import { validateFunctionTestcase, type FunctionSpec } from "../src/modules/problem/function-spec";
 
-// Bộ dữ liệu mẫu để test bản deploy. Idempotent: chạy lại không nhân đôi dữ liệu.
-// Mọi bản ghi đều có dấu hiệu nhận biết: user `sample_*`, tiêu đề/tên `[Mẫu] ...`, mã lớp `SAMPLE0x`.
-// Lưu ý: trigger chặn xóa bài nộp, nên script này chỉ thêm dữ liệu, không có chế độ xóa.
+// Bộ dữ liệu ban đầu cho bản deploy. Idempotent: chạy lại không nhân đôi dữ liệu.
+// Mật khẩu không nằm trong source: truyền qua biến môi trường SEED_PASSWORD khi chạy.
 
-const PASSWORD = "Password@123";
-const CONTEST_PASSWORD = "sample123";
+const PASSWORD = process.env.SEED_PASSWORD ?? "";
+if (PASSWORD.length < 8) {
+  console.error("Thiếu SEED_PASSWORD (tối thiểu 8 ký tự). Ví dụ: SEED_PASSWORD='...' npx tsx scripts/db-seed-sample.ts");
+  process.exit(1);
+}
+const CONTEST_PASSWORD = PASSWORD;
 
 type Tc = { input: string[]; expected: string; hidden: boolean };
 type SampleProblem = {
@@ -28,7 +31,7 @@ type SampleProblem = {
 const problems: SampleProblem[] = [
   {
     key: "sum",
-    title: "[Mẫu] Tổng hai số",
+    title: "Tổng hai số",
     difficulty: "Easy",
     status: "Public",
     tags: "math,basic",
@@ -53,7 +56,7 @@ const problems: SampleProblem[] = [
   },
   {
     key: "prime",
-    title: "[Mẫu] Kiểm tra số nguyên tố",
+    title: "Kiểm tra số nguyên tố",
     difficulty: "Easy",
     status: "Public",
     tags: "math,prime",
@@ -72,7 +75,7 @@ const problems: SampleProblem[] = [
   },
   {
     key: "reverse",
-    title: "[Mẫu] Đảo ngược chuỗi",
+    title: "Đảo ngược chuỗi",
     difficulty: "Easy",
     status: "Public",
     tags: "string",
@@ -90,7 +93,7 @@ const problems: SampleProblem[] = [
   },
   {
     key: "maxsub",
-    title: "[Mẫu] Tổng dãy con lớn nhất",
+    title: "Tổng dãy con lớn nhất",
     difficulty: "Medium",
     status: "Public",
     tags: "array,dp",
@@ -109,7 +112,7 @@ const problems: SampleProblem[] = [
   },
   {
     key: "twosum",
-    title: "[Mẫu] Hai số có tổng bằng target",
+    title: "Hai số có tổng bằng target",
     difficulty: "Medium",
     status: "Public",
     tags: "array,hash",
@@ -135,7 +138,7 @@ const problems: SampleProblem[] = [
   },
   {
     key: "paths",
-    title: "[Mẫu] Đếm đường đi trong lưới",
+    title: "Đếm đường đi trong lưới",
     difficulty: "Hard",
     status: "Public",
     tags: "dp,math",
@@ -162,11 +165,11 @@ const problems: SampleProblem[] = [
   },
   {
     key: "fib",
-    title: "[Mẫu] Fibonacci (bài riêng tư)",
+    title: "Fibonacci",
     difficulty: "Easy",
     status: "Private",
     tags: "math,dp",
-    statement: "Bài mẫu trạng thái Riêng tư. Viết hàm `fib(n)` trả về số Fibonacci thứ n (fib(0)=0, fib(1)=1).",
+    statement: "Viết hàm `fib(n)` trả về số Fibonacci thứ n (fib(0)=0, fib(1)=1).",
     inputFormat: "Số nguyên n (0 ≤ n ≤ 80).",
     outputFormat: "fib(n).",
     spec: { name: "fib", params: [{ name: "n", type: "int" }], returns: "long" },
@@ -179,11 +182,11 @@ const problems: SampleProblem[] = [
   },
   {
     key: "fact",
-    title: "[Mẫu] Giai thừa (bài bị khóa)",
+    title: "Giai thừa",
     difficulty: "Easy",
     status: "Hidden",
     tags: "math",
-    statement: "Bài mẫu trạng thái Hidden (bị khóa). Viết hàm `factorial(n)` trả về n!.",
+    statement: "Viết hàm `factorial(n)` trả về n!.",
     inputFormat: "Số nguyên n (0 ≤ n ≤ 15).",
     outputFormat: "n!.",
     spec: { name: "factorial", params: [{ name: "n", type: "int" }], returns: "long" },
@@ -340,13 +343,10 @@ async function main() {
     // ---- Users ----
     const hash = await bcrypt.hash(PASSWORD, 10);
     const userDefs = [
-      { username: "sample_teacher", fullName: "Giảng viên Mẫu", role: "Teacher" },
-      { username: "sample_ta", fullName: "Trợ giảng Mẫu", role: "TA" },
-      ...[1, 2, 3, 4, 5, 6].map((i) => ({
-        username: `sample_student${i}`,
-        fullName: `Học viên Mẫu ${i}`,
-        role: "User",
-      })),
+      { username: "admin", fullName: "Quản trị viên", role: "Admin" },
+      { username: "teacher", fullName: "Giảng viên", role: "Teacher" },
+      { username: "assist", fullName: "Trợ giảng", role: "TA" },
+      { username: "user", fullName: "Học viên", role: "User" },
     ];
     const userId: Record<string, number> = {};
     for (const u of userDefs) {
@@ -361,9 +361,10 @@ async function main() {
         username: u.username,
       }))!;
     }
-    const teacher = userId.sample_teacher;
-    const ta = userId.sample_ta;
-    const student = (i: number) => userId[`sample_student${i}`];
+    const teacher = userId.teacher;
+    const ta = userId.assist;
+    // Chỉ có một tài khoản học viên; mọi hoạt động của học viên gán cho tài khoản này.
+    const student = (_i: number) => userId.user;
 
     // ---- Problems + testcases ----
     const problemId: Record<string, number> = {};
@@ -406,9 +407,9 @@ async function main() {
     // ---- Classes ----
     const classDefs = [
       {
-        code: "SAMPLE01",
-        name: "[Mẫu] Nhập môn lập trình",
-        description: "Lớp công khai dùng để test: có trợ giảng, bài tập còn hạn và quá hạn.",
+        code: "NMLT2026",
+        name: "Nhập môn lập trình",
+        description: "Lớp công khai dành cho sinh viên năm nhất, có trợ giảng hỗ trợ.",
         isPublic: 1,
         students: [1, 2, 3, 4, 5],
         problems: [
@@ -418,9 +419,9 @@ async function main() {
         ],
       },
       {
-        code: "SAMPLE02",
-        name: "[Mẫu] Cấu trúc dữ liệu và giải thuật",
-        description: "Lớp riêng tư (vào bằng mã mời SAMPLE02) dùng để test.",
+        code: "CTDL2026",
+        name: "Cấu trúc dữ liệu và giải thuật",
+        description: "Lớp riêng tư, tham gia bằng mã mời.",
         isPublic: 0,
         students: [3, 4, 5, 6],
         problems: [
@@ -465,19 +466,12 @@ async function main() {
         );
       }
     }
-    await q(
-      `IF NOT EXISTS (SELECT 1 FROM dbo.Documents WHERE ClassID = @id AND FileName = @name)
-         INSERT dbo.Documents (ClassID, FileName, CloudinaryURL, Category)
-         VALUES (@id, @name, 'https://example.com/itoj-sample/bai-giang-1.pdf', N'Bài giảng')`,
-      { id: classId.SAMPLE01, name: "[Mẫu] Bài giảng tuần 1 (liên kết giả).pdf" },
-    );
-
     // ---- Contests ----
     const contestDefs = [
       {
         key: "A",
-        name: "[Mẫu] Kỳ thi giữa kỳ (đã kết thúc)",
-        description: "Kỳ thi đã kết thúc, có bảng xếp hạng.",
+        name: "Kỳ thi giữa kỳ",
+        description: "Kỳ thi giữa kỳ đã kết thúc.",
         start: A0,
         end: A0 + 120,
         password: null as string | null,
@@ -491,12 +485,12 @@ async function main() {
       },
       {
         key: "B",
-        name: "[Mẫu] Kỳ thi đang diễn ra",
-        description: "Kỳ thi đang diễn ra, gắn với lớp SAMPLE01.",
+        name: "Kỳ thi thực hành tuần 5",
+        description: "Kỳ thi dành cho lớp Nhập môn lập trình.",
         start: B0,
         end: B0 + 300,
         password: null,
-        classCode: "SAMPLE01",
+        classCode: "NMLT2026",
         problems: [
           ["prime", 100],
           ["reverse", 150],
@@ -506,8 +500,8 @@ async function main() {
       },
       {
         key: "C",
-        name: "[Mẫu] Kỳ thi sắp diễn ra (có mật khẩu)",
-        description: `Kỳ thi sắp diễn ra, mật khẩu: ${CONTEST_PASSWORD}.`,
+        name: "Kỳ thi cuối kỳ",
+        description: "Kỳ thi sắp diễn ra, cần mật khẩu để tham gia.",
         start: 2 * 24 * 60,
         end: 2 * 24 * 60 + 180,
         password: CONTEST_PASSWORD,
@@ -668,11 +662,8 @@ async function main() {
         `INSERT dbo.Comments (UserID, ProblemID, ParentID, Content) VALUES (@u, @p, @parent, @c)`,
         { u: student(2), p: problemId.prime, parent: root, c: "Cảm ơn bạn, mình qua bài rồi!" },
       );
-      for (const s of [2, 3]) {
-        await q(`INSERT dbo.CommentLikes (CommentID, UserID) VALUES (@c, @u)`, {
-          c: root,
-          u: student(s),
-        });
+      for (const u of [teacher, ta]) {
+        await q(`INSERT dbo.CommentLikes (CommentID, UserID) VALUES (@c, @u)`, { c: root, u });
       }
       await q(`INSERT dbo.Comments (UserID, ProblemID, Content) VALUES (@u, @p, @c)`, {
         u: student(4),
@@ -714,7 +705,7 @@ async function main() {
           {
             u: student(s),
             title: "Kỳ thi đã bắt đầu",
-            body: "[Mẫu] Kỳ thi đang diễn ra vừa bắt đầu.",
+            body: "Kỳ thi thực hành tuần 5 vừa bắt đầu.",
             link: `/user/contests/${contestId.B}`,
           },
         );
@@ -725,17 +716,17 @@ async function main() {
         {
           u: student(5),
           title: "Bạn đã được thêm vào lớp",
-          body: "[Mẫu] Nhập môn lập trình",
-          link: `/user/classes/${classId.SAMPLE01}`,
+          body: "Nhập môn lập trình",
+          link: `/user/classes/${classId.NMLT2026}`,
         },
       );
     }
 
     await tx.commit();
-    console.log("Sample data ready.");
-    console.log(`  Accounts: sample_teacher, sample_ta, sample_student1..6 (password: ${PASSWORD})`);
-    console.log(`  Classes:  SAMPLE01 (public), SAMPLE02 (private)`);
-    console.log(`  Contests: 3 (ended / ongoing / upcoming, password of the last: ${CONTEST_PASSWORD})`);
+    console.log("Seed data ready.");
+    console.log("  Accounts: admin, teacher, assist, user");
+    console.log(`  Classes:  NMLT2026 (public), CTDL2026 (private)`);
+    console.log("  Contests: 3 (ended / ongoing / upcoming; the upcoming one uses the seed password)");
   } catch (e) {
     await tx.rollback();
     throw e;
