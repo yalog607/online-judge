@@ -43,7 +43,9 @@ BEGIN
     IF @Role = 'Admin'
         RETURN 1;
 
-    -- Teachers can inspect problems they own or that are attached to their classes.
+    IF @CreatorID = @UserID
+        RETURN 1;
+
     IF @Role = 'Teacher' AND (
         @CreatorID = @UserID OR EXISTS (
             SELECT 1
@@ -54,8 +56,6 @@ BEGIN
     )
         RETURN 1;
 
-    -- TAs can inspect problems attached to an active class they support.
-    -- Pending/rejected work is limited to the TA who authored it.
     IF @Role = 'TA' AND EXISTS (
         SELECT 1
         FROM dbo.Class_Problem cp

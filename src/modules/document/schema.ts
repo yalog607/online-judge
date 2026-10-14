@@ -45,6 +45,51 @@ export function getFileExtension(fileName: string): string {
   return fileName.slice(lastIndex).toLowerCase();
 }
 
+export function detectDocumentTypeKey(fileName: string): DocumentTypeKey | null {
+  const ext = getFileExtension(fileName);
+  if (!ext) return null;
+  for (const [key, config] of Object.entries(ALLOWED_DOCUMENT_TYPES)) {
+    if (config.extensions.some((e) => e === ext)) {
+      return key as DocumentTypeKey;
+    }
+  }
+  return null;
+}
+
+export function getDocumentMimeType(fileName: string): string {
+  const ext = getFileExtension(fileName);
+  switch (ext) {
+    case ".pdf":
+      return "application/pdf";
+    case ".docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case ".doc":
+      return "application/msword";
+    case ".xlsx":
+      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    case ".xls":
+      return "application/vnd.ms-excel";
+    case ".pptx":
+      return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    case ".ppt":
+      return "application/vnd.ms-powerpoint";
+    case ".zip":
+      return "application/zip";
+    case ".rar":
+      return "application/x-rar-compressed";
+    case ".7z":
+      return "application/x-7z-compressed";
+    case ".txt":
+    case ".cpp":
+    case ".c":
+    case ".py":
+    case ".java":
+      return "text/plain; charset=utf-8";
+    default:
+      return "application/octet-stream";
+  }
+}
+
 export function validateDocumentFile(
   fileName: string,
   typeKey?: string | null

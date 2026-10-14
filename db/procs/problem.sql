@@ -508,3 +508,170 @@ BEGIN
     SELECT app.ufn_CanUserAccessProblem(@ProblemID, @UserID) AS CanAccess;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_Clone
+    @ProblemID INT,
+    @ActorID INT,
+    @NewTitle NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.Users 
+            WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin')
+        )
+        BEGIN
+            THROW 50020, 'Chi giang vien hoac quan tri vien moi co the nhan ban bai tap.', 1;
+        END;
+
+        DECLARE @SourceStatus VARCHAR(20), @SourceCreatorID INT, @OrigTitle NVARCHAR(200);
+        SELECT 
+            @SourceStatus = Status,
+            @SourceCreatorID = CreatorID,
+            @OrigTitle = Title
+        FROM dbo.Problems 
+        WHERE ProblemID = @ProblemID;
+
+        IF @SourceStatus IS NULL
+        BEGIN
+            THROW 50021, 'Bai tap nguon khong ton tai.', 1;
+        END;
+
+        IF @SourceStatus <> 'Public' AND @SourceCreatorID <> @ActorID
+           AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        BEGIN
+            THROW 50022, 'Ban khong co quyen nhan ban bai tap nay.', 1;
+        END;
+
+        DECLARE @FinalTitle NVARCHAR(200);
+        IF @NewTitle IS NOT NULL AND LEN(RTRIM(LTRIM(@NewTitle))) > 0
+            SET @FinalTitle = RTRIM(LTRIM(@NewTitle));
+        ELSE
+            SET @FinalTitle = N'[Bản sao] ' + @OrigTitle;
+
+        IF LEN(@FinalTitle) > 200
+            SET @FinalTitle = LEFT(@FinalTitle, 200);
+
+        BEGIN TRANSACTION;
+
+        DECLARE @NewProblemID INT;
+
+        INSERT INTO dbo.Problems (
+            CreatorID,
+            Title,
+            Statement,
+            InputFormat,
+            OutputFormat,
+            TimeLimit,
+            MemoryLimit,
+            Tags,
+            Difficulty,
+            Status,
+            CreatedAt
+        )
+        SELECT 
+            @ActorID,
+            @FinalTitle,
+            Statement,
+            InputFormat,
+            OutputFormat,
+            TimeLimit,
+            MemoryLimit,
+            Tags,
+            Difficulty,
+            'Private',
+            SYSUTCDATETIME()
+        FROM dbo.Problems
+        WHERE ProblemID = @ProblemID;
+
+        SET @NewProblemID = SCOPE_IDENTITY();
+
+        INSERT INTO dbo.Testcases (
+            ProblemID,
+            InputData,
+            ExpectedOutput,
+            IsHidden,
+            OrderIndex
+        )
+        SELECT 
+            @NewProblemID,
+            InputData,
+            ExpectedOutput,
+            IsHidden,
+            OrderIndex
+        FROM dbo.Testcases
+        WHERE ProblemID = @ProblemID;
+
+        COMMIT TRANSACTION;
+
+        SELECT 
+            p.ProblemID,
+            p.Title,
+            p.Difficulty,
+            p.Status,
+            p.CreatedAt
+        FROM dbo.Problems p
+        WHERE p.ProblemID = @NewProblemID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_GetSubmissions
+    @ProblemID INT,
+    @ActorID INT,
+    @Result VARCHAR(10) = NULL,
+    @Page INT = 1,
+    @PageSize INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role IN ('Teacher', 'Admin', 'TA'))
+        THROW 50027, 'Ban khong co quyen xem danh sach bai nop cua bai tap nay.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Problems WHERE ProblemID = @ProblemID)
+        THROW 50021, 'Bai tap khong ton tai.', 1;
+
+    SELECT
+        COUNT(*) AS TotalSubmissions,
+        COUNT(DISTINCT CASE WHEN s.Result = 'AC' THEN s.UserID END) AS SolvedUsers,
+        COUNT(DISTINCT s.UserID) AS AttemptedUsers,
+        CAST(ROUND(COALESCE(
+            CAST(COUNT(CASE WHEN s.Result = 'AC' THEN 1 END) AS FLOAT) * 100.0 / NULLIF(COUNT(*), 0)
+        , 0), 0) AS INT) AS AcRate
+    FROM dbo.Submissions s
+    WHERE s.ProblemID = @ProblemID;
+
+    WITH Filtered AS (
+        SELECT
+            s.SubmissionID,
+            s.UserID,
+            u.Username,
+            u.FullName,
+            s.Language,
+            s.Result,
+            s.Runtime,
+            s.Memory,
+            s.PassedCases,
+            s.SubmitTime,
+            COUNT(*) OVER () AS TotalCount
+        FROM dbo.Submissions s
+        JOIN dbo.Users u ON u.UserID = s.UserID
+        WHERE s.ProblemID = @ProblemID
+          AND (@Result IS NULL OR @Result = '' OR s.Result = @Result)
+    )
+    SELECT *
+    FROM Filtered
+    ORDER BY SubmitTime DESC
+    OFFSET (@Page - 1) * @PageSize ROWS FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+

@@ -1,42 +1,11 @@
 import { requireUser } from "@/lib/dal";
-import { AppShell, type NavItem } from "@/components/app-shell";
+import { AppShell } from "@/components/app-shell";
+import { getNavForRole, getRoleLabel, getNotificationsHref } from "@/lib/nav";
 
 export default async function ProfileLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  
-  let nav: NavItem[];
-  let roleLabel = "Học viên";
-  if (user.role === "Admin") {
-    roleLabel = "Quản trị";
-    nav = [
-      { href: "/admin", label: "Tổng quan", icon: "home" },
-    { href: "/admin/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
-      { href: "/admin/users", label: "Người dùng", icon: "users" },
-      { href: "/admin/approvals", label: "Duyệt Yêu Cầu", icon: "shield" },
-      { href: "/admin/reports", label: "Báo cáo thống kê", icon: "chart" },
-      { href: "/profile", label: "Hồ sơ", icon: "user" },
-    ];
-  } else if (user.role === "Teacher") {
-    roleLabel = "Giảng viên";
-    nav = [
-      { href: "/teacher", label: "Tổng quan", icon: "home" },
-    { href: "/teacher/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
-      { href: "/teacher/problems", label: "Bài tập", icon: "code" },
-      { href: "/teacher/classes", label: "Lớp học", icon: "users" },
-      { href: "/teacher/contests", label: "Kỳ thi", icon: "trophy" },
-      { href: "/profile", label: "Hồ sơ", icon: "user" },
-    ];
-  } else {
-    if (user.role === "TA") roleLabel = "Trợ giảng";
-    nav = [
-      { href: "/user", label: "Tổng quan", icon: "home" },
-    { href: "/user/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
-      { href: "/user/problems", label: "Bài tập", icon: "code" },
-      { href: "/user/classes", label: "Lớp học", icon: "users" },
-      { href: "/user/contests", label: "Kỳ thi", icon: "trophy" },
-      { href: "/profile", label: "Hồ sơ", icon: "user" },
-    ];
-  }
+  const nav = getNavForRole(user.role);
+  const roleLabel = getRoleLabel(user.role);
 
   return (
     <AppShell
@@ -45,7 +14,7 @@ export default async function ProfileLayout({ children }: { children: React.Reac
       avatar={user.avatar}
       nav={nav}
       impersonating={Boolean(user.actorId)}
-      notificationsHref={`/${user.role === "Admin" ? "admin" : user.role === "Teacher" ? "teacher" : "user"}/notifications`}
+      notificationsHref={getNotificationsHref(user.role)}
     >
       <div className="w-full max-w-6xl p-6 md:p-8">
         {children}

@@ -36,6 +36,7 @@ async function main() {
       role: "Teacher",
     },
     { username: "user1", email: "user1@itoj.local", fullName: "Nguyễn Minh Anh", role: "User" },
+    { username: "ta1", email: "ta1@itoj.local", fullName: "Phạm Trợ Giảng", role: "TA" },
   ];
 
   for (const u of users) {
@@ -50,6 +51,31 @@ async function main() {
         IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @email)
           INSERT dbo.Users (Username, Password, Email, FullName, Role)
           VALUES (@username, @password, @email, @fullName, @role)
+        ELSE
+          UPDATE dbo.Users SET Role = @role WHERE Email = @email;
+      `);
+  }
+
+  const taRes = await pool
+    .request()
+    .query(`SELECT UserID FROM dbo.Users WHERE Email = 'ta1@itoj.local'`);
+  const taUserId = taRes.recordset[0]?.UserID;
+
+  const classRes = await pool
+    .request()
+    .query(`SELECT TOP 1 ClassID FROM dbo.Classes WHERE IsCancelled = 0 ORDER BY ClassID ASC`);
+  const targetClassId = classRes.recordset[0]?.ClassID;
+
+  if (taUserId && targetClassId) {
+    await pool
+      .request()
+      .input("classId", targetClassId)
+      .input("taUserId", taUserId)
+      .query(`
+        IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @classId AND UserID_TA = @taUserId)
+          INSERT dbo.Class_TA (ClassID, UserID_TA)
+          VALUES (@classId, @taUserId);
+        DELETE FROM dbo.Class_Student WHERE ClassID = @classId AND UserID = @taUserId;
       `);
   }
 

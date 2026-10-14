@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ALLOWED_DOCUMENT_TYPES,
   type DocumentTypeKey,
+  detectDocumentTypeKey,
   validateDocumentFile,
 } from "@/modules/document/schema";
 
@@ -61,7 +62,14 @@ export function DocumentUploadForm({ classId }: { classId: number }) {
       return;
     }
 
-    const check = validateDocumentFile(name, selectedType || null);
+    const detected = detectDocumentTypeKey(name);
+    let targetType = selectedType;
+    if (detected && detected !== selectedType) {
+      targetType = detected;
+      setSelectedType(detected);
+    }
+
+    const check = validateDocumentFile(name, targetType || null);
     if (!check.valid) {
       setFileError(check.error || "Định dạng tập tin không hợp lệ.");
       e.target.value = "";
@@ -87,7 +95,9 @@ export function DocumentUploadForm({ classId }: { classId: number }) {
     }
 
     const file = fileInput.files[0];
-    const check = validateDocumentFile(file.name, selectedType || null);
+    const detected = detectDocumentTypeKey(file.name);
+    const targetType = detected || selectedType;
+    const check = validateDocumentFile(file.name, targetType || null);
     if (!check.valid) {
       setFileError(check.error || "Định dạng tập tin không hợp lệ.");
       return;
@@ -105,7 +115,7 @@ export function DocumentUploadForm({ classId }: { classId: number }) {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("fileType", selectedType);
+      formData.append("fileType", targetType);
       formData.append("fileName", finalFileName);
       if (category.trim()) {
         formData.append("category", category.trim());

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setUserRoleAction } from "@/modules/auth/actions";
+import { Modal } from "@/components/modal";
 import type { Role } from "@/lib/session";
 
 type UserRoleButtonProps = {
@@ -95,16 +96,8 @@ export function UserRoleButton({
         Phân quyền
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-            onClick={() => !pending && setIsOpen(false)}
-          />
-
-          {/* Modal Content */}
-          <div className="relative w-full max-w-md rounded-xl border border-line bg-surface p-6 text-left shadow-xl animate-in fade-in zoom-in-95 duration-150">
+      <Modal isOpen={isOpen} onClose={() => !pending && setIsOpen(false)}>
+        <div className="relative w-full max-w-md rounded-xl border border-line bg-surface p-6 text-left shadow-xl animate-in fade-in zoom-in-95 duration-150">
             <h3 className="text-lg font-semibold text-fg">Phân quyền người dùng</h3>
 
             <div className="mt-3 rounded-lg border border-line bg-muted/40 p-3 text-xs leading-relaxed">
@@ -184,8 +177,7 @@ export function UserRoleButton({
               </button>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
     </>
   );
 }

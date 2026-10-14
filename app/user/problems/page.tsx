@@ -1,5 +1,6 @@
 import { Select } from "@/components/select";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { listForManage, listForUser } from "@/modules/problem/repo";
 import { DifficultyBadge, UserStatusBadge, ProblemStatusBadge } from "@/components/badge";
@@ -15,8 +16,13 @@ export default async function ProblemListPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const user = await requireUser();
-  const isStaff = user.role === "TA" || user.role === "Teacher" || user.role === "Admin";
-  const canApprove = user.role === "Teacher" || user.role === "Admin";
+  if (user.role === "Teacher" || user.role === "Admin") {
+    const spRecord = await searchParams;
+    const queryString = new URLSearchParams(spRecord as Record<string, string>).toString();
+    redirect(queryString ? `/teacher/problems?${queryString}` : "/teacher/problems");
+  }
+  const isStaff = user.role === "TA";
+  const canApprove = false;
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const isApprovalView = canApprove && sp.view === "pending";
@@ -268,7 +274,7 @@ export default async function ProblemListPage({
               {isStaff && <th className="px-5 py-3">Trạng thái bài</th>}
               <th className="px-5 py-3">Tỉ lệ AC</th>
               <th className="px-5 py-3">Trạng thái giải</th>
-              {sp.view === "mine" && <th className="px-5 py-3 text-right">Thao tác</th>}
+              {(isStaff || sp.view === "mine") && <th className="px-5 py-3 text-right">Thao tác</th>}
             </tr>
           </thead>
           <tbody>
@@ -320,21 +326,25 @@ export default async function ProblemListPage({
                 <td className="px-5 py-3">
                   <UserStatusBadge value={p.UserStatus} />
                 </td>
-                {sp.view === "mine" && (
+                {(isStaff || sp.view === "mine") && (
                   <td className="px-5 py-3 text-right">
-                    <Link
-                      href={`/user/problems/${p.ProblemID}/edit`}
-                      className="text-primary hover:underline text-sm font-medium"
-                    >
-                      Chi tiết
-                    </Link>
+                    {p.CreatorID === user.userId ? (
+                      <Link
+                        href={`/user/problems/${p.ProblemID}/edit`}
+                        className="text-primary hover:underline text-sm font-medium"
+                      >
+                        Sửa
+                      </Link>
+                    ) : (
+                      <span className="text-fg-muted text-xs">-</span>
+                    )}
                   </td>
                 )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={sp.view === "mine" ? (isStaff ? 9 : 8) : (isStaff ? 8 : 7)} className="px-5 py-12 text-center text-fg-muted">
+                <td colSpan={isStaff ? 9 : 8} className="px-5 py-12 text-center text-fg-muted">
                   Không có bài tập nào khớp bộ lọc.
                 </td>
               </tr>

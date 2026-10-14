@@ -30,7 +30,7 @@ export default async function ProblemDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ contestId?: string }>;
+  searchParams?: Promise<{ contestId?: string; from?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
@@ -39,6 +39,10 @@ export default async function ProblemDetailPage({
   const contestId = sParams?.contestId ? Number(sParams.contestId) : undefined;
   const problem = await getProblem(problemId);
   if (!problem) notFound();
+  const canEdit =
+    user.role !== "Admin" &&
+    ((user.role === "Teacher" && (problem.CreatorID === user.userId || problem.TeacherID === user.userId)) ||
+      (user.role === "TA" && problem.CreatorID === user.userId));
 
   let canAccessContest = false;
   let contestStatus: "Upcoming" | "Ongoing" | "Ended" | null = null;
@@ -160,13 +164,41 @@ export default async function ProblemDetailPage({
     </div>
   );
 
+  const backHref = contestId
+    ? (user.role === "Admin"
+        ? `/admin/contests/${contestId}`
+        : user.role === "Teacher"
+          ? `/teacher/contests/${contestId}`
+          : `/user/contests/${contestId}`)
+    : sParams?.from === "preview"
+      ? (user.role === "Admin"
+          ? `/admin/problems/${problemId}`
+          : user.role === "Teacher"
+            ? `/teacher/problems/${problemId}`
+            : `/user/problems/${problemId}`)
+      : (user.role === "Admin"
+          ? "/admin/problems"
+          : user.role === "Teacher"
+            ? "/teacher/problems"
+            : "/user/problems");
+
+  const backText = contestId
+    ? "Quay lại kỳ thi"
+    : sParams?.from === "preview"
+      ? "Quay lại chi tiết bài tập"
+      : user.role === "Admin"
+        ? "Quay lại danh sách bài tập"
+        : user.role === "Teacher"
+          ? "Quay lại ngân hàng bài tập"
+          : "Quay lại danh sách";
+
   return (
     <div className="flex flex-col gap-4 pt-6">
       <Link
-        href={contestId ? `/user/contests/${contestId}` : "/user/problems"}
+        href={backHref}
         className="inline-flex items-center gap-1.5 text-fg-muted hover:text-fg"
       >
-        ← {contestId ? "Quay lại kỳ thi" : "Quay lại danh sách"}
+        ← {backText}
       </Link>
       {contestId && (
         <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs font-medium text-primary">
@@ -176,9 +208,19 @@ export default async function ProblemDetailPage({
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <div className="card">
           <div className="border-b border-line px-5 py-4">
-            <h1 className="text-[22px] font-semibold tracking-tight">
-              {problem.ProblemID}. {problem.Title}
-            </h1>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-[22px] font-semibold tracking-tight">
+                {problem.ProblemID}. {problem.Title}
+              </h1>
+              {canEdit && (
+                <Link
+                  href={user.role === "Teacher" || user.role === "Admin" ? `/teacher/problems/${problem.ProblemID}/edit` : `/user/problems/${problem.ProblemID}/edit`}
+                  className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  Chỉnh sửa bài
+                </Link>
+              )}
+            </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
               <DifficultyBadge value={problem.Difficulty} />
               <span>

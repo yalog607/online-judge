@@ -4,7 +4,8 @@ import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
 import { listForManage as listProblemsForManage } from "@/modules/problem/repo";
-import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
+import { DifficultyBadge, ProblemStatusBadge, VerdictBadge } from "@/components/badge";
+import { Pager } from "@/components/pager";
 import { AddStudentForm } from "./add-student-form";
 import { DocumentUploadForm } from "./document-upload-form";
 import { TeacherDocumentList } from "./document-list";
@@ -16,18 +17,24 @@ import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
 import { TeacherClassReadonlyView } from "./teacher-class-readonly-view";
 import { CancelClassButton } from "../cancel-class-button";
 import { ResubmitClassButton } from "../resubmit-class-button";
+import { ImportStudentsDialog } from "./import-students-dialog";
+import { ExportStudentsButton } from "./export-students-button";
 
 export default async function TeacherClassDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ tab?: string }>;
+  searchParams?: Promise<{ tab?: string; page?: string; problemId?: string; result?: string }>;
 }) {
   const actor = await requireRole("Teacher", "Admin");
   const { id } = await params;
   const sParams = await searchParams;
   const activeTab = sParams?.tab || "overview";
+  const page = Math.max(1, Number(sParams?.page) || 1);
+  const selectedProblemId = sParams?.problemId ? Number(sParams.problemId) : undefined;
+  const selectedResult = sParams?.result || undefined;
+  const PAGE_SIZE = 20;
 
   const classId = parseInt(id, 10);
   if (isNaN(classId)) notFound();
@@ -45,8 +52,32 @@ export default async function TeacherClassDetailPage({
     documentRepository.listDocuments(classId, actor.userId),
     classRepository.getClassProblems(classId, actor.userId),
     listProblemsForManage({ actorId: actor.userId, page: 1, pageSize: 100 }),
-    activeTab === "submissions" ? classRepository.getClassSubmissions(classId, actor.userId) : Promise.resolve({ items: [], total: 0 }),
+    activeTab === "submissions"
+      ? classRepository.getClassSubmissions(classId, actor.userId, page, PAGE_SIZE, selectedProblemId, selectedResult)
+      : Promise.resolve({ items: [], total: 0 }),
   ]);
+
+  const VERDICT_FILTERS = [
+    { label: "Tất cả", value: "" },
+    { label: "AC", value: "AC" },
+    { label: "WA", value: "WA" },
+    { label: "TLE", value: "TLE" },
+    { label: "MLE", value: "MLE" },
+    { label: "RE", value: "RE" },
+    { label: "CE", value: "CE" },
+  ];
+
+  const buildSubmissionsHref = (filterParams: { page?: number; problemId?: number | null; result?: string | null }) => {
+    const query = new URLSearchParams();
+    query.set("tab", "submissions");
+    const p = filterParams.page !== undefined ? filterParams.page : page;
+    if (p > 1) query.set("page", String(p));
+    const prob = filterParams.problemId !== undefined ? filterParams.problemId : selectedProblemId;
+    if (prob) query.set("problemId", String(prob));
+    const res = filterParams.result !== undefined ? filterParams.result : selectedResult;
+    if (res) query.set("result", res);
+    return `/teacher/classes/${classId}?${query.toString()}`;
+  };
 
 
   const assignedProblemIds = new Set(problems.map((p) => p.ProblemID));
@@ -110,6 +141,12 @@ export default async function TeacherClassDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
+          {!classDetail.IsCancelled && (
+            <>
+              <ImportStudentsDialog classId={classId} />
+              <ExportStudentsButton classId={classId} />
+            </>
+          )}
           {classDetail.TeacherID === actor.userId &&
             classDetail.ApprovalStatus === "Rejected" &&
             !classDetail.IsCancelled && <ResubmitClassButton classId={classId} />}
@@ -264,6 +301,12 @@ export default async function TeacherClassDetailPage({
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
+                        <Link
+                          href={`/teacher/classes/${classId}?tab=submissions&problemId=${p.ProblemID}`}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          Danh sách nộp bài
+                        </Link>
                         {p.Status === "Pending" && (
                           <ApproveProblemButton problemId={p.ProblemID} />
                         )}
@@ -310,31 +353,87 @@ export default async function TeacherClassDetailPage({
       )}
 
       {activeTab === "submissions" && (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3 rounded-xl border border-line bg-card p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase text-fg-muted mr-1">Bài tập:</span>
+              <Link
+                href={buildSubmissionsHref({ problemId: null, page: 1 })}
+                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                  !selectedProblemId
+                    ? "bg-primary text-primary-fg"
+                    : "bg-muted text-fg-muted hover:text-fg"
+                }`}
+              >
+                Tất cả bài tập
+              </Link>
+              {problems.map((prob) => {
+                const isSelected = selectedProblemId === prob.ProblemID;
+                return (
+                  <Link
+                    key={prob.ProblemID}
+                    href={buildSubmissionsHref({ problemId: prob.ProblemID, page: 1 })}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-fg"
+                        : "bg-muted text-fg-muted hover:text-fg"
+                    }`}
+                  >
+                    #{prob.ProblemID} - {prob.Title}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-3">
+              <span className="text-xs font-semibold uppercase text-fg-muted mr-1">Kết quả:</span>
+              {VERDICT_FILTERS.map((f) => {
+                const isSelected = (selectedResult || "") === f.value;
+                return (
+                  <Link
+                    key={f.value}
+                    href={buildSubmissionsHref({ result: f.value || null, page: 1 })}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-fg"
+                        : "bg-muted text-fg-muted hover:text-fg"
+                    }`}
+                  >
+                    {f.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="card overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
-                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">STT</th>
                   <th className="px-4 py-3">Sinh viên</th>
                   <th className="px-4 py-3">Bài tập</th>
                   <th className="px-4 py-3">Kết quả</th>
+                  <th className="px-4 py-3">Ngôn ngữ</th>
                   <th className="px-4 py-3">Thời gian</th>
+                  <th className="px-4 py-3">Bộ nhớ</th>
+                  <th className="px-4 py-3">Thời gian nộp</th>
                   <th className="px-4 py-3 text-right">Chi tiết</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {submissions.items.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
-                      Chưa có lượt nộp bài nào từ học sinh trong lớp.
+                    <td colSpan={9} className="px-4 py-12 text-center text-fg-muted">
+                      Chưa có lượt nộp bài nào phù hợp bộ lọc.
                     </td>
                   </tr>
                 ) : (
-                  submissions.items.map((s: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
+                  submissions.items.map((s, idx) => (
                     <tr key={s.SubmissionID} className="hover:bg-muted/50">
-                      <td className="px-4 py-3 font-mono text-xs text-fg-muted">#{s.SubmissionID}</td>
+                      <td className="px-4 py-3 text-fg-muted font-mono text-xs">
+                        {(page - 1) * PAGE_SIZE + idx + 1}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-fg">{s.FullName}</div>
                         <div className="text-xs text-fg-muted">@{s.Username}</div>
@@ -344,17 +443,18 @@ export default async function TeacherClassDetailPage({
                           href={`/teacher/problems/${s.ProblemID}`}
                           className="font-medium text-fg hover:text-primary hover:underline"
                         >
-                          {s.ProblemTitle}
+                          #{s.ProblemID} - {s.ProblemTitle}
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          s.Result === "AC" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : 
-                          s.Result === "Pending" || s.Result === "Judging" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                          "bg-red-500/10 text-red-500 border border-red-500/20"
-                        }`}>
-                          {s.Result}
-                        </span>
+                        <VerdictBadge value={s.Result} />
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">{s.Language}</td>
+                      <td className="px-4 py-3 text-xs text-fg-muted">
+                        {s.Runtime !== null && s.Runtime !== undefined ? `${s.Runtime}ms` : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-fg-muted">
+                        {s.Memory !== null && s.Memory !== undefined ? `${(s.Memory / 1024).toFixed(1)}MB` : "—"}
                       </td>
                       <td className="px-4 py-3 text-fg-muted">
                         {new Date(s.SubmitTime).toLocaleString("vi-VN")}
@@ -373,6 +473,17 @@ export default async function TeacherClassDetailPage({
               </tbody>
             </table>
           </div>
+
+          {submissions.total > PAGE_SIZE && (
+            <div className="flex justify-center pt-2">
+              <Pager
+                page={page}
+                pageSize={PAGE_SIZE}
+                total={submissions.total}
+                buildHref={(p) => buildSubmissionsHref({ page: p })}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

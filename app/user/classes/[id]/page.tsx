@@ -8,6 +8,7 @@ import { DifficultyBadge, UserStatusBadge } from "@/components/badge";
 import LeaveClassDialog from "./leave-dialog";
 import { JoinPublicButton } from "./join-public-button";
 import { TAClassView } from "./ta-class-view";
+import { MyProgressButton } from "./my-progress-button";
 
 function getFormatTag(fileName: string, url: string) {
   const extFromFileName = fileName.includes(".") ? fileName.split(".").pop() : "";
@@ -67,7 +68,16 @@ export default async function UserClassDetailPage({
             Lớp đã hủy · chỉ xem lịch sử
           </span>
         ) : classDetail.IsJoined ? (
-          <LeaveClassDialog classId={classId} className={classDetail.ClassName} />
+          <div className="flex items-center gap-3">
+            <MyProgressButton
+              classId={classId}
+              user={{
+                UserID: user.userId,
+                FullName: user.fullName,
+              }}
+            />
+            <LeaveClassDialog classId={classId} className={classDetail.ClassName} />
+          </div>
         ) : classDetail.IsPublic ? (
           <form action={joinPublicActionWithId}>
             <JoinPublicButton />
@@ -142,7 +152,7 @@ export default async function UserClassDetailPage({
                           <td className="px-5 py-4 text-fg-muted">{idx + 1}</td>
                           <td className="px-5 py-4 font-medium text-fg">
                             <a
-                              href={doc.CloudinaryURL}
+                              href={`/api/documents/${doc.DocumentID}`}
                               target="_blank"
                               rel="noreferrer"
                               className="hover:text-primary hover:underline"
@@ -165,12 +175,12 @@ export default async function UserClassDetailPage({
                           </td>
                           <td className="px-5 py-4 text-right">
                             <a
-                              href={doc.CloudinaryURL}
+                              href={`/api/documents/${doc.DocumentID}?download=1`}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-fg hover:bg-muted transition-colors"
                             >
-                              Tải về / Xem →
+                              Tải về →
                             </a>
                           </td>
                         </tr>

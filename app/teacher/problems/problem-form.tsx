@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Select } from "@/components/select";
 import { useActionState, useState } from "react";
 import { Field, FormError, SubmitButton } from "@/components/form";
@@ -132,6 +133,42 @@ export function ProblemForm({
               <option value="Public">Công khai (Public - Mọi người có thể làm)</option>
               <option value="Private">Riêng tư (Private - Dành cho lớp học &amp; kỳ thi)</option>
               <option value="Hidden">Khóa (Hidden - Không cho làm bài nữa)</option>
+            </Select>
+          </label>
+        )}
+
+        {isTA && classes.length > 0 && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
+            <span>Lớp học phụ trách <span className="text-bad">*</span></span>
+            <Select
+              name="classId"
+              defaultValue={String(defaultClassId ?? problem?.ClassID ?? classes[0]?.ClassID ?? "")}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+              required
+            >
+              {classes.map((c) => (
+                <option key={c.ClassID} value={c.ClassID}>
+                  {c.ClassName}
+                </option>
+              ))}
+            </Select>
+          </label>
+        )}
+
+        {!isTA && classes.length > 0 && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-fg-muted sm:col-span-2">
+            <span>Gắn vào lớp học (tùy chọn)</span>
+            <Select
+              name="classId"
+              defaultValue={String(problem?.ClassID ?? "")}
+              className="rounded-lg border border-line bg-muted px-3.5 py-2.5 text-fg font-medium"
+            >
+              <option value="">Không gắn vào lớp</option>
+              {classes.map((c) => (
+                <option key={c.ClassID} value={c.ClassID}>
+                  {c.ClassName}
+                </option>
+              ))}
             </Select>
           </label>
         )}
@@ -442,7 +479,15 @@ export function ProblemForm({
         <p className="rounded-lg bg-ok-soft px-3 py-2 text-sm text-ok">Đã lưu bài tập.</p>
       )}
       <FormError message={state.error} />
-      {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+      <div className="flex items-center gap-3">
+        {!disabled && <SubmitButton className="self-start">Lưu bài tập</SubmitButton>}
+        <Link
+          href={isTA ? "/user/problems" : "/teacher/problems"}
+          className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors text-fg-muted hover:text-fg"
+        >
+          Hủy / Quay lại
+        </Link>
+      </div>
       </fieldset>
     </form>
   );

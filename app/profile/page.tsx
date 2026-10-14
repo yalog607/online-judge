@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { getUserById } from "@/modules/auth/repo";
@@ -16,11 +17,19 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">Hồ sơ cá nhân</h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          Cập nhật họ tên, ảnh đại diện và mật khẩu.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Hồ sơ cá nhân</h1>
+          <p className="mt-1 text-sm text-fg-muted">
+            Cập nhật họ tên, ảnh đại diện và mật khẩu.
+          </p>
+        </div>
+        <Link
+          href="/user"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-xs"
+        >
+          <span>📊 Xem báo cáo tiến độ cá nhân →</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

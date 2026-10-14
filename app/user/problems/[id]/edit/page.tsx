@@ -1,4 +1,4 @@
-
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
@@ -7,12 +7,16 @@ import { updateProblemAction } from "@/modules/problem/actions";
 import { ProblemForm } from "../../../../teacher/problems/problem-form";
 
 export default async function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
-  const actor = await requireRole("TA", "Teacher", "Admin");
+  const actor = await requireRole("TA", "Teacher");
   const { id } = await params;
   const problemId = Number(id);
   const problem = await getProblem(problemId);
   if (!problem) notFound();
-  if (actor.role !== "Admin" && problem.CreatorID !== actor.userId) notFound();
+  const canManage =
+    actor.role === "Admin" ||
+    problem.CreatorID === actor.userId ||
+    (actor.role === "Teacher" && problem.TeacherID === actor.userId);
+  if (!canManage) notFound();
   if (actor.role === "TA" && !(await canTAEditProblem(problemId, actor.userId))) notFound();
 
   let classes: { ClassID: number; ClassName: string }[] = [];
@@ -20,9 +24,6 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
     classes = await classRepository.getClassesForTA(actor.userId);
   } else if (actor.role === "Teacher") {
     const res = await classRepository.listClasses({ userId: actor.userId, onlyMine: true, page: 1, pageSize: 100 });
-    classes = res.classes.map(c => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
-  } else if (actor.role === "Admin") {
-    const res = await classRepository.listClasses({ page: 1, pageSize: 100 });
     classes = res.classes.map(c => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
   }
 
@@ -32,6 +33,12 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
 
   return (
     <div className="max-w-3xl pt-8">
+      <Link
+        href="/user/problems"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-fg mb-4"
+      >
+        ← Quay lại tất cả bài tập
+      </Link>
       <h1 className="mb-6 text-2xl font-semibold">Sửa bài tập {isTA ? "(Bản nháp)" : ""}</h1>
       
       {isTA && problem.Status === "Pending" && (

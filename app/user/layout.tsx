@@ -1,41 +1,18 @@
 import { requireRole } from "@/lib/dal";
-import { AppShell, type NavItem } from "@/components/app-shell";
-
-const NAV: NavItem[] = [
-  { href: "/user", label: "Tổng quan", icon: "home" },
-  { href: "/user/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
-  { href: "/user/problems", label: "Bài tập", icon: "code" },
-  { href: "/user/classes", label: "Lớp học", icon: "users" },
-  { href: "/user/contests", label: "Kỳ thi", icon: "trophy" },
-  { href: "/profile", label: "Hồ sơ", icon: "user" },
-];
-
-const TEACHER_NAV: NavItem[] = [
-  { href: "/teacher", label: "Tổng quan", icon: "home" },
-  { href: "/teacher/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
-  { href: "/teacher/problems", label: "Bài tập", icon: "code" },
-  { href: "/teacher/classes", label: "Lớp học", icon: "users" },
-  { href: "/teacher/contests", label: "Kỳ thi", icon: "trophy" },
-  { href: "/profile", label: "Hồ sơ", icon: "user" },
-];
+import { AppShell } from "@/components/app-shell";
+import { getNavForRole, getNotificationsHref, getRoleLabel } from "@/lib/nav";
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("User", "TA", "Teacher", "Admin");
-  
-  const nav = user.role === "Teacher" ? TEACHER_NAV : [...NAV];
-  let roleLabel = "Học viên";
-  if (user.role === "TA") roleLabel = "Trợ giảng";
-  if (user.role === "Admin") roleLabel = "Quản trị viên";
-  if (user.role === "Teacher") roleLabel = "Giảng viên";
 
   return (
     <AppShell
-      roleLabel={roleLabel}
+      roleLabel={getRoleLabel(user.role)}
       fullName={user.fullName}
       avatar={user.avatar}
-      nav={nav}
+      nav={getNavForRole(user.role)}
       impersonating={Boolean(user.actorId)}
-      notificationsHref={user.role === "Teacher" ? "/teacher/notifications" : "/user/notifications"}
+      notificationsHref={getNotificationsHref(user.role)}
     >
       {children}
     </AppShell>

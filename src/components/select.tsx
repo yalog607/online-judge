@@ -254,7 +254,7 @@ export function Select({
               bottom: placement.bottom,
               maxHeight: placement.maxHeight,
             }}
-            className="popover z-[60] overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-pop"
+            className="popover z-[9999] overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-pop"
           >
             {options.map((opt, i) => {
               const isSelected = opt.value === current;
