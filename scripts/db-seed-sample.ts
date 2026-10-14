@@ -375,8 +375,8 @@ async function main() {
       if (id === undefined) {
         id = await scalar(
           `INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, FunctionSpec)
-           OUTPUT INSERTED.ProblemID
-           VALUES (@creator, @title, @statement, @inputFormat, @outputFormat, 1000, 256, @tags, @difficulty, @status, @spec)`,
+           VALUES (@creator, @title, @statement, @inputFormat, @outputFormat, 1000, 256, @tags, @difficulty, @status, @spec);
+           SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
             creator: teacher,
             title: p.title,
@@ -436,8 +436,8 @@ async function main() {
       if (id === undefined) {
         id = await scalar(
           `INSERT dbo.Classes (TeacherID, InviteCode, ClassName, Description, IsPublic, ApprovalStatus)
-           OUTPUT INSERTED.ClassID
-           VALUES (@teacher, @code, @name, @description, @isPublic, 'Approved')`,
+           VALUES (@teacher, @code, @name, @description, @isPublic, 'Approved');
+           SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           { teacher, code: c.code, name: c.name, description: c.description, isPublic: c.isPublic },
         );
       }
@@ -529,10 +529,10 @@ async function main() {
       if (id === undefined) {
         id = await scalar(
           `INSERT dbo.Contests (CreatorID, ContestName, Description, StartTime, EndTime, [Password], ClassID)
-           OUTPUT INSERTED.ContestID
            VALUES (@teacher, @name, @description,
                    DATEADD(MINUTE, @start, SYSUTCDATETIME()), DATEADD(MINUTE, @end, SYSUTCDATETIME()),
-                   @password, @classId)`,
+                   @password, @classId);
+           SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
             teacher,
             name: c.name,
@@ -598,8 +598,8 @@ async function main() {
 
         const id = (await scalar(
           `INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language, SubmitTime, Result)
-           OUTPUT INSERTED.SubmissionID
-           VALUES (@u, @p, @c, @code, @lang, DATEADD(MINUTE, @at, SYSUTCDATETIME()), 'Pending')`,
+           VALUES (@u, @p, @c, @code, @lang, DATEADD(MINUTE, @at, SYSUTCDATETIME()), 'Pending');
+           SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
             u: student(s.student),
             p: problemId[s.problem],
@@ -659,8 +659,9 @@ async function main() {
     );
     if (!existingComments) {
       const root = (await scalar(
-        `INSERT dbo.Comments (UserID, ProblemID, Content, Likes) OUTPUT INSERTED.CommentID
-         VALUES (@u, @p, @c, 2)`,
+        `INSERT dbo.Comments (UserID, ProblemID, Content, Likes)
+         VALUES (@u, @p, @c, 2);
+         SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
         { u: student(1), p: problemId.prime, c: "Gợi ý: chỉ cần kiểm tra ước đến căn bậc hai của n." },
       ))!;
       await q(
@@ -686,8 +687,9 @@ async function main() {
     );
     if (!existingCC) {
       const cc = (await scalar(
-        `INSERT dbo.ContestComments (ContestID, UserID, Content) OUTPUT INSERTED.CommentID
-         VALUES (@c, @u, @text)`,
+        `INSERT dbo.ContestComments (ContestID, UserID, Content)
+         VALUES (@c, @u, @text);
+         SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
         { c: contestId.A, u: student(1), text: "Đề năm nay vừa sức, bài 3 hơi khó." },
       ))!;
       await q(
