@@ -8,6 +8,8 @@ import { listComments } from "@/modules/contest-comment/repo";
 import { ContestComments } from "../../../app/user/contests/[id]/comments";
 import { mapToCommentView } from "@/modules/contest-comment/view";
 
+import { ContestTimer } from "./contest-timer";
+
 function formatDateTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleString("vi-VN", {
@@ -16,6 +18,7 @@ function formatDateTime(iso: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
   });
 }
 
@@ -84,6 +87,11 @@ export async function ContestParticipantPage({
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-fg">{contest.contestName}</h1>
               <StatusBadge status={contest.status} />
+              <ContestTimer
+                startTime={contest.startTime}
+                endTime={contest.endTime}
+                status={contest.status}
+              />
               <span className="text-xs text-fg-muted">Tạo bởi {contest.creatorName}</span>
               {contest.className && (
                 <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary border border-primary/20">
