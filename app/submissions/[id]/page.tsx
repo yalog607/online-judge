@@ -43,6 +43,11 @@ export default async function SubmissionDetailPage({
               <RejudgeButton submissionId={detail.SubmissionID} />
             )}
           </div>
+          {detail.UserID !== user.userId && detail.FullName && (
+            <div className="mt-1 text-xs text-fg-muted">
+              Học viên: <span className="font-medium text-fg">{detail.FullName}</span> (@{detail.Username})
+            </div>
+          )}
         </div>
         <VerdictBadge value={detail.Result} />
       </div>
