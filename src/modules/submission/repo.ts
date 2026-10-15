@@ -28,6 +28,8 @@ export type SubmissionDetail = {
   Runtime: number | null;
   Memory: number | null;
   PassedCases: string | null;
+  Username?: string;
+  FullName?: string;
 };
 
 export type SubmissionTestcaseResult = {
