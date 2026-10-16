@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
@@ -155,11 +156,7 @@ export default async function AdminContestDetailPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {problems.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có bài tập nào trong đề thi.
-                    </td>
-                  </tr>
+                  <EmptyState variant="cell" colSpan={5}>Chưa có bài tập nào trong đề thi.</EmptyState>
                 ) : (
                   problems.map((p, idx) => (
                     <tr key={p.problemId} className="hover:bg-muted/40 transition-colors">
@@ -217,11 +214,7 @@ export default async function AdminContestDetailPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {leaderboard.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có thí sinh nào tham gia hoặc nộp bài.
-                    </td>
-                  </tr>
+                  <EmptyState variant="cell" colSpan={5}>Chưa có thí sinh nào tham gia hoặc nộp bài.</EmptyState>
                 ) : (
                   leaderboard.map((row) => (
                     <tr key={row.userId} className="hover:bg-muted/40 transition-colors">

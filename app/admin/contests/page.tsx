@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
 import { classRepository } from "@/modules/class/repo";
 import { Pager } from "@/components/pager";
+import { DataTable } from "@/components/data-table";
+import { ContestStatusBadge } from "@/components/badge";
 
 const PAGE_SIZE = 20;
 
@@ -16,29 +20,6 @@ function formatDateTime(iso: string | Date) {
     year: "numeric",
     timeZone: "Asia/Ho_Chi_Minh",
   });
-}
-
-function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
-  if (status === "Ongoing") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500 border border-emerald-500/20">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        Đang diễn ra
-      </span>
-    );
-  }
-  if (status === "Upcoming") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20">
-        Sắp diễn ra
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20">
-      Đã kết thúc
-    </span>
-  );
 }
 
 export default async function AdminContestsPage({
@@ -84,25 +65,24 @@ export default async function AdminContestsPage({
 
   return (
     <div className="flex flex-col gap-6 pt-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold text-fg">Danh sách kỳ thi</h1>
-            <span className="rounded-full bg-muted border border-line px-2.5 py-0.5 text-xs font-medium text-fg-muted">
-              Chỉ xem
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-fg-muted">
-            Theo dõi danh sách và kết quả các kỳ thi trong hệ thống (không chỉnh sửa).
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Danh sách kỳ thi"
+        badge={
+          <span className="rounded-full border border-line bg-muted px-2.5 py-0.5 text-xs font-medium text-fg-muted">
+            Chỉ xem
+          </span>
+        }
+        description="Theo dõi danh sách và kết quả các kỳ thi trong hệ thống (không chỉnh sửa)."
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = statusParam === tab.value;
-            const params = new URLSearchParams({ ...sp, status: tab.value, page: "1" } as Record<string, string>);
+            const params = new URLSearchParams({ ...sp, status: tab.value, page: "1" } as Record<
+              string,
+              string
+            >);
             return (
               <Link
                 key={tab.value}
@@ -158,7 +138,8 @@ export default async function AdminContestsPage({
         <div className="flex items-center gap-2 text-xs">
           <span className="text-fg-muted">Đang lọc theo lớp:</span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary border border-primary/20">
-            {classOptions.find((c) => String(c.classId) === sp.classId)?.className || `Lớp #${sp.classId}`}
+            {classOptions.find((c) => String(c.classId) === sp.classId)?.className ||
+              `Lớp #${sp.classId}`}
             <Link
               href={(() => {
                 const params = new URLSearchParams(sp as Record<string, string>);
@@ -173,83 +154,76 @@ export default async function AdminContestsPage({
         </div>
       )}
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-line bg-muted text-fg-muted font-medium">
-            <tr>
-              <th className="px-4 py-3">Tên kỳ thi</th>
-              <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3">Thời gian</th>
-              <th className="px-4 py-3">Phạm vi</th>
-              <th className="px-4 py-3">Đề thi / Thí sinh</th>
-              <th className="px-4 py-3 text-right">Thao tác</th>
+      <DataTable
+        columns={[
+          { label: "Tên kỳ thi" },
+          { label: "Trạng thái" },
+          { label: "Thời gian" },
+          { label: "Phạm vi" },
+          { label: "Đề thi / Thí sinh" },
+          { label: "Thao tác", align: "right" },
+        ]}
+      >
+        {contests.length === 0 ? (
+          <EmptyState variant="cell" colSpan={6}>
+            Không tìm thấy kỳ thi nào phù hợp.
+          </EmptyState>
+        ) : (
+          contests.map((c) => (
+            <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
+              <td className="px-4 py-3 font-medium text-fg">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/contests/${c.contestId}`}
+                    className="hover:underline font-semibold"
+                  >
+                    {c.contestName}
+                  </Link>
+                  {c.isProtected && (
+                    <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
+                      Mật khẩu
+                    </span>
+                  )}
+                </div>
+                {c.description && (
+                  <p className="mt-0.5 text-xs text-fg-muted line-clamp-1">{c.description}</p>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <ContestStatusBadge status={c.status} />
+              </td>
+              <td className="px-4 py-3 text-xs text-fg-muted">
+                <div>{formatDateTime(c.startTime)}</div>
+                <div className="text-[11px] text-fg-subtle">đến {formatDateTime(c.endTime)}</div>
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {c.className && c.classId ? (
+                  <Link
+                    href={`/admin/contests?classId=${c.classId}${statusParam !== "All" ? `&status=${statusParam}` : ""}`}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {c.className}
+                  </Link>
+                ) : (
+                  <span className="text-fg-muted">Công khai</span>
+                )}
+              </td>
+              <td className="px-4 py-3 text-xs text-fg-muted">
+                <div>{c.problemCount} bài tập</div>
+                <div className="text-[11px]">{c.participantCount} thí sinh</div>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <Link
+                  href={`/admin/contests/${c.contestId}`}
+                  className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors"
+                >
+                  Xem chi tiết
+                </Link>
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {contests.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-fg-muted">
-                  Không tìm thấy kỳ thi nào phù hợp.
-                </td>
-              </tr>
-            ) : (
-              contests.map((c) => (
-                <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-fg">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/contests/${c.contestId}`}
-                        className="hover:underline font-semibold"
-                      >
-                        {c.contestName}
-                      </Link>
-                      {c.isProtected && (
-                        <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
-                          Mật khẩu
-                        </span>
-                      )}
-                    </div>
-                    {c.description && (
-                      <p className="mt-0.5 text-xs text-fg-muted line-clamp-1">{c.description}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    <div>{formatDateTime(c.startTime)}</div>
-                    <div className="text-[11px] text-fg-subtle">đến {formatDateTime(c.endTime)}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    {c.className && c.classId ? (
-                      <Link
-                        href={`/admin/contests?classId=${c.classId}${statusParam !== "All" ? `&status=${statusParam}` : ""}`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {c.className}
-                      </Link>
-                    ) : (
-                      <span className="text-fg-muted">Công khai</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-fg-muted">
-                    <div>{c.problemCount} bài tập</div>
-                    <div className="text-[11px]">{c.participantCount} thí sinh</div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/contests/${c.contestId}`}
-                      className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors"
-                    >
-                      Xem chi tiết
-                    </Link>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))
+        )}
+      </DataTable>
 
       <Pager
         page={page}

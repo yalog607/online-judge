@@ -1,10 +1,13 @@
 import { Select } from "@/components/select";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { listForManage, listForUser } from "@/modules/problem/repo";
 import { DifficultyBadge, UserStatusBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
+import { SearchForm, TagFilterChip, searchInputClass, tagInputClass, filterControlClass } from "@/components/search-form";
 import { RowActions } from "../../teacher/problems/row-actions";
 import { NotificationBanner } from "@/components/notification-banner";
 
@@ -78,24 +81,15 @@ export default async function ProblemListPage({
     <div className="flex flex-col gap-5 pt-8">
       {successMessage && <NotificationBanner message={successMessage} />}
 
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{isApprovalView ? "Bài tập chờ duyệt" : "Danh sách bài tập"}</h1>
-          <p className="mt-1 text-fg-muted">
-            {isApprovalView
-              ? "Duyệt bài tập trợ giảng gửi lên từ các lớp bạn phụ trách."
-              : "Chọn bài để luyện tập, lọc theo chủ đề và độ khó."}
-          </p>
-        </div>
-        {isStaff && !isApprovalView && (
-          <Link
-            href="/user/problems/new"
-            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:bg-primary/90"
-          >
-            + Tạo bài tập
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title={isApprovalView ? "Bài tập chờ duyệt" : "Danh sách bài tập"}
+        description={
+          isApprovalView
+            ? "Duyệt bài tập trợ giảng gửi lên từ các lớp bạn phụ trách."
+            : "Chọn bài để luyện tập, lọc theo chủ đề và độ khó."
+        }
+        action={isStaff && !isApprovalView ? { href: "/user/problems/new", label: "+ Tạo bài tập" } : undefined}
+      />
 
       {isStaff && (
         <nav aria-label="Danh sách bài tập" className="flex gap-5 border-b border-line pb-2">
@@ -127,26 +121,24 @@ export default async function ProblemListPage({
         </nav>
       )}
 
-      <form key={new URLSearchParams(sp as Record<string, string>).toString()} className="flex gap-2.5 card p-2.5 overflow-x-auto items-center scrollbar-hide" method="get">
-        {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
-        {isApprovalView && <input type="hidden" name="view" value="pending" />}
+      <SearchForm sp={sp} hidden={{ view: isApprovalView ? "pending" : sp.view === "mine" && "mine" }} resetHref={`/user/problems${isApprovalView ? "?view=pending" : sp.view === "mine" ? "?view=mine" : ""}`}>
         <input
           name="q"
           defaultValue={sp.q}
           placeholder="Tìm kiếm tên bài tập..."
-          className="min-w-[140px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+          className={searchInputClass}
         />
         <input
           name="tag"
           defaultValue={sp.tag}
           placeholder="Chủ đề (tag)..."
-          className="min-w-[110px] w-[110px] rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+          className={tagInputClass}
         />
         <Select
           name="difficulty"
           label="Độ khó"
           defaultValue={sp.difficulty ?? ""}
-          className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+          className={filterControlClass}
         >
           <option value="">Tất cả</option>
           <option value="Easy">Dễ</option>
@@ -158,7 +150,7 @@ export default async function ProblemListPage({
             name="problemStatus"
           label="Trạng thái bài"
             defaultValue={sp.problemStatus ?? ""}
-            className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+            className={filterControlClass}
           >
             <option value="">Tất cả</option>
             <option value="Public">Công khai</option>
@@ -172,42 +164,16 @@ export default async function ProblemListPage({
           name="status"
           label="Trạng thái giải"
           defaultValue={sp.status ?? ""}
-          className="rounded-lg border border-line bg-muted px-3 py-2 text-sm"
+          className={filterControlClass}
         >
           <option value="">Tất cả</option>
           <option value="done">Đã giải</option>
           <option value="tried">Đã thử</option>
           <option value="todo">Chưa làm</option>
         </Select>}
-        <button type="submit" className="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm">
-          Tìm kiếm
-        </button>
-        <Link
-          href={`/user/problems${isApprovalView ? "?view=pending" : sp.view === "mine" ? "?view=mine" : ""}`}
-          className="shrink-0 rounded-lg border border-line bg-muted px-4 py-2 font-medium text-fg text-sm hover:bg-muted/80 transition-colors"
-        >
-          Xóa lọc
-        </Link>
-      </form>
+      </SearchForm>
 
-      {sp.tag && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-fg-muted">Đang lọc theo chủ đề:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary border border-primary/20">
-            #{sp.tag}
-            <Link
-              href={(() => {
-                const params = new URLSearchParams(sp as Record<string, string>);
-                params.delete("tag");
-                return `/user/problems?${params.toString()}`;
-              })()}
-              className="hover:opacity-75 font-bold ml-1"
-            >
-              ✕
-            </Link>
-          </span>
-        </div>
-      )}
+      <TagFilterChip tag={sp.tag} sp={sp} basePath="/user/problems" />
 
       {isApprovalView ? (
       <div className="card overflow-hidden">
@@ -343,11 +309,7 @@ export default async function ProblemListPage({
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr>
-                <td colSpan={isStaff ? 9 : 8} className="px-5 py-12 text-center text-fg-muted">
-                  Không có bài tập nào khớp bộ lọc.
-                </td>
-              </tr>
+              <EmptyState variant="cell" colSpan={isStaff ? 9 : 8}>Không có bài tập nào khớp bộ lọc.</EmptyState>
             )}
           </tbody>
         </table>

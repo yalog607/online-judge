@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
@@ -192,9 +193,7 @@ export default async function UserClassDetailPage({
             </div>
 
             {documents.length === 0 ? (
-              <div className="card p-8 text-center text-fg-muted">
-                Lớp học hiện chưa có tài liệu nào được chia sẻ.
-              </div>
+              <EmptyState>Lớp học hiện chưa có tài liệu nào được chia sẻ.</EmptyState>
             ) : (
               <div className="card overflow-hidden">
                 <table className="w-full text-left text-sm">
@@ -262,9 +261,7 @@ export default async function UserClassDetailPage({
             </div>
 
             {problems.length === 0 ? (
-              <div className="card p-8 text-center text-fg-muted">
-                Lớp học hiện chưa có bài tập nào được giao. Vui lòng quay lại sau!
-              </div>
+              <EmptyState>Lớp học hiện chưa có bài tập nào được giao. Vui lòng quay lại sau!</EmptyState>
             ) : (
               <div className="card overflow-hidden">
                 <table className="w-full text-left text-sm">

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
@@ -301,12 +302,8 @@ export default async function TeacherContestDetailPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {problems.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có bài tập nào trong đề thi. Nhấn &quot;Thêm bài tập&quot; để gán bài vào
-                      kỳ thi.
-                    </td>
-                  </tr>
+                  <EmptyState variant="cell" colSpan={6}>Chưa có bài tập nào trong đề thi. Nhấn &quot;Thêm bài tập&quot; để gán bài vào
+                      kỳ thi.</EmptyState>
                 ) : (
                   problems.map((p, idx) => (
                     <tr key={p.problemId} className="hover:bg-muted/40 transition-colors">
@@ -395,11 +392,7 @@ export default async function TeacherContestDetailPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {leaderboard.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có thí sinh nào tham gia hoặc nộp bài.
-                    </td>
-                  </tr>
+                  <EmptyState variant="cell" colSpan={5}>Chưa có thí sinh nào tham gia hoặc nộp bài.</EmptyState>
                 ) : (
                   leaderboard.map((row) => (
                     <tr key={row.userId} className="hover:bg-muted/40 transition-colors">
@@ -539,11 +532,7 @@ export default async function TeacherContestDetailPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {submissionsData.items.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có lượt nộp bài nào phù hợp bộ lọc.
-                    </td>
-                  </tr>
+                  <EmptyState variant="cell" colSpan={9}>Chưa có lượt nộp bài nào phù hợp bộ lọc.</EmptyState>
                 ) : (
                   submissionsData.items.map((s, idx) => (
                     <tr key={s.SubmissionID} className="hover:bg-muted/50">

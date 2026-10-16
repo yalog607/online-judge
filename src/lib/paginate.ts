@@ -14,3 +14,13 @@ export function paginate<T>(items: T[], page: number, pageSize: number) {
     total: items.length,
   };
 }
+
+/** Tạo hàm dựng href cho Pager, giữ nguyên các query khác và chỉ đổi tham số trang `key`. */
+export function pageHrefBuilder(sp: Record<string, string | undefined>, key: string) {
+  return (p: number) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (v !== undefined && k !== key) params.set(k, v);
+    params.set(key, String(p));
+    return `?${params.toString()}`;
+  };
+}

@@ -49,8 +49,6 @@ UPDATE dbo.Comments SET ParentID = NULL WHERE CommentID IN (SELECT CommentID FRO
 DELETE FROM dbo.Comments WHERE CommentID IN (SELECT CommentID FROM #M);
 
 -- Bài nộp (tắt trigger chặn xóa trong transaction này)
-DELETE FROM dbo.Reports WHERE SubmissionID IN (SELECT SubmissionID FROM #S);
-UPDATE dbo.Reports SET TeacherID = NULL WHERE TeacherID IN (SELECT UserID FROM #U);
 DELETE FROM dbo.SubmissionResults WHERE SubmissionID IN (SELECT SubmissionID FROM #S);
 DISABLE TRIGGER trg_Submission_PreventDelete ON dbo.Submissions;
 DELETE FROM dbo.Submissions WHERE SubmissionID IN (SELECT SubmissionID FROM #S);

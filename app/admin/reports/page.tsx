@@ -1,4 +1,5 @@
 import { Select } from "@/components/select";
+import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import {
@@ -137,12 +138,10 @@ export default async function AdminReportsPage({
       </div>
 
       {!summary ? (
-        <div className="card p-12 text-center text-fg-muted">
-          <p className="text-base font-medium">Chưa có dữ liệu để thống kê.</p>
+        <EmptyState><p className="text-base font-medium">Chưa có dữ liệu để thống kê.</p>
           <p className="text-xs mt-1">
             Vui lòng chọn một {type === "class" ? "lớp học" : "kỳ thi"} hợp lệ có thành viên và bài tập.
-          </p>
-        </div>
+          </p></EmptyState>
       ) : (
         <>
           {/* KPI Summary Cards */}
@@ -299,11 +298,7 @@ export default async function AdminReportsPage({
                       })}
 
                       {people.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-5 py-12 text-center text-fg-muted">
-                            Chưa có dữ liệu học sinh/thí sinh nộp bài.
-                          </td>
-                        </tr>
+                        <EmptyState variant="cell" colSpan={7}>Chưa có dữ liệu học sinh/thí sinh nộp bài.</EmptyState>
                       )}
                     </tbody>
                   </table>
@@ -364,11 +359,7 @@ export default async function AdminReportsPage({
                       })}
 
                       {problems.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-5 py-12 text-center text-fg-muted">
-                            Chưa có bài tập nào trong danh sách.
-                          </td>
-                        </tr>
+                        <EmptyState variant="cell" colSpan={7}>Chưa có bài tập nào trong danh sách.</EmptyState>
                       )}
                     </tbody>
                   </table>

@@ -1,9 +1,11 @@
 import { Select } from "@/components/select";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { listForManage } from "@/modules/problem/repo";
 import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
+import { SearchForm, TagFilterChip, filterControlClass } from "@/components/search-form";
 import { RowActions } from "./row-actions";
 
 import { NotificationBanner } from "@/components/notification-banner";
@@ -70,18 +72,11 @@ export default async function ManageProblemsPage({
     <div className="flex flex-col gap-5 pt-8">
       {successMessage && <NotificationBanner message={successMessage} />}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Ngân hàng bài tập</h1>
-          <p className="mt-1 text-fg-muted">Quản lý kho bài tập dùng chung, nhân bản bài mẫu, lọc theo chủ đề, độ khó và trạng thái để giao cho lớp học hoặc kỳ thi.</p>
-        </div>
-        <Link
-          href="/teacher/problems/new"
-          className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg hover:opacity-90 transition-opacity"
-        >
-          + Tạo bài tập
-        </Link>
-      </div>
+      <PageHeader
+        title="Ngân hàng bài tập"
+        description="Quản lý kho bài tập dùng chung, nhân bản bài mẫu, lọc theo chủ đề, độ khó và trạng thái để giao cho lớp học hoặc kỳ thi."
+        action={{ href: "/teacher/problems/new", label: "+ Tạo bài tập" }}
+      />
 
       <nav aria-label="Lọc danh sách bài tập" className="flex gap-5 border-b border-line pb-2">
         <Link 
@@ -109,25 +104,24 @@ export default async function ManageProblemsPage({
         </Link>
       </nav>
 
-      <form key={new URLSearchParams(sp as Record<string, string>).toString()} className="card grid grid-cols-1 items-center gap-2.5 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_minmax(10rem,0.7fr)_minmax(11rem,0.8fr)_minmax(12rem,0.9fr)_auto_auto]" method="get">
-        {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
+      <SearchForm sp={sp} hidden={{ view: sp.view === "mine" && "mine" }} resetHref={`/teacher/problems${sp.view === "mine" ? "?view=mine" : ""}`}>
         <input
           name="q"
           defaultValue={sp.q}
           placeholder="Tìm kiếm tên bài tập..."
-          className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
+          className={filterControlClass}
         />
         <input
           name="tag"
           defaultValue={sp.tag}
           placeholder="Chủ đề (tag)..."
-          className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
+          className={filterControlClass}
         />
         <Select
           name="difficulty"
           label="Độ khó"
           defaultValue={sp.difficulty ?? ""}
-          className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
+          className={filterControlClass}
         >
           <option value="">Tất cả</option>
           <option value="Easy">Dễ</option>
@@ -138,7 +132,7 @@ export default async function ManageProblemsPage({
           name="status"
           label="Trạng thái bài"
           defaultValue={sp.status ?? ""}
-          className="min-w-0 rounded-lg border border-line bg-muted px-3 py-2.5 text-sm"
+          className={filterControlClass}
         >
           <option value="">Tất cả</option>
           <option value="Public">Công khai</option>
@@ -147,35 +141,9 @@ export default async function ManageProblemsPage({
           <option value="Pending">Chờ duyệt</option>
           <option value="Rejected">Đã từ chối</option>
         </Select>
-        <button type="submit" className="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg text-sm hover:opacity-90 transition-opacity">
-          Tìm kiếm
-        </button>
-        <Link
-          href={`/teacher/problems${sp.view === "mine" ? "?view=mine" : ""}`}
-          className="shrink-0 rounded-lg border border-line bg-muted px-4 py-2 font-medium text-fg text-sm hover:bg-muted/80 transition-colors"
-        >
-          Xóa lọc
-        </Link>
-      </form>
+      </SearchForm>
 
-      {sp.tag && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-fg-muted">Đang lọc theo chủ đề:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary border border-primary/20">
-            #{sp.tag}
-            <Link
-              href={(() => {
-                const params = new URLSearchParams(sp as Record<string, string>);
-                params.delete("tag");
-                return `/teacher/problems?${params.toString()}`;
-              })()}
-              className="hover:opacity-75 font-bold ml-1"
-            >
-              ✕
-            </Link>
-          </span>
-        </div>
-      )}
+      <TagFilterChip tag={sp.tag} sp={sp} basePath="/teacher/problems" />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

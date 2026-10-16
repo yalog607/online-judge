@@ -97,3 +97,37 @@ const VERDICT_KIND: Record<string, keyof typeof KIND_CLASS> = {
 export function VerdictBadge({ value }: { value: string }) {
   return <Badge kind={VERDICT_KIND[value] ?? "neutral"}>{VERDICT_LABEL[value] ?? value}</Badge>;
 }
+
+export function ContestStatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
+  if (status === "Ongoing") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-ok/20 bg-ok-soft px-2 py-0.5 text-xs font-medium text-ok">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
+        Đang diễn ra
+      </span>
+    );
+  }
+  if (status === "Upcoming") return <Badge kind="info">Sắp diễn ra</Badge>;
+  return <Badge>Đã kết thúc</Badge>;
+}
+
+const APPROVAL_KIND: Record<string, keyof typeof KIND_CLASS> = {
+  Approved: "ok",
+  Rejected: "bad",
+  Pending: "warn",
+};
+const APPROVAL_LABEL: Record<string, string> = {
+  Approved: "Đã duyệt",
+  Rejected: "Bị từ chối",
+  Pending: "Chờ duyệt",
+};
+
+export function ClassApprovalBadge({ status }: { status: string }) {
+  return (
+    <Badge kind={APPROVAL_KIND[status] ?? "warn"}>{APPROVAL_LABEL[status] ?? "Chờ duyệt"}</Badge>
+  );
+}
+
+export function ClassActiveBadge({ cancelled }: { cancelled: boolean }) {
+  return cancelled ? <Badge>Đã hủy</Badge> : <Badge kind="ok">Đang hoạt động</Badge>;
+}

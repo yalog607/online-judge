@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
 import { Pager } from "@/components/pager";
+import { ContestStatusBadge } from "@/components/badge";
 import { JoinContestDialog } from "./join-contest-dialog";
 
 const PAGE_SIZE = 20;
@@ -17,29 +20,6 @@ function formatDateTime(iso: string) {
     year: "numeric",
     timeZone: "Asia/Ho_Chi_Minh",
   });
-}
-
-function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
-  if (status === "Ongoing") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500 border border-emerald-500/20">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        Đang diễn ra
-      </span>
-    );
-  }
-  if (status === "Upcoming") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20">
-        Sắp diễn ra
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20">
-      Đã kết thúc
-    </span>
-  );
 }
 
 export default async function UserContestsPage({
@@ -101,12 +81,10 @@ export default async function UserContestsPage({
 
   return (
     <div className="flex flex-col gap-6 pt-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-fg">Kỳ thi trực tuyến</h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          Tham gia các cuộc thi lập trình và bài kiểm tra đánh giá năng lực.
-        </p>
-      </div>
+      <PageHeader
+        title="Kỳ thi trực tuyến"
+        description="Tham gia các cuộc thi lập trình và bài kiểm tra đánh giá năng lực."
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-4 card p-4">
         <div className="flex items-center gap-1 overflow-x-auto">
@@ -176,9 +154,7 @@ export default async function UserContestsPage({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {detailedContests.length === 0 ? (
-          <div className="col-span-full card p-12 text-center text-fg-muted">
-            {joinedView ? "Bạn chưa tham gia kỳ thi nào phù hợp." : "Không tìm thấy kỳ thi nào phù hợp."}
-          </div>
+          <EmptyState>{joinedView ? "Bạn chưa tham gia kỳ thi nào phù hợp." : "Không tìm thấy kỳ thi nào phù hợp."}</EmptyState>
         ) : (
           detailedContests.map((c) => (
             <div
@@ -207,7 +183,7 @@ export default async function UserContestsPage({
                       </span>
                     )}
                   </div>
-                  <StatusBadge status={c.status} />
+                  <ContestStatusBadge status={c.status} />
                 </div>
 
                 {c.description && (

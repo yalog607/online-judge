@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { notFound, redirect } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
@@ -274,11 +275,7 @@ export default async function TeacherClassDetailPage({
             </thead>
             <tbody className="divide-y divide-line">
               {problems.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-fg-muted">
-                    Chưa có bài tập nào được giao cho lớp này. Nhấn &quot;Giao bài tập&quot; để thêm.
-                  </td>
-                </tr>
+                <EmptyState variant="cell" colSpan={7}>Chưa có bài tập nào được giao cho lớp này. Nhấn &quot;Giao bài tập&quot; để thêm.</EmptyState>
               ) : (
                 problems.map((p, idx) => (
                   <tr key={p.ProblemID} className="hover:bg-muted/50">
@@ -430,11 +427,7 @@ export default async function TeacherClassDetailPage({
               </thead>
               <tbody className="divide-y divide-line">
                 {submissions.items.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-fg-muted">
-                      Chưa có lượt nộp bài nào phù hợp bộ lọc.
-                    </td>
-                  </tr>
+                  <EmptyState variant="cell" colSpan={9}>Chưa có lượt nộp bài nào phù hợp bộ lọc.</EmptyState>
                 ) : (
                   submissions.items.map((s, idx) => (
                     <tr key={s.SubmissionID} className="hover:bg-muted/50">

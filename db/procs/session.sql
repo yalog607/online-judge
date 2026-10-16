@@ -36,12 +36,3 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE app.usp_Session_RevokeAllForUser
-    @UserID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE dbo.Sessions SET RevokedAt = SYSUTCDATETIME()
-    WHERE UserID = @UserID AND RevokedAt IS NULL;
-END
-GO

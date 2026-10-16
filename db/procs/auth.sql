@@ -308,26 +308,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE app.usp_Teacher_ListImpersonatableStudents
-    @TeacherID INT,
-    @ClassID INT = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT 
-        UserID,
-        Username,
-        FullName,
-        Email,
-        Role,
-        Avatar,
-        ClassID,
-        ClassName
-    FROM app.ufn_GetImpersonatableStudentsForTeacher(@TeacherID, @ClassID)
-    ORDER BY ClassName, FullName;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE app.usp_Auth_RegisterDirect
     @Username VARCHAR(50),
     @Email VARCHAR(100),
