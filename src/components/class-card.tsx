@@ -20,13 +20,18 @@ export function ClassCard({
   teacherName: string;
   studentCount?: number;
   kicker: string;
-  kickerTone?: "primary" | "bad" | "muted";
+  kickerTone?: "primary" | "bad" | "muted" | "ok" | "warn";
   badges?: React.ReactNode;
   ctaLabel: string;
   variant?: "default" | "ta";
 }) {
-  const tone =
-    kickerTone === "bad" ? "text-bad" : kickerTone === "muted" ? "text-fg-muted" : "text-primary";
+  const tone = {
+    primary: "text-primary",
+    bad: "text-bad",
+    muted: "text-fg-muted",
+    ok: "text-ok",
+    warn: "text-warn",
+  }[kickerTone];
   return (
     <article
       className={`card card-hover relative flex flex-col justify-between p-5 ${

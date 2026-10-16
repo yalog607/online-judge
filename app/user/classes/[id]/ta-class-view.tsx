@@ -49,7 +49,7 @@ export async function TAClassView({
       <div className="flex items-start justify-between">
         <div>
           <Link
-            href="/user/classes"
+            href={role === "Teacher" ? "/teacher/classes" : "/user/classes"}
             className="text-sm font-medium text-fg-muted hover:text-fg hover:underline"
           >
             ← Quay lại danh sách lớp học

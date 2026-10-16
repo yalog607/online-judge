@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { ClassCard, ClassSection } from "@/components/class-card";
-import { ClassActiveBadge, ClassApprovalBadge } from "@/components/badge";
+import { Badge, ClassActiveBadge, ClassApprovalBadge } from "@/components/badge";
 import { PageHeader } from "@/components/page-header";
 import { pageHrefBuilder, paginate, parsePage } from "@/lib/paginate";
 import { JoinClassForm } from "@/components/join-class-form";
@@ -75,19 +75,19 @@ export default async function TeacherClassesPage({
         pageKey="pj"
         sp={sp}
         buildHref={pageHrefBuilder(sp, "pj")}
-        hrefPrefix="/teacher/classes"
+        hrefPrefix="/user/classes"
         empty="Bạn chưa tham gia lớp học nào."
         label="Đã tham gia"
       />
       <ClassCards
-        title={`Lớp công khai khác (${otherClasses.length})`}
+        title={`Các lớp học khác (${otherClasses.length})`}
         classes={otherClasses}
         pageKey="pc"
         sp={sp}
         buildHref={pageHrefBuilder(sp, "pc")}
-        hrefPrefix="/teacher/classes"
-        empty="Không có lớp công khai phù hợp."
-        label="Lớp công khai"
+        hrefPrefix="/user/classes"
+        empty="Không có lớp học phù hợp."
+        label="Lớp học"
       />
     </div>
   );
@@ -132,6 +132,7 @@ function ClassCards({
           kickerTone={c.IsCancelled ? "bad" : "primary"}
           badges={
             <>
+              <Badge kind={c.IsPublic ? "ok" : "warn"}>{c.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}</Badge>
               <ClassApprovalBadge status={c.ApprovalStatus} />
               <ClassActiveBadge cancelled={c.IsCancelled} />
             </>

@@ -10,6 +10,8 @@ import LeaveClassDialog from "./leave-dialog";
 import { JoinPublicButton } from "./join-public-button";
 import { TAClassView } from "./ta-class-view";
 import { MyProgressButton } from "./my-progress-button";
+import { JoinRequestDialog } from "./join-request-dialog";
+import { CancelJoinRequestButton } from "./cancel-join-request-button";
 
 function getFormatTag(fileName: string, url: string) {
   const extFromFileName = fileName.includes(".") ? fileName.split(".").pop() : "";
@@ -53,12 +55,23 @@ export default async function UserClassDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <Link
-            href="/user/classes"
+            href={user.role === "Teacher" ? "/teacher/classes" : "/user/classes"}
             className="text-sm font-medium text-fg-muted hover:text-fg hover:underline"
           >
             ← Quay lại danh sách lớp học
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">{classDetail.ClassName}</h1>
+          <div className="mt-2 flex items-center gap-3">
+            <h1 className="text-2xl font-semibold">{classDetail.ClassName}</h1>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                classDetail.IsPublic
+                  ? "bg-ok/10 text-ok border border-ok/30"
+                  : "bg-warn/10 text-warn border border-warn/30"
+              }`}
+            >
+              {classDetail.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}
+            </span>
+          </div>
           <p className="mt-1 text-fg-muted">
             {classDetail.Description || "Chưa có mô tả cho lớp học này."}
           </p>
@@ -77,14 +90,49 @@ export default async function UserClassDetailPage({
                 FullName: user.fullName,
               }}
             />
-            <LeaveClassDialog classId={classId} className={classDetail.ClassName} />
+            <LeaveClassDialog
+              classId={classId}
+              className={classDetail.ClassName}
+              redirectUrl={user.role === "Teacher" ? "/teacher/classes" : "/user/classes"}
+            />
           </div>
         ) : classDetail.IsPublic ? (
           <form action={joinPublicActionWithId}>
             <JoinPublicButton />
           </form>
-        ) : null}
+        ) : classDetail.JoinRequestStatus === "Pending" ? (
+          <div className="flex items-center gap-2">
+            <span className="rounded-lg border border-warn/30 bg-warn/10 px-3 py-1.5 text-xs font-semibold text-warn">
+              Đang chờ duyệt
+            </span>
+            <CancelJoinRequestButton classId={classId} />
+          </div>
+        ) : (
+          <JoinRequestDialog
+            classId={classId}
+            className={classDetail.ClassName}
+            isRejected={classDetail.JoinRequestStatus === "Rejected"}
+          />
+        )}
       </div>
+
+      {!classDetail.IsJoined && classDetail.JoinRequestStatus === "Pending" && (
+        <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-fg">
+          <div className="font-semibold text-warn">Yêu cầu tham gia đang chờ giảng viên duyệt</div>
+          <div className="mt-1 text-xs text-fg-muted">
+            Thông tin bạn đã gửi: &quot;{classDetail.JoinRequestMessage}&quot;
+          </div>
+        </div>
+      )}
+
+      {!classDetail.IsJoined && classDetail.JoinRequestStatus === "Rejected" && (
+        <div className="rounded-xl border border-bad/30 bg-bad/5 p-4 text-sm text-fg">
+          <div className="font-semibold text-bad">Yêu cầu tham gia trước đó đã bị từ chối</div>
+          <div className="mt-1 text-xs text-fg-muted">
+            Bạn có thể chỉnh sửa lại thông tin và gửi lại yêu cầu tham gia lớp học.
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="card p-4">
@@ -99,8 +147,24 @@ export default async function UserClassDetailPage({
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Trạng thái tham gia
           </span>
-          <p className="mt-2 text-lg font-bold text-ok">
-            {classDetail.IsJoined ? "Đã tham gia" : "Chưa tham gia"}
+          <p
+            className={`mt-2 text-lg font-bold ${
+              classDetail.IsJoined
+                ? "text-ok"
+                : classDetail.JoinRequestStatus === "Pending"
+                  ? "text-warn"
+                  : classDetail.JoinRequestStatus === "Rejected"
+                    ? "text-bad"
+                    : "text-fg-muted"
+            }`}
+          >
+            {classDetail.IsJoined
+              ? "Đã tham gia"
+              : classDetail.JoinRequestStatus === "Pending"
+                ? "Đang chờ duyệt"
+                : classDetail.JoinRequestStatus === "Rejected"
+                  ? "Bị từ chối"
+                  : "Chưa tham gia"}
           </p>
         </div>
 
@@ -215,7 +279,7 @@ export default async function UserClassDetailPage({
                       <tr key={p.ProblemID} className="hover:bg-muted/50 transition-colors">
                         <td className="px-5 py-4">
                           <Link
-                            href={`/user/problems/${p.ProblemID}`}
+                            href={`/user/problems/${p.ProblemID}?classId=${classId}`}
                             className="font-medium text-fg hover:underline"
                           >
                             {p.Title}
@@ -243,7 +307,7 @@ export default async function UserClassDetailPage({
                             <span className="text-xs text-fg-muted">Chỉ xem</span>
                           ) : (
                             <Link
-                              href={`/user/problems/${p.ProblemID}`}
+                              href={`/user/problems/${p.ProblemID}?classId=${classId}`}
                               className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-fg hover:bg-muted transition-colors"
                             >
                               Làm bài →

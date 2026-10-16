@@ -108,8 +108,8 @@ export default async function UserClassesPage({
               name={c.ClassName}
               description={c.Description}
               teacherName={c.TeacherName}
-              kicker={c.IsPublic ? "Lớp học công khai" : "Lớp học riêng tư"}
-              kickerTone="muted"
+              kicker={c.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}
+              kickerTone={c.IsPublic ? "ok" : "warn"}
               ctaLabel="Xem chi tiết"
             />
           ))}
