@@ -46,9 +46,8 @@ export async function createClassAction(_prev: FormState, formData: FormData): P
 }
 
 function classHomePath(role: string, classId: number): string {
-  return role === "Teacher" || role === "Admin"
-    ? `/teacher/classes/${classId}`
-    : `/user/classes/${classId}`;
+  void role;
+  return `/user/classes/${classId}`;
 }
 
 export async function joinClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -87,7 +86,10 @@ export async function leaveClassAction(classId: number): Promise<{ error?: strin
   const user = await requireRole("User", "TA", "Teacher", "Admin");
   try {
     await classRepository.leaveClass(user.userId, classId);
-    revalidatePath(user.role === "Teacher" ? "/teacher/classes" : "/user/classes");
+    revalidatePath("/user/classes");
+    revalidatePath("/teacher/classes");
+    revalidatePath(`/user/classes/${classId}`);
+    revalidatePath(`/teacher/classes/${classId}`);
     return { ok: true };
   } catch (error) {
     if (error instanceof DomainError) {
@@ -313,6 +315,7 @@ export async function requestJoinClassAction(
   try {
     const res = await classRepository.requestJoinClass(user.userId, classId, parsed.data.message);
     revalidatePath("/user/classes");
+    revalidatePath("/teacher/classes");
     revalidatePath(`/user/classes/${classId}`);
     revalidatePath(`/teacher/classes/${classId}`);
     if (res.status === "Joined") {
@@ -335,7 +338,9 @@ export async function cancelJoinRequestAction(
   try {
     await classRepository.cancelJoinRequest(user.userId, classId);
     revalidatePath("/user/classes");
+    revalidatePath("/teacher/classes");
     revalidatePath(`/user/classes/${classId}`);
+    revalidatePath(`/teacher/classes/${classId}`);
     return { ok: true };
   } catch (error) {
     if (error instanceof DomainError) {

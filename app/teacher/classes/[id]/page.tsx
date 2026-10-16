@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
@@ -14,7 +14,6 @@ import { AssignProblemDialog } from "./assign-problem-dialog";
 import { RemoveClassProblemButton } from "./remove-class-problem-button";
 import { ApproveProblemButton } from "./approve-problem-button";
 import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
-import { TeacherClassReadonlyView } from "./teacher-class-readonly-view";
 import { CancelClassButton } from "../cancel-class-button";
 import { ResubmitClassButton } from "../resubmit-class-button";
 import { TeacherClassJoinRequests } from "./teacher-class-join-requests";
@@ -39,11 +38,8 @@ export default async function TeacherClassDetailPage({
   if (isNaN(classId)) notFound();
 
   const classDetail = await classRepository.getTeacherClassView(classId, actor.userId);
-  if (!classDetail) notFound();
-
-  if (!classDetail.CanManage) {
-    const problems = await classRepository.getPublicClassProblems(classId, actor.userId);
-    return <TeacherClassReadonlyView classDetail={classDetail} problems={problems} />;
+  if (!classDetail || !classDetail.CanManage) {
+    redirect(`/user/classes/${classId}`);
   }
 
   const [students, documents, problems, allProblems, submissions, joinRequests] = await Promise.all([

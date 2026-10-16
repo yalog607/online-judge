@@ -19,13 +19,14 @@ export default async function ProblemDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ contestId?: string; from?: string }>;
+  searchParams?: Promise<{ contestId?: string; from?: string; classId?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
   const sParams = await searchParams;
   const problemId = Number(id);
   const contestId = sParams?.contestId ? Number(sParams.contestId) : undefined;
+  const classId = sParams?.classId ? Number(sParams.classId) : undefined;
   const problem = await getProblem(problemId);
   if (!problem) notFound();
   const canEdit =
@@ -149,27 +150,31 @@ export default async function ProblemDetailPage({
         : user.role === "Teacher"
           ? `/teacher/contests/${contestId}`
           : `/user/contests/${contestId}`)
-    : sParams?.from === "preview"
-      ? (user.role === "Admin"
-          ? `/admin/problems/${problemId}`
-          : user.role === "Teacher"
-            ? `/teacher/problems/${problemId}`
-            : `/user/problems/${problemId}`)
-      : (user.role === "Admin"
-          ? "/admin/problems"
-          : user.role === "Teacher"
-            ? "/teacher/problems"
-            : "/user/problems");
+    : classId && !isNaN(classId)
+      ? `/user/classes/${classId}`
+      : sParams?.from === "preview"
+        ? (user.role === "Admin"
+            ? `/admin/problems/${problemId}`
+            : user.role === "Teacher"
+              ? `/teacher/problems/${problemId}`
+              : `/user/problems/${problemId}`)
+        : (user.role === "Admin"
+            ? "/admin/problems"
+            : user.role === "Teacher"
+              ? "/teacher/problems"
+              : "/user/problems");
 
   const backText = contestId
     ? "Quay lại kỳ thi"
-    : sParams?.from === "preview"
-      ? "Quay lại chi tiết bài tập"
-      : user.role === "Admin"
-        ? "Quay lại danh sách bài tập"
-        : user.role === "Teacher"
-          ? "Quay lại ngân hàng bài tập"
-          : "Quay lại danh sách";
+    : classId && !isNaN(classId)
+      ? "Quay lại lớp học"
+      : sParams?.from === "preview"
+        ? "Quay lại chi tiết bài tập"
+        : user.role === "Admin"
+          ? "Quay lại danh sách bài tập"
+          : user.role === "Teacher"
+            ? "Quay lại ngân hàng bài tập"
+            : "Quay lại danh sách";
 
   return (
     <div className="flex flex-col gap-4 pt-6">
