@@ -12,7 +12,7 @@ import {
   notifyTAApproved,
   notifyTARequestSubmitted,
 } from "@/modules/notification/events";
-import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
+import { createClassSchema, joinClassSchema, updateClassSchema, requestJoinClassSchema, reviewJoinRequestSchema } from "./schema";
 import { firstIssue } from "@/lib/form-errors";
 
 export type FormState = { error?: string; field?: string; ok?: boolean; message?: string };
@@ -294,3 +294,78 @@ export async function approveClassRequestAction(
     throw error;
   }
 }
+
+export async function requestJoinClassAction(
+  classId: number,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
+  const rawData = {
+    message: formData.get("message") || "",
+  };
+
+  const parsed = requestJoinClassSchema.safeParse(rawData);
+  if (!parsed.success) {
+    return firstIssue(parsed.error);
+  }
+
+  try {
+    const res = await classRepository.requestJoinClass(user.userId, classId, parsed.data.message);
+    revalidatePath("/user/classes");
+    revalidatePath(`/user/classes/${classId}`);
+    revalidatePath(`/teacher/classes/${classId}`);
+    if (res.status === "Joined") {
+      redirect(classHomePath(user.role, classId));
+    }
+    return { ok: true, message: "Đã gửi yêu cầu tham gia lớp học. Vui lòng chờ giảng viên duyệt." };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function cancelJoinRequestAction(
+  classId: number,
+): Promise<{ ok?: boolean; error?: string }> {
+  const user = await requireRole("User", "TA", "Teacher", "Admin");
+
+  try {
+    await classRepository.cancelJoinRequest(user.userId, classId);
+    revalidatePath("/user/classes");
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function reviewJoinRequestAction(
+  requestId: number,
+  action: "Approve" | "Reject",
+  classId: number,
+): Promise<{ ok?: boolean; error?: string }> {
+  const actor = await requireRole("Teacher", "TA", "Admin");
+  const parsed = reviewJoinRequestSchema.safeParse({ requestId, action });
+  if (!parsed.success) {
+    return { error: "Dữ liệu yêu cầu không hợp lệ." };
+  }
+
+  try {
+    await classRepository.reviewJoinRequest(actor.userId, requestId, action);
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+

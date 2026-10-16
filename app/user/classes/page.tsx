@@ -150,8 +150,14 @@ export default async function UserClassesPage({
                 className="relative flex flex-col justify-between card card-hover p-5"
               >
                 <div>
-                  <span className="text-xs font-medium text-fg-muted">
-                    {c.IsPublic ? "Lớp học công khai" : "Lớp học riêng tư"}
+                  <span
+                    className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      c.IsPublic
+                        ? "bg-ok/10 text-ok border border-ok/30"
+                        : "bg-warn/10 text-warn border border-warn/30"
+                    }`}
+                  >
+                    {c.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}
                   </span>
                   <h3 className="mt-1 text-lg font-semibold text-fg">
                     <Link href={`/user/classes/${c.ClassID}`} className="hover:underline after:absolute after:inset-0">

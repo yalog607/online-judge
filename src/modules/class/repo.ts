@@ -67,6 +67,24 @@ export interface ClassItem {
   IsJoined: boolean;
   IsTA?: boolean;
   TotalCount?: number;
+  JoinRequestStatus?: string | null;
+  JoinRequestMessage?: string | null;
+  PendingRequestCount?: number;
+}
+
+export interface ClassJoinRequestItem {
+  RequestID: number;
+  ClassID: number;
+  UserID: number;
+  Username: string;
+  FullName: string;
+  Email: string;
+  Message: string;
+  Status: "Pending" | "Approved" | "Rejected";
+  CreatedAt: string;
+  ReviewedAt: string | null;
+  ReviewedBy: number | null;
+  ReviewerName: string | null;
 }
 
 export interface StudentItem {
@@ -231,6 +249,11 @@ export interface IClassRepository {
     studentId: number,
     actorId: number
   ): Promise<StudentProgressDetailData>;
+
+  requestJoinClass(userId: number, classId: number, message: string): Promise<{ classId: number; status: "Joined" | "Pending" }>;
+  cancelJoinRequest(userId: number, classId: number): Promise<void>;
+  listJoinRequests(classId: number, actorId: number, status?: string): Promise<ClassJoinRequestItem[]>;
+  reviewJoinRequest(actorId: number, requestId: number, action: "Approve" | "Reject"): Promise<{ requestId: number; classId: number; userId: number; action: string }>;
 }
 
 export class ClassRepository implements IClassRepository {
@@ -531,6 +554,54 @@ export class ClassRepository implements IClassRepository {
     const submissions = (res.sets[2] as StudentClassSubmission[] | undefined) ?? [];
 
     return { student, problems, submissions };
+  }
+
+  async requestJoinClass(userId: number, classId: number, message: string): Promise<{ classId: number; status: "Joined" | "Pending" }> {
+    const { rows } = await execProc<{ ClassID: number; Status: "Joined" | "Pending" }>("usp_Class_RequestJoin", {
+      UserID: userId,
+      ClassID: classId,
+      Message: message,
+    });
+    if (!rows[0]) {
+      throw new DomainError(50025, "Không thể xử lý yêu cầu tham gia lớp học.");
+    }
+    return {
+      classId: rows[0].ClassID,
+      status: rows[0].Status,
+    };
+  }
+
+  async cancelJoinRequest(userId: number, classId: number): Promise<void> {
+    await execProc("usp_Class_CancelJoinRequest", {
+      UserID: userId,
+      ClassID: classId,
+    });
+  }
+
+  async listJoinRequests(classId: number, actorId: number, status?: string): Promise<ClassJoinRequestItem[]> {
+    const { rows } = await execProc<ClassJoinRequestItem>("usp_Class_ListJoinRequests", {
+      ClassID: classId,
+      ActorID: actorId,
+      Status: status ?? null,
+    });
+    return rows;
+  }
+
+  async reviewJoinRequest(actorId: number, requestId: number, action: "Approve" | "Reject"): Promise<{ requestId: number; classId: number; userId: number; action: string }> {
+    const { rows } = await execProc<{ RequestID: number; ClassID: number; UserID: number; Action: string }>("usp_Class_ReviewJoinRequest", {
+      RequestID: requestId,
+      ActorID: actorId,
+      Action: action,
+    });
+    if (!rows[0]) {
+      throw new DomainError(50029, "Không thể duyệt yêu cầu tham gia.");
+    }
+    return {
+      requestId: rows[0].RequestID,
+      classId: rows[0].ClassID,
+      userId: rows[0].UserID,
+      action: rows[0].Action,
+    };
   }
 }
 

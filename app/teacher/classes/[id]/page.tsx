@@ -17,8 +17,7 @@ import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
 import { TeacherClassReadonlyView } from "./teacher-class-readonly-view";
 import { CancelClassButton } from "../cancel-class-button";
 import { ResubmitClassButton } from "../resubmit-class-button";
-import { ImportStudentsDialog } from "./import-students-dialog";
-import { ExportStudentsButton } from "./export-students-button";
+import { TeacherClassJoinRequests } from "./teacher-class-join-requests";
 
 export default async function TeacherClassDetailPage({
   params,
@@ -47,7 +46,7 @@ export default async function TeacherClassDetailPage({
     return <TeacherClassReadonlyView classDetail={classDetail} problems={problems} />;
   }
 
-  const [students, documents, problems, allProblems, submissions] = await Promise.all([
+  const [students, documents, problems, allProblems, submissions, joinRequests] = await Promise.all([
     classRepository.getClassStudents(classId, actor.userId),
     documentRepository.listDocuments(classId, actor.userId),
     classRepository.getClassProblems(classId, actor.userId),
@@ -55,7 +54,10 @@ export default async function TeacherClassDetailPage({
     activeTab === "submissions"
       ? classRepository.getClassSubmissions(classId, actor.userId, page, PAGE_SIZE, selectedProblemId, selectedResult)
       : Promise.resolve({ items: [], total: 0 }),
+    classRepository.listJoinRequests(classId, actor.userId),
   ]);
+
+  const pendingRequestsCount = joinRequests.filter((r) => r.Status === "Pending").length;
 
   const VERDICT_FILTERS = [
     { label: "Tất cả", value: "" },
@@ -129,10 +131,10 @@ export default async function TeacherClassDetailPage({
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 classDetail.IsPublic
                   ? "bg-ok/10 text-ok border border-ok/30"
-                  : "bg-muted text-fg-muted border border-line"
+                  : "bg-warn/10 text-warn border border-warn/30"
               }`}
             >
-              {classDetail.IsPublic ? "Công khai" : "Riêng tư"}
+              {classDetail.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}
             </span>
           </div>
           <p className="mt-1 text-fg-muted">
@@ -141,12 +143,6 @@ export default async function TeacherClassDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
-          {!classDetail.IsCancelled && (
-            <>
-              <ImportStudentsDialog classId={classId} />
-              <ExportStudentsButton classId={classId} />
-            </>
-          )}
           {classDetail.TeacherID === actor.userId &&
             classDetail.ApprovalStatus === "Rejected" &&
             !classDetail.IsCancelled && <ResubmitClassButton classId={classId} />}
@@ -190,6 +186,21 @@ export default async function TeacherClassDetailPage({
           }`}
         >
           Lịch sử nộp bài
+        </Link>
+        <Link
+          href={`/teacher/classes/${classId}?tab=requests`}
+          className={`flex items-center gap-1.5 pb-3 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === "requests"
+              ? "border-primary text-primary"
+              : "border-transparent text-fg-muted hover:text-fg"
+          }`}
+        >
+          <span>Yêu cầu tham gia</span>
+          {pendingRequestsCount > 0 && (
+            <span className="rounded-full bg-primary px-1.5 py-0.2 text-[10px] font-bold text-primary-fg">
+              {pendingRequestsCount}
+            </span>
+          )}
         </Link>
       </div>
 
@@ -485,6 +496,10 @@ export default async function TeacherClassDetailPage({
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === "requests" && (
+        <TeacherClassJoinRequests requests={joinRequests} classId={classId} />
       )}
     </div>
   );
