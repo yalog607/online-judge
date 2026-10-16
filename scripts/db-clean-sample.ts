@@ -17,7 +17,6 @@ CREATE TABLE #C (ContestID INT PRIMARY KEY);
 CREATE TABLE #K (ClassID INT PRIMARY KEY);
 CREATE TABLE #S (SubmissionID INT PRIMARY KEY);
 CREATE TABLE #M (CommentID INT PRIMARY KEY);
-CREATE TABLE #CM (CommentID INT PRIMARY KEY);
 
 INSERT #U SELECT UserID FROM dbo.Users WHERE Username LIKE 'sample[_]%';
 INSERT #P SELECT ProblemID FROM dbo.Problems WHERE CreatorID IN (SELECT UserID FROM #U);
@@ -27,8 +26,6 @@ INSERT #S SELECT SubmissionID FROM dbo.Submissions
   WHERE UserID IN (SELECT UserID FROM #U) OR ProblemID IN (SELECT ProblemID FROM #P) OR ContestID IN (SELECT ContestID FROM #C);
 INSERT #M SELECT CommentID FROM dbo.Comments
   WHERE UserID IN (SELECT UserID FROM #U) OR ProblemID IN (SELECT ProblemID FROM #P) OR ContestID IN (SELECT ContestID FROM #C);
-INSERT #CM SELECT CommentID FROM dbo.ContestComments
-  WHERE UserID IN (SELECT UserID FROM #U) OR ContestID IN (SELECT ContestID FROM #C);
 
 IF @dryRun = 1
 BEGIN
@@ -38,8 +35,7 @@ BEGIN
     (SELECT COUNT(*) FROM #K) AS classes,
     (SELECT COUNT(*) FROM #C) AS contests,
     (SELECT COUNT(*) FROM #S) AS submissions,
-    (SELECT COUNT(*) FROM #M) AS comments,
-    (SELECT COUNT(*) FROM #CM) AS contestComments;
+    (SELECT COUNT(*) FROM #M) AS comments;
   RETURN;
 END;
 
@@ -49,14 +45,8 @@ BEGIN TRAN;
 UPDATE dbo.Comments SET ParentID = NULL
   WHERE ParentID IN (SELECT CommentID FROM #M) AND CommentID NOT IN (SELECT CommentID FROM #M);
 DELETE FROM dbo.CommentLikes WHERE UserID IN (SELECT UserID FROM #U) OR CommentID IN (SELECT CommentID FROM #M);
-DELETE FROM dbo.CommentReports WHERE ReporterID IN (SELECT UserID FROM #U) OR CommentID IN (SELECT CommentID FROM #M);
 UPDATE dbo.Comments SET ParentID = NULL WHERE CommentID IN (SELECT CommentID FROM #M);
 DELETE FROM dbo.Comments WHERE CommentID IN (SELECT CommentID FROM #M);
-
-UPDATE dbo.ContestComments SET ParentID = NULL WHERE ParentID IN (SELECT CommentID FROM #CM) AND CommentID NOT IN (SELECT CommentID FROM #CM);
-DELETE FROM dbo.ContestCommentLikes WHERE UserID IN (SELECT UserID FROM #U) OR CommentID IN (SELECT CommentID FROM #CM);
-UPDATE dbo.ContestComments SET ParentID = NULL WHERE CommentID IN (SELECT CommentID FROM #CM);
-DELETE FROM dbo.ContestComments WHERE CommentID IN (SELECT CommentID FROM #CM);
 
 -- Bài nộp (tắt trigger chặn xóa trong transaction này)
 DELETE FROM dbo.Reports WHERE SubmissionID IN (SELECT SubmissionID FROM #S);

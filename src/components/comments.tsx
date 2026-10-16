@@ -9,18 +9,8 @@ import {
 } from "@/modules/comment/actions";
 import { Form, FormError, SubmitButton } from "@/components/form";
 import type { FormState } from "@/modules/auth/actions";
-
-export type CommentView = {
-  id: number;
-  parentId: number | null;
-  userId: number;
-  fullName: string;
-  content: string;
-  timeAgo: string;
-  likes: number;
-  liked: boolean;
-  authorRole: string;
-};
+import type { CommentTarget } from "@/modules/comment/schema";
+import type { CommentView } from "@/modules/comment/view";
 
 const initial: FormState = {};
 
@@ -42,12 +32,12 @@ function Avatar({ userId, name, size = 34 }: { userId: number; name: string; siz
 }
 
 function CommentForm({
-  problemId,
+  target,
   parentId,
   placeholder,
   onDone,
 }: {
-  problemId: number;
+  target: CommentTarget;
   parentId?: number;
   placeholder: string;
   onDone?: () => void;
@@ -60,7 +50,8 @@ function CommentForm({
 
   return (
     <Form action={action} state={state} resetOnSuccess errorField="content" className="flex flex-col gap-2">
-      <input type="hidden" name="problemId" value={problemId} />
+      <input type="hidden" name="kind" value={target.kind} />
+      <input type="hidden" name="targetId" value={target.id} />
       {parentId && <input type="hidden" name="parentId" value={parentId} />}
       <div className="flex gap-2">
         <input
@@ -80,13 +71,13 @@ function CommentForm({
 
 function CommentItem({
   c,
-  problemId,
+  target,
   currentUserId,
   canModerate,
   replies,
 }: {
   c: CommentView;
-  problemId: number;
+  target: CommentTarget;
   currentUserId: number;
   canModerate: boolean;
   replies?: CommentView[];
@@ -124,7 +115,7 @@ function CommentItem({
           <button
             type="button"
             disabled={pending}
-            onClick={() => start(() => toggleLikeAction(problemId, c.id))}
+            onClick={() => start(() => toggleLikeAction(target, c.id))}
             className={c.liked ? "font-semibold text-bad" : "hover:text-fg"}
             aria-pressed={c.liked}
           >
@@ -146,7 +137,7 @@ function CommentItem({
                   confirmText: "Xóa",
                   danger: true,
                 });
-                if (ok) start(() => deleteCommentAction(problemId, c.id));
+                if (ok) start(() => deleteCommentAction(target, c.id));
               }}
               className="ml-auto hover:text-bad"
             >
@@ -157,7 +148,7 @@ function CommentItem({
         {replying && (
           <div className="mt-3">
             <CommentForm
-              problemId={problemId}
+              target={target}
               parentId={c.id}
               placeholder="Viết câu trả lời..."
               onDone={() => setReplying(false)}
@@ -170,7 +161,7 @@ function CommentItem({
               <CommentItem
                 key={r.id}
                 c={r}
-                problemId={problemId}
+                target={target}
                 currentUserId={currentUserId}
                 canModerate={canModerate}
               />
@@ -183,14 +174,16 @@ function CommentItem({
 }
 
 export function Comments({
-  problemId,
+  target,
   currentUserId,
   canModerate,
+  canComment = true,
   comments,
 }: {
-  problemId: number;
+  target: CommentTarget;
   currentUserId: number;
   canModerate: boolean;
+  canComment?: boolean;
   comments: CommentView[];
 }) {
   const roots = comments.filter((c) => c.parentId === null);
@@ -199,12 +192,25 @@ export function Comments({
 
   return (
     <div className="flex flex-col gap-5">
-      <CommentForm problemId={problemId} placeholder="Viết bình luận hoặc trao đổi giải thuật..." />
+      {canComment ? (
+        <CommentForm
+          target={target}
+          placeholder={
+            target.kind === "problem"
+              ? "Viết bình luận hoặc trao đổi giải thuật..."
+              : "Viết bình luận hoặc thảo luận..."
+          }
+        />
+      ) : (
+        <div className="rounded-lg border border-line bg-muted px-4 py-3 text-sm text-fg-muted text-center">
+          Bạn cần tham gia kỳ thi để có thể thảo luận.
+        </div>
+      )}
       {roots.map((c) => (
         <CommentItem
           key={c.id}
           c={c}
-          problemId={problemId}
+          target={target}
           currentUserId={currentUserId}
           canModerate={canModerate}
           replies={repliesOf(c.id)}

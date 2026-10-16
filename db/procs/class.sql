@@ -728,13 +728,17 @@ BEGIN
         THROW 50030, N'Người này không có trong lớp học.', 1;
 
     BEGIN TRY
+        DECLARE @Created BIT = 0;
         BEGIN TRANSACTION;
         IF NOT EXISTS (SELECT 1 FROM dbo.TA_Requests WHERE ClassID = @ClassID AND UserID = @UserID AND Status = 'Pending')
         BEGIN
             INSERT dbo.TA_Requests (ClassID, UserID, RequestedBy)
             VALUES (@ClassID, @UserID, @TeacherID);
+            SET @Created = 1;
         END
         COMMIT TRANSACTION;
+        -- Created = 0 when a Pending request already existed (used to avoid duplicate notifications).
+        SELECT @Created AS Created;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
@@ -759,11 +763,12 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
         
-        DECLARE @ClassID INT, @UserID INT;
+        DECLARE @ClassID INT, @UserID INT, @Changed BIT = 0;
         SELECT @ClassID = ClassID, @UserID = UserID FROM dbo.TA_Requests WHERE RequestID = @RequestID AND Status = 'Pending';
-        
+
         IF @ClassID IS NOT NULL
         BEGIN
+            SET @Changed = 1;
             IF @IsApproved = 1
             BEGIN
                 UPDATE dbo.TA_Requests SET Status = 'Approved' WHERE RequestID = @RequestID;
@@ -780,8 +785,10 @@ BEGIN
                 WHERE RequestID = @RequestID;
             END
         END
-        
+
         COMMIT TRANSACTION;
+        -- Changed = 0 when the request was no longer Pending (used to avoid duplicate notifications).
+        SELECT @Changed AS Changed;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;

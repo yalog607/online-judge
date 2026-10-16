@@ -1,5 +1,6 @@
 import "server-only";
 import { execProc } from "@/db/exec";
+import type { CommentTarget } from "./schema";
 
 export type CommentRow = {
   CommentID: number;
@@ -14,22 +15,26 @@ export type CommentRow = {
   AuthorRole: string;
 };
 
-export async function listComments(problemId: number, userId: number) {
+function targetParams(target: CommentTarget) {
+  return target.kind === "problem" ? { ProblemID: target.id } : { ContestID: target.id };
+}
+
+export async function listComments(target: CommentTarget, userId: number) {
   const { rows } = await execProc<CommentRow>("usp_Comment_List", {
-    ProblemID: problemId,
+    ...targetParams(target),
     UserID: userId,
   });
   return rows;
 }
 
 export async function addComment(input: {
-  problemId: number;
+  target: CommentTarget;
   userId: number;
   parentId?: number;
   content: string;
 }) {
   await execProc("usp_Comment_Add", {
-    ProblemID: input.problemId,
+    ...targetParams(input.target),
     UserID: input.userId,
     ParentID: input.parentId,
     Content: input.content,

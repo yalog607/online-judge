@@ -121,7 +121,8 @@ export async function problemInfo(problemId: number) {
 export async function commentInfo(commentId: number, userId: number) {
   const { rows } = await execProc<{
     AuthorID: number;
-    ProblemID: number;
+    ProblemID: number | null;
+    ContestID: number | null;
     ParentID: number | null;
     LikedByUser: boolean;
   }>("usp_Notification_CommentInfo", { CommentID: commentId, UserID: userId });
@@ -130,6 +131,45 @@ export async function commentInfo(commentId: number, userId: number) {
 
 export async function classInfo(classId: number) {
   const { rows } = await execProc<{ ClassName: string }>("usp_Notification_ClassInfo", { ClassID: classId });
+  return rows[0] ?? null;
+}
+
+export async function adminIds(): Promise<number[]> {
+  const { rows } = await execProc<{ UserID: number }>("usp_Notification_AdminIds");
+  return rows.map((r) => r.UserID);
+}
+
+export async function classCreatedInfo(classId: number) {
+  const { rows } = await execProc<{ ClassName: string; TeacherID: number; TeacherName: string }>(
+    "usp_Notification_ClassCreatedInfo",
+    { ClassID: classId },
+  );
+  return rows[0] ?? null;
+}
+
+type TARequestInfoRow = {
+  RequestID: number;
+  ClassID: number;
+  ClassName: string;
+  UserID: number;
+  StudentName: string;
+  RequestedBy: number;
+  TeacherName: string;
+  Status: string;
+};
+
+export async function taRequestInfo(classId: number, userId: number) {
+  const { rows } = await execProc<TARequestInfoRow>("usp_Notification_TARequestInfo", {
+    ClassID: classId,
+    UserID: userId,
+  });
+  return rows[0] ?? null;
+}
+
+export async function taRequestById(requestId: number) {
+  const { rows } = await execProc<TARequestInfoRow>("usp_Notification_TARequestById", {
+    RequestID: requestId,
+  });
   return rows[0] ?? null;
 }
 

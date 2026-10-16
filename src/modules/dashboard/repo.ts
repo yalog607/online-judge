@@ -8,8 +8,6 @@ export type UserDashboardSummary = {
   TotalAC: number;
   CurrentStreak: number;
   LongestStreak: number;
-  Rank: number | null;
-  RankedUsers: number;
   Today: string;
 };
 

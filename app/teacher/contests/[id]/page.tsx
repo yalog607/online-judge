@@ -13,9 +13,9 @@ import { EditProblemScoreDialog } from "./edit-problem-score-dialog";
 import { RemoveProblemButton } from "./remove-problem-button";
 import { StartContestDialog } from "./start-contest-dialog";
 import { DeleteContestDialog } from "../delete-contest-dialog";
-import { listComments } from "@/modules/contest-comment/repo";
-import { ContestComments } from "../../../user/contests/[id]/comments";
-import { mapToCommentView } from "@/modules/contest-comment/view";
+import { listComments } from "@/modules/comment/repo";
+import { Comments } from "@/components/comments";
+import { mapToCommentView } from "@/modules/comment/view";
 import { ContestParticipantPage } from "@/modules/contest/participant-page";
 
 function formatDateTime(iso: string) {
@@ -91,7 +91,7 @@ export default async function TeacherContestDetailPage({
     [
       contestRepository.listProblems(contestId, actor.userId).catch(() => []),
       contestRepository.getLeaderboard(contestId, actor.userId).catch(() => []),
-      listComments(contestId, actor.userId).catch(() => []),
+      listComments({ kind: "contest", id: contestId }, actor.userId).catch(() => []),
       classRepository.listClasses({
         userId: actor.userId,
         onlyMine: true,
@@ -605,8 +605,8 @@ export default async function TeacherContestDetailPage({
 
       {activeTab === "comments" && (
         <div className="card p-6">
-          <ContestComments
-            contestId={contestId}
+          <Comments
+            target={{ kind: "contest", id: contestId }}
             currentUserId={actor.userId}
             canModerate={canManage}
             canComment={true}

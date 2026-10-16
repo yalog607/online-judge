@@ -11,6 +11,9 @@ export const NOTIFICATION_TYPES = [
   "comment_like",
   "contest_joined",
   "contest_started",
+  "ta_request_submitted",
+  "ta_request_approved",
+  "class_created",
 ] as const;
 
 // Internal paths only: must start with a single "/" and carry no scheme, backslash or markup.

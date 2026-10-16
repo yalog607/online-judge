@@ -3,7 +3,7 @@ DECLARE @Suffix VARCHAR(12) = LEFT(REPLACE(CAST(NEWID() AS VARCHAR(36)), '-', ''
 DECLARE @TeacherID INT, @StudentID INT, @ClassID INT, @ProblemID INT;
 DECLARE @UserSummary TABLE (
     ProblemsSolved INT, SolvedThisWeek INT, TotalSubmissions INT, TotalAC INT,
-    CurrentStreak INT, LongestStreak INT, [Rank] INT NULL, RankedUsers INT, Today VARCHAR(10)
+    CurrentStreak INT, LongestStreak INT, Today VARCHAR(10)
 );
 DECLARE @TeacherSummary TABLE (
     ClassCount INT, StudentCount INT, OpenProblems INT, ExpiringSoon INT,
@@ -46,13 +46,11 @@ INSERT @Results VALUES ('User dashboard counts solved problems and submissions',
     CASE WHEN EXISTS (SELECT 1 FROM @UserSummary WHERE ProblemsSolved = 1 AND TotalSubmissions = 3 AND TotalAC = 1) THEN 1 ELSE 0 END);
 INSERT @Results VALUES ('User dashboard streak counts consecutive submission days',
     CASE WHEN EXISTS (SELECT 1 FROM @UserSummary WHERE CurrentStreak = 2 AND LongestStreak = 2) THEN 1 ELSE 0 END);
-INSERT @Results VALUES ('User dashboard ranks a user who solved a problem',
-    CASE WHEN EXISTS (SELECT 1 FROM @UserSummary WHERE [Rank] >= 1 AND RankedUsers >= 1) THEN 1 ELSE 0 END);
 
 DELETE FROM @UserSummary;
 INSERT @UserSummary EXEC app.usp_Dashboard_User @UserID = @TeacherID, @SummaryOnly = 1;
-INSERT @Results VALUES ('User dashboard has no rank and zero streak without submissions',
-    CASE WHEN EXISTS (SELECT 1 FROM @UserSummary WHERE ProblemsSolved = 0 AND [Rank] IS NULL AND CurrentStreak = 0) THEN 1 ELSE 0 END);
+INSERT @Results VALUES ('User dashboard has zero streak without submissions',
+    CASE WHEN EXISTS (SELECT 1 FROM @UserSummary WHERE ProblemsSolved = 0 AND CurrentStreak = 0) THEN 1 ELSE 0 END);
 
 INSERT @TeacherSummary EXEC app.usp_Dashboard_Teacher @TeacherID = @TeacherID, @SummaryOnly = 1;
 INSERT @Results VALUES ('Teacher dashboard counts classes, students and open problems',

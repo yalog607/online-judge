@@ -126,11 +126,11 @@ CREATE OR ALTER PROCEDURE app.usp_Notification_CommentInfo
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT c.UserID AS AuthorID, c.ProblemID, c.ParentID,
+    SELECT c.UserID AS AuthorID, c.ProblemID, c.ContestID, c.ParentID,
            CAST(CASE WHEN EXISTS (
-               SELECT 1 FROM dbo.ProblemCommentLikes l WHERE l.CommentID = c.CommentID AND l.UserID = @UserID
+               SELECT 1 FROM dbo.CommentLikes l WHERE l.CommentID = c.CommentID AND l.UserID = @UserID
            ) THEN 1 ELSE 0 END AS BIT) AS LikedByUser
-    FROM dbo.ProblemComments c
+    FROM dbo.Comments c
     WHERE c.CommentID = @CommentID;
 END
 GO
@@ -141,6 +141,58 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT ClassName FROM dbo.Classes WHERE ClassID = @ClassID;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Notification_AdminIds
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT UserID FROM dbo.Users WHERE Role = 'Admin';
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Notification_ClassCreatedInfo
+    @ClassID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT c.ClassName, c.TeacherID, t.FullName AS TeacherName
+    FROM dbo.Classes c
+    JOIN dbo.Users t ON t.UserID = c.TeacherID
+    WHERE c.ClassID = @ClassID;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Notification_TARequestInfo
+    @ClassID INT,
+    @UserID  INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT TOP (1) r.RequestID, r.ClassID, c.ClassName, r.UserID, s.FullName AS StudentName,
+           r.RequestedBy, t.FullName AS TeacherName, r.Status
+    FROM dbo.TA_Requests r
+    JOIN dbo.Classes c ON c.ClassID = r.ClassID
+    JOIN dbo.Users s ON s.UserID = r.UserID
+    JOIN dbo.Users t ON t.UserID = r.RequestedBy
+    WHERE r.ClassID = @ClassID AND r.UserID = @UserID
+    ORDER BY r.RequestID DESC;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Notification_TARequestById
+    @RequestID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT r.RequestID, r.ClassID, c.ClassName, r.UserID, s.FullName AS StudentName,
+           r.RequestedBy, t.FullName AS TeacherName, r.Status
+    FROM dbo.TA_Requests r
+    JOIN dbo.Classes c ON c.ClassID = r.ClassID
+    JOIN dbo.Users s ON s.UserID = r.UserID
+    JOIN dbo.Users t ON t.UserID = r.RequestedBy
+    WHERE r.RequestID = @RequestID;
 END
 GO
 

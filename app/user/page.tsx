@@ -67,7 +67,7 @@ export default async function UserDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon="code"
           label="Bài đã giải"
@@ -80,12 +80,6 @@ export default async function UserDashboard() {
           label="Chuỗi ngày liên tiếp"
           value={s.CurrentStreak}
           hint={`Kỷ lục ${s.LongestStreak} ngày`}
-        />
-        <StatCard
-          icon="trophy"
-          label="Xếp hạng"
-          value={s.Rank ? `#${s.Rank}` : "—"}
-          hint={s.Rank ? `trên ${s.RankedUsers} học viên` : "Giải bài đầu tiên để có hạng"}
         />
         <StatCard
           icon="chart"

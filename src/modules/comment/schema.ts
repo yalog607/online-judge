@@ -1,7 +1,12 @@
 import { z } from "zod";
 
+export const commentKindSchema = z.enum(["problem", "contest"]);
+
+export type CommentTarget = { kind: z.infer<typeof commentKindSchema>; id: number };
+
 export const addCommentSchema = z.object({
-  problemId: z.coerce.number().int().positive(),
+  kind: commentKindSchema,
+  targetId: z.coerce.number().int().positive(),
   parentId: z.coerce.number().int().positive().optional(),
   content: z
     .string()

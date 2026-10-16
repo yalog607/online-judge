@@ -4,9 +4,9 @@ import { requireUser } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
 import { DifficultyBadge } from "@/components/badge";
 import { JoinContestDialog } from "../../../app/user/contests/join-contest-dialog";
-import { listComments } from "@/modules/contest-comment/repo";
-import { ContestComments } from "../../../app/user/contests/[id]/comments";
-import { mapToCommentView } from "@/modules/contest-comment/view";
+import { listComments } from "@/modules/comment/repo";
+import { Comments } from "@/components/comments";
+import { mapToCommentView } from "@/modules/comment/view";
 import { Pager } from "@/components/pager";
 import { paginate, parsePage } from "@/lib/paginate";
 
@@ -70,7 +70,7 @@ export async function ContestParticipantPage({
     contestRepository.getContest(contestId, user.userId),
     contestRepository.listProblems(contestId, user.userId).catch(() => []),
     contestRepository.getLeaderboard(contestId, user.userId).catch(() => []),
-    listComments(contestId, user.userId).catch(() => []),
+    listComments({ kind: "contest", id: contestId }, user.userId).catch(() => []),
   ]);
 
   if (!contest) notFound();
@@ -380,8 +380,8 @@ export async function ContestParticipantPage({
 
       {activeTab === "comments" && (
         <div className="card p-6">
-          <ContestComments
-            contestId={contestId}
+          <Comments
+            target={{ kind: "contest", id: contestId }}
             currentUserId={user.userId}
             canModerate={false}
             canComment={Boolean(contest.isJoined)}

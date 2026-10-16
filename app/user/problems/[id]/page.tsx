@@ -11,19 +11,8 @@ import { parseFunctionSpec } from "@/modules/problem/function-spec";
 import { starterCode } from "@/modules/problem/harness";
 import { SubmitForm } from "./submit-form";
 import { ProblemTabs } from "./problem-tabs";
-import { Comments, type CommentView } from "./comments";
-
-function timeAgo(date: Date) {
-  const sec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-  if (sec < 60) return "vừa xong";
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} phút trước`;
-  const hour = Math.floor(min / 60);
-  if (hour < 24) return `${hour} giờ trước`;
-  const day = Math.floor(hour / 24);
-  if (day < 30) return `${day} ngày trước`;
-  return date.toLocaleDateString("vi-VN");
-}
+import { Comments } from "@/components/comments";
+import { mapToCommentView } from "@/modules/comment/view";
 
 export default async function ProblemDetailPage({
   params,
@@ -73,20 +62,10 @@ export default async function ProblemDetailPage({
   const [examples, history, commentRows] = await Promise.all([
     listPublicTestcases(problemId),
     listSubmissions(user.userId, problemId, 1, 10),
-    listComments(problemId, user.userId),
+    listComments({ kind: "problem", id: problemId }, user.userId),
   ]);
 
-  const comments: CommentView[] = commentRows.map((c) => ({
-    id: c.CommentID,
-    parentId: c.ParentID,
-    userId: c.UserID,
-    fullName: c.FullName,
-    content: c.Content,
-    timeAgo: timeAgo(new Date(c.CreatedAt)),
-    likes: c.LikeCount,
-    liked: c.LikedByMe,
-    authorRole: c.AuthorRole,
-  }));
+  const comments = commentRows.map(mapToCommentView);
   const tags = (problem.Tags ?? "")
     .split(",")
     .map((t) => t.trim())
@@ -242,7 +221,7 @@ export default async function ProblemDetailPage({
             statement={statement}
             discussion={
               <Comments
-                problemId={problem.ProblemID}
+                target={{ kind: "problem", id: problem.ProblemID }}
                 currentUserId={user.userId}
                 canModerate={user.role !== "User"}
                 comments={comments}

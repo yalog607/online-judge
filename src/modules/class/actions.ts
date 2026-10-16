@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { classRepository } from "./repo";
-import { notifyStudentAdded, notifyStudentRemoved } from "@/modules/notification/events";
+import {
+  notifyClassCreated,
+  notifyStudentAdded,
+  notifyStudentRemoved,
+  notifyTAApproved,
+  notifyTARequestSubmitted,
+} from "@/modules/notification/events";
 import { createClassSchema, joinClassSchema, updateClassSchema } from "./schema";
 import { firstIssue } from "@/lib/form-errors";
 
@@ -27,6 +33,8 @@ export async function createClassAction(_prev: FormState, formData: FormData): P
 
   try {
     const { classId } = await classRepository.createClass(actor.userId, parsed.data);
+    // An Admin's class is approved immediately, so only a Teacher's class needs a review.
+    if (actor.role === "Teacher") await notifyClassCreated(classId, actor.userId);
     revalidatePath("/teacher/classes");
     redirect(`/teacher/classes/${classId}`);
   } catch (error) {
@@ -236,7 +244,8 @@ export async function requestTAUpgradeAction(
   const actor = await requireRole("Teacher", "Admin");
 
   try {
-    await classRepository.requestUpgradeToTA(classId, actor.userId, studentId);
+    const created = await classRepository.requestUpgradeToTA(classId, actor.userId, studentId);
+    if (created) await notifyTARequestSubmitted(classId, studentId, actor.userId);
     revalidatePath(`/teacher/classes/${classId}`);
     return { ok: true };
   } catch (error) {
@@ -255,7 +264,8 @@ export async function approveTARequestAction(
   const actor = await requireRole("Admin");
 
   try {
-    await classRepository.approveTARequest(actor.userId, requestId, isApproved, rejectionReason);
+    const changed = await classRepository.approveTARequest(actor.userId, requestId, isApproved, rejectionReason);
+    if (changed && isApproved) await notifyTAApproved(requestId);
     revalidatePath("/admin/approvals");
     return { ok: true };
   } catch (error) {
