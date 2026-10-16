@@ -86,13 +86,13 @@ export default async function ManageProblemsPage({
       <nav aria-label="Lọc danh sách bài tập" className="flex gap-5 border-b border-line pb-2">
         <Link 
           href="/teacher/problems" 
-          className={`whitespace-nowrap pb-2 -mb-[9px] font-medium ${sp.status !== 'Pending' && sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+          className={`whitespace-nowrap pb-2 -mb-2.25 font-medium ${sp.status !== 'Pending' && sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
         >
           Tất cả
         </Link>
         <Link 
           href="/teacher/problems?view=mine" 
-          className={`whitespace-nowrap pb-2 -mb-[9px] font-medium ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
+          className={`whitespace-nowrap pb-2 -mb-2.25 font-medium ${sp.view === 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
         >
           Bài tập của tôi
         </Link>
@@ -179,15 +179,15 @@ export default async function ManageProblemsPage({
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[1180px] text-sm">
+        <table className="w-full min-w-295 text-sm">
           <colgroup>
             <col className="w-16" />
-            <col className="w-[230px]" />
-            <col className="w-[170px]" />
-            <col className="w-[190px]" />
-            <col className="w-[125px]" />
-            <col className="w-[210px]" />
-            <col className="w-[360px]" />
+            <col className="w-57.5" />
+            <col className="w-42.5" />
+            <col className="w-47.5" />
+            <col className="w-31.25" />
+            <col className="w-52.5" />
+            <col className="w-90" />
           </colgroup>
           <thead>
             <tr className="border-b border-line text-left text-fg-muted bg-muted font-medium">
