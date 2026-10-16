@@ -90,19 +90,19 @@ export default async function TeacherClassesPage({
         pageKey="pj"
         sp={sp}
         buildHref={hrefFor("pj")}
-        hrefPrefix="/teacher/classes"
+        hrefPrefix="/user/classes"
         empty="Bạn chưa tham gia lớp học nào."
         label="Đã tham gia"
       />
       <ClassCards
-        title={`Lớp công khai khác (${otherClasses.length})`}
+        title={`Các lớp học khác (${otherClasses.length})`}
         classes={otherClasses}
         pageKey="pc"
         sp={sp}
         buildHref={hrefFor("pc")}
-        hrefPrefix="/teacher/classes"
-        empty="Không có lớp công khai phù hợp."
-        label="Lớp công khai"
+        hrefPrefix="/user/classes"
+        empty="Không có lớp học phù hợp."
+        label="Lớp học"
       />
     </div>
   );
@@ -142,6 +142,15 @@ function ClassCards({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-medium text-primary">
                     {c.IsCancelled ? "Đã hủy · chỉ xem lịch sử" : label}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      c.IsPublic
+                        ? "bg-ok/10 text-ok border border-ok/30"
+                        : "bg-warn/10 text-warn border border-warn/30"
+                    }`}
+                  >
+                    {c.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}
                   </span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${

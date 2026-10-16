@@ -8,9 +8,11 @@ import { Modal } from "@/components/modal";
 export default function LeaveClassDialog({
   classId,
   className,
+  redirectUrl = "/user/classes",
 }: {
   classId: number;
   className: string;
+  redirectUrl?: string;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +27,7 @@ export default function LeaveClassDialog({
         setError(result.error);
       } else {
         setIsOpen(false);
-        router.push("/user/classes");
+        router.push(redirectUrl);
       }
     });
   };

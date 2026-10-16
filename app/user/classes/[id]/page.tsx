@@ -54,7 +54,7 @@ export default async function UserClassDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <Link
-            href="/user/classes"
+            href={user.role === "Teacher" ? "/teacher/classes" : "/user/classes"}
             className="text-sm font-medium text-fg-muted hover:text-fg hover:underline"
           >
             ← Quay lại danh sách lớp học
@@ -89,7 +89,11 @@ export default async function UserClassDetailPage({
                 FullName: user.fullName,
               }}
             />
-            <LeaveClassDialog classId={classId} className={classDetail.ClassName} />
+            <LeaveClassDialog
+              classId={classId}
+              className={classDetail.ClassName}
+              redirectUrl={user.role === "Teacher" ? "/teacher/classes" : "/user/classes"}
+            />
           </div>
         ) : classDetail.IsPublic ? (
           <form action={joinPublicActionWithId}>
@@ -278,7 +282,7 @@ export default async function UserClassDetailPage({
                       <tr key={p.ProblemID} className="hover:bg-muted/50 transition-colors">
                         <td className="px-5 py-4">
                           <Link
-                            href={`/user/problems/${p.ProblemID}`}
+                            href={`/user/problems/${p.ProblemID}?classId=${classId}`}
                             className="font-medium text-fg hover:underline"
                           >
                             {p.Title}
@@ -306,7 +310,7 @@ export default async function UserClassDetailPage({
                             <span className="text-xs text-fg-muted">Chỉ xem</span>
                           ) : (
                             <Link
-                              href={`/user/problems/${p.ProblemID}`}
+                              href={`/user/problems/${p.ProblemID}?classId=${classId}`}
                               className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-fg hover:bg-muted transition-colors"
                             >
                               Làm bài →
