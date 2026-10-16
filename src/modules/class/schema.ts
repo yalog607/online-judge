@@ -11,6 +11,15 @@ export const joinClassSchema = z.object({
   inviteCode: z.string().trim().min(1, "Vui lòng nhập mã tham gia lớp").max(20),
 });
 
+export const requestJoinClassSchema = z.object({
+  message: z.string().trim().max(500).default(""),
+});
+
+export const reviewJoinRequestSchema = z.object({
+  requestId: z.number().int().positive(),
+  action: z.enum(["Approve", "Reject"]),
+});
+
 export const listClassQuerySchema = z.object({
   search: z.string().trim().optional(),
   onlyMine: z
@@ -29,6 +38,8 @@ export const listClassQuerySchema = z.object({
 
 export type CreateClassInput = z.infer<typeof createClassSchema>;
 export type JoinClassInput = z.infer<typeof joinClassSchema>;
+export type RequestJoinClassInput = z.infer<typeof requestJoinClassSchema>;
+export type ReviewJoinRequestInput = z.infer<typeof reviewJoinRequestSchema>;
 
 export const updateClassSchema = z.object({
   className: z.string().trim().min(3, "Tên lớp phải có ít nhất 3 ký tự").max(150),
@@ -37,4 +48,3 @@ export const updateClassSchema = z.object({
 });
 
 export type UpdateClassInput = z.infer<typeof updateClassSchema>;
-
