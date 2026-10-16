@@ -18,31 +18,47 @@ VALUES (@TeacherID, N'Contest comment integration ' + @Suffix, DATEADD(HOUR, -1,
 SET @ContestID = SCOPE_IDENTITY();
 INSERT dbo.Contest_User (ContestID, UserID) VALUES (@ContestID, @StudentID);
 
-INSERT @CreatedComment EXEC app.usp_ContestComment_Add
+INSERT @CreatedComment EXEC app.usp_Comment_Add
     @ContestID = @ContestID, @UserID = @StudentID, @Content = N'Bình luận từ thí sinh';
 SELECT @CommentID = CommentID FROM @CreatedComment;
 INSERT @Results VALUES ('Joined contestant can post a comment', CASE WHEN @CommentID IS NOT NULL THEN 1 ELSE 0 END);
 
 DELETE @CreatedComment;
-INSERT @CreatedComment EXEC app.usp_ContestComment_Add
+INSERT @CreatedComment EXEC app.usp_Comment_Add
     @ContestID = @ContestID, @UserID = @TeacherID, @Content = N'Bình luận từ giảng viên';
 INSERT @Results VALUES ('Contest teacher can post a comment', CASE WHEN EXISTS (SELECT 1 FROM @CreatedComment) THEN 1 ELSE 0 END);
 
 BEGIN TRY
-    EXEC app.usp_ContestComment_Add @ContestID = @ContestID, @UserID = @OtherID, @Content = N'Người ngoài';
+    EXEC app.usp_Comment_Add @ContestID = @ContestID, @UserID = @OtherID, @Content = N'Người ngoài';
     INSERT @Results VALUES ('Non-participant cannot post a comment', 0);
 END TRY BEGIN CATCH
     INSERT @Results VALUES ('Non-participant cannot post a comment', CASE WHEN ERROR_NUMBER() = 50071 THEN 1 ELSE 0 END);
 END CATCH;
 
 BEGIN TRY
-    EXEC app.usp_ContestComment_Add @ContestID = @ContestID, @UserID = @StudentID, @Content = N'   ';
+    EXEC app.usp_Comment_Add @ContestID = @ContestID, @UserID = @StudentID, @Content = N'   ';
     INSERT @Results VALUES ('Empty comment is rejected', 0);
 END TRY BEGIN CATCH
     INSERT @Results VALUES ('Empty comment is rejected', CASE WHEN ERROR_NUMBER() = 50070 THEN 1 ELSE 0 END);
 END CATCH;
 
-DELETE dbo.ContestComments WHERE ContestID = @ContestID;
+EXEC app.usp_Comment_ToggleLike @CommentID = @CommentID, @UserID = @OtherID;
+INSERT @Results VALUES ('Public contest comment can be liked',
+    CASE WHEN (SELECT COUNT(*) FROM dbo.CommentLikes WHERE CommentID = @CommentID) = 1 THEN 1 ELSE 0 END);
+
+BEGIN TRY
+    EXEC app.usp_Comment_Delete @CommentID = @CommentID, @UserID = @OtherID;
+    INSERT @Results VALUES ('Unrelated user cannot delete a contest comment', 0);
+END TRY BEGIN CATCH
+    INSERT @Results VALUES ('Unrelated user cannot delete a contest comment', CASE WHEN ERROR_NUMBER() = 50074 THEN 1 ELSE 0 END);
+END CATCH;
+
+EXEC app.usp_Comment_Delete @CommentID = @CommentID, @UserID = @TeacherID;
+INSERT @Results VALUES ('Contest creator can delete a comment and its likes',
+    CASE WHEN NOT EXISTS (SELECT 1 FROM dbo.Comments WHERE CommentID = @CommentID)
+          AND NOT EXISTS (SELECT 1 FROM dbo.CommentLikes WHERE CommentID = @CommentID) THEN 1 ELSE 0 END);
+
+DELETE dbo.Comments WHERE ContestID = @ContestID;
 DELETE dbo.Contests WHERE ContestID = @ContestID;
 DELETE dbo.Users WHERE UserID IN (@TeacherID, @StudentID, @OtherID);
 

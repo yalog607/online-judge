@@ -12,12 +12,8 @@ SET XACT_ABORT ON;
 BEGIN TRAN;
 
 DELETE FROM dbo.CommentLikes;
-DELETE FROM dbo.CommentReports;
 UPDATE dbo.Comments SET ParentID = NULL;
 DELETE FROM dbo.Comments;
-DELETE FROM dbo.ContestCommentLikes;
-UPDATE dbo.ContestComments SET ParentID = NULL;
-DELETE FROM dbo.ContestComments;
 
 DELETE FROM dbo.Reports;
 DELETE FROM dbo.SubmissionResults;
@@ -55,8 +51,6 @@ DBCC CHECKIDENT ('dbo.Contests', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Documents', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Submissions', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Comments', RESEED, 0) WITH NO_INFOMSGS;
-DBCC CHECKIDENT ('dbo.ContestComments', RESEED, 0) WITH NO_INFOMSGS;
-DBCC CHECKIDENT ('dbo.CommentReports', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Reports', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Notifications', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.TA_Requests', RESEED, 0) WITH NO_INFOMSGS;

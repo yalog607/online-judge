@@ -39,10 +39,10 @@ END CATCH;
 
 EXEC app.usp_Comment_ToggleLike @CommentID = @C1, @UserID = @OtherID;
 INSERT @Results VALUES ('Like is recorded',
-    CASE WHEN (SELECT COUNT(*) FROM dbo.ProblemCommentLikes WHERE CommentID = @C1) = 1 THEN 1 ELSE 0 END);
+    CASE WHEN (SELECT COUNT(*) FROM dbo.CommentLikes WHERE CommentID = @C1) = 1 THEN 1 ELSE 0 END);
 EXEC app.usp_Comment_ToggleLike @CommentID = @C1, @UserID = @OtherID;
 INSERT @Results VALUES ('Second toggle removes like',
-    CASE WHEN (SELECT COUNT(*) FROM dbo.ProblemCommentLikes WHERE CommentID = @C1) = 0 THEN 1 ELSE 0 END);
+    CASE WHEN (SELECT COUNT(*) FROM dbo.CommentLikes WHERE CommentID = @C1) = 0 THEN 1 ELSE 0 END);
 
 BEGIN TRY
     EXEC app.usp_Comment_Delete @CommentID = @C1, @UserID = @OtherID;
@@ -54,7 +54,15 @@ END CATCH;
 
 EXEC app.usp_Comment_Delete @CommentID = @C1, @UserID = @UserID;
 INSERT @Results VALUES ('Author delete removes comment and replies',
-    CASE WHEN NOT EXISTS (SELECT 1 FROM dbo.ProblemComments WHERE ProblemID = @ProblemID) THEN 1 ELSE 0 END);
+    CASE WHEN NOT EXISTS (SELECT 1 FROM dbo.Comments WHERE ProblemID = @ProblemID) THEN 1 ELSE 0 END);
+
+BEGIN TRY
+    INSERT dbo.Comments (UserID, Content) VALUES (@UserID, N'Khong dich');
+    INSERT @Results VALUES ('Comment without a target is rejected', 0);
+END TRY
+BEGIN CATCH
+    INSERT @Results VALUES ('Comment without a target is rejected', 1);
+END CATCH;
 
 DELETE FROM dbo.Problems WHERE ProblemID = @ProblemID;
 DELETE FROM dbo.Users WHERE UserID IN (@UserID, @OtherID);

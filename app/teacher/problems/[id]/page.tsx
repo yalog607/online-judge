@@ -5,21 +5,10 @@ import { checkProblemAccess, getProblem, listPublicTestcases, getProblemSubmissi
 import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
 import { MathContent } from "@/components/math-content";
-import { Comments, type CommentView } from "../../../user/problems/[id]/comments";
+import { Comments } from "@/components/comments";
+import { mapToCommentView } from "@/modules/comment/view";
 import { StatCard } from "@/components/stat-card";
 import { Pager } from "@/components/pager";
-
-function timeAgo(date: Date) {
-  const sec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-  if (sec < 60) return "vừa xong";
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} phút trước`;
-  const hour = Math.floor(min / 60);
-  if (hour < 24) return `${hour} giờ trước`;
-  const day = Math.floor(hour / 24);
-  if (day < 30) return `${day} ngày trước`;
-  return date.toLocaleDateString("vi-VN");
-}
 
 export default async function TeacherProblemPreviewPage({
   params,
@@ -47,7 +36,7 @@ export default async function TeacherProblemPreviewPage({
 
   const [examples, commentRows, submissionsData] = await Promise.all([
     listPublicTestcases(problemId),
-    listComments(problemId, user.userId),
+    listComments({ kind: "problem", id: problemId }, user.userId),
     activeTab === "submissions"
       ? getProblemSubmissions(problemId, user.userId, page, PAGE_SIZE, selectedResult)
       : Promise.resolve({
@@ -57,17 +46,7 @@ export default async function TeacherProblemPreviewPage({
         }),
   ]);
 
-  const comments: CommentView[] = commentRows.map((c) => ({
-    id: c.CommentID,
-    parentId: c.ParentID,
-    userId: c.UserID,
-    fullName: c.FullName,
-    content: c.Content,
-    timeAgo: timeAgo(new Date(c.CreatedAt)),
-    likes: c.LikeCount,
-    liked: c.LikedByMe,
-    authorRole: c.AuthorRole,
-  }));
+  const comments = commentRows.map(mapToCommentView);
   const tags = (problem.Tags ?? "")
     .split(",")
     .map((t) => t.trim())
@@ -327,7 +306,7 @@ export default async function TeacherProblemPreviewPage({
 
       <div className="card p-5">
         <h2 className="text-xl font-semibold mb-4">Bình luận & Thảo luận</h2>
-        <Comments comments={comments} problemId={problemId} currentUserId={user.userId} canModerate={true} />
+        <Comments comments={comments} target={{ kind: "problem", id: problemId }} currentUserId={user.userId} canModerate={true} />
       </div>
     </div>
   );

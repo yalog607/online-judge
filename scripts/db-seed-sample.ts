@@ -649,12 +649,12 @@ async function main() {
 
     // ---- Comments (bài tập) ----
     const existingComments = await scalar(
-      `SELECT COUNT(*) FROM dbo.Comments WHERE UserID IN (${idList})`,
+      `SELECT COUNT(*) FROM dbo.Comments WHERE ProblemID IS NOT NULL AND UserID IN (${idList})`,
     );
     if (!existingComments) {
       const root = (await scalar(
-        `INSERT dbo.Comments (UserID, ProblemID, Content, Likes)
-         VALUES (@u, @p, @c, 2);
+        `INSERT dbo.Comments (UserID, ProblemID, Content)
+         VALUES (@u, @p, @c);
          SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
         { u: student(1), p: problemId.prime, c: "Gợi ý: chỉ cần kiểm tra ước đến căn bậc hai của n." },
       ))!;
@@ -674,20 +674,20 @@ async function main() {
 
     // ---- Comments (kỳ thi) ----
     const existingCC = await scalar(
-      `SELECT COUNT(*) FROM dbo.ContestComments WHERE UserID IN (${idList})`,
+      `SELECT COUNT(*) FROM dbo.Comments WHERE ContestID IS NOT NULL AND UserID IN (${idList})`,
     );
     if (!existingCC) {
       const cc = (await scalar(
-        `INSERT dbo.ContestComments (ContestID, UserID, Content)
+        `INSERT dbo.Comments (ContestID, UserID, Content)
          VALUES (@c, @u, @text);
          SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
         { c: contestId.A, u: student(1), text: "Đề năm nay vừa sức, bài 3 hơi khó." },
       ))!;
       await q(
-        `INSERT dbo.ContestComments (ContestID, UserID, ParentID, Content) VALUES (@c, @u, @parent, @text)`,
+        `INSERT dbo.Comments (ContestID, UserID, ParentID, Content) VALUES (@c, @u, @parent, @text)`,
         { c: contestId.A, u: teacher, parent: cc, text: "Cảm ơn góp ý, lời giải sẽ được đăng sớm." },
       );
-      await q(`INSERT dbo.ContestCommentLikes (CommentID, UserID) VALUES (@c, @u)`, {
+      await q(`INSERT dbo.CommentLikes (CommentID, UserID) VALUES (@c, @u)`, {
         c: cc,
         u: student(2),
       });
