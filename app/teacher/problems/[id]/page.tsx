@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { checkProblemAccess, getProblem, listPublicTestcases, getProblemSubmissions } from "@/modules/problem/repo";
@@ -248,11 +249,7 @@ export default async function TeacherProblemPreviewPage({
                 </thead>
                 <tbody className="divide-y divide-line">
                   {submissionsData.items.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center text-fg-muted">
-                        Chưa có học viên nào nộp bài tập này.
-                      </td>
-                    </tr>
+                    <EmptyState variant="cell" colSpan={8}>Chưa có học viên nào nộp bài tập này.</EmptyState>
                   ) : (
                     submissionsData.items.map((s, idx) => (
                       <tr key={s.SubmissionID} className="hover:bg-muted/50">

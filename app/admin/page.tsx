@@ -1,4 +1,5 @@
 import { getAdminDashboard } from "@/modules/dashboard/service";
+import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/dal";
 import { StatCard, Panel, EmptyNote } from "@/components/stat-card";
 import { LineChart, DonutChart } from "@/components/dashboard-charts";
@@ -68,10 +69,7 @@ export default async function AdminDashboard() {
 
   return (
     <div className="flex flex-col gap-5 pt-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Tổng quan hệ thống</h1>
-        <p className="mt-1 text-fg-muted">Số liệu vận hành 24 giờ gần nhất.</p>
-      </div>
+      <PageHeader title="Tổng quan hệ thống" description="Số liệu vận hành 24 giờ gần nhất." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

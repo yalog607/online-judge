@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { getProblem, listPublicTestcases, checkProblemAccess } from "@/modules/problem/repo";
@@ -132,11 +133,7 @@ export default async function ProblemDetailPage({
             </tr>
           ))}
           {history.rows.length === 0 && (
-            <tr>
-              <td colSpan={4} className="px-5 py-8 text-center text-fg-muted">
-                Chưa có lượt nộp nào.
-              </td>
-            </tr>
+            <EmptyState variant="cell" colSpan={4}>Chưa có lượt nộp nào.</EmptyState>
           )}
         </tbody>
       </table>

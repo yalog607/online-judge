@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/dal";
+import { PageHeader } from "@/components/page-header";
 import { classRepository } from "@/modules/class/repo";
-import { Pager } from "@/components/pager";
-import { paginate, parsePage } from "@/lib/paginate";
-import { JoinClassForm } from "./join-class-form";
+import { ClassCard, ClassSection } from "@/components/class-card";
+import { pageHrefBuilder, paginate, parsePage } from "@/lib/paginate";
+import { JoinClassForm } from "@/components/join-class-form";
 
 const CLASS_PAGE_SIZE = 9;
 
@@ -32,25 +32,16 @@ export default async function UserClassesPage({
   const myClasses = minePage.items;
   const otherClasses = otherPage.items;
 
-  const hrefFor = (key: string) => (p: number) => {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(sp)) if (v !== undefined && k !== key) params.set(k, v);
-    params.set(key, String(p));
-    return `?${params.toString()}`;
-  };
-
   const getHref = (classId: number) => {
     return `/user/classes/${classId}`;
   };
 
   return (
     <div className="flex flex-col gap-8 pt-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Lớp học của tôi</h1>
-        <p className="mt-1 text-fg-muted">
-          Tham gia các lớp học của giảng viên để làm bài tập và theo dõi tiến độ học tập.
-        </p>
-      </div>
+      <PageHeader
+        title="Lớp học của tôi"
+        description="Tham gia các lớp học của giảng viên để làm bài tập và theo dõi tiến độ học tập."
+      />
 
       <div className="card p-6">
         <h2 className="mb-2 text-base font-semibold">Tham gia lớp học mới</h2>
@@ -60,123 +51,69 @@ export default async function UserClassesPage({
         <JoinClassForm />
       </div>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Lớp học bạn đã tham gia ({allMine.length})</h2>
-        {myClasses.length === 0 ? (
-          <div className="card p-8 text-center text-fg-muted">
-            Bạn chưa tham gia lớp học nào. Hãy nhập mã mời phía trên để tham gia lớp.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {myClasses.map((c) => (
-              <div
-                key={c.ClassID}
-                className="relative flex flex-col justify-between card card-hover p-5"
-              >
-                <div>
-                  <span className={`text-xs font-medium ${c.IsCancelled ? "text-bad" : "text-primary"}`}>
-                    {c.IsCancelled ? "Đã hủy · chỉ xem lịch sử" : "Đang tham gia"}
-                  </span>
-                  <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={getHref(c.ClassID)} className="hover:underline after:absolute after:inset-0">
-                      {c.ClassName}
-                    </Link>
-                  </h3>
-                  <p className="mt-1 text-sm text-fg-muted line-clamp-2">
-                    {c.Description || "Không có mô tả."}
-                  </p>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between border-t border-line pt-3 text-xs text-fg-muted">
-                  <span>GV: {c.TeacherName}</span>
-                  <Link
-                    href={getHref(c.ClassID)}
-                    className="font-medium text-fg hover:underline"
-                  >
-                    Vào lớp →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <Pager page={minePage.page} pageSize={CLASS_PAGE_SIZE} total={minePage.total} buildHref={hrefFor("pm")} />
-      </div>
+      <ClassSection
+        title={`Lớp học bạn đã tham gia (${allMine.length})`}
+        empty="Bạn chưa tham gia lớp học nào. Hãy nhập mã mời phía trên để tham gia lớp."
+        isEmpty={myClasses.length === 0}
+        pager={{ page: minePage.page, pageSize: CLASS_PAGE_SIZE, total: minePage.total, buildHref: pageHrefBuilder(sp, "pm") }}
+      >
+        {myClasses.map((c) => (
+          <ClassCard
+            key={c.ClassID}
+            href={getHref(c.ClassID)}
+            name={c.ClassName}
+            description={c.Description}
+            teacherName={c.TeacherName}
+            kicker={c.IsCancelled ? "Đã hủy · chỉ xem lịch sử" : "Đang tham gia"}
+            kickerTone={c.IsCancelled ? "bad" : "primary"}
+            ctaLabel="Vào lớp"
+          />
+        ))}
+      </ClassSection>
 
       {allTa.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Lớp học bạn phụ trách (Trợ giảng)</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {taClasses.map((c) => (
-              <div
-                key={c.ClassID}
-                className="relative flex flex-col justify-between rounded-xl border border-primary/30 bg-primary/5 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-pop"
-              >
-                <div>
-                  <span className="text-xs font-medium text-primary uppercase tracking-wider">Trợ giảng</span>
-                  <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={getHref(c.ClassID)} className="hover:underline after:absolute after:inset-0">
-                      {c.ClassName}
-                    </Link>
-                  </h3>
-                  <div className="mt-2 flex flex-col gap-1 text-sm text-fg-muted">
-                    <span>Giảng viên: {c.TeacherName}</span>
-                    <span>Sĩ số: {c.StudentCount}</span>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link
-                    href={getHref(c.ClassID)}
-                    className="inline-block w-full text-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg hover:bg-primary/90 transition-colors"
-                  >
-                    Quản lý lớp →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Pager page={taPage.page} pageSize={CLASS_PAGE_SIZE} total={taPage.total} buildHref={hrefFor("pt")} />
-        </div>
+        <ClassSection
+          title="Lớp học bạn phụ trách (Trợ giảng)"
+          empty=""
+          isEmpty={false}
+          pager={{ page: taPage.page, pageSize: CLASS_PAGE_SIZE, total: taPage.total, buildHref: pageHrefBuilder(sp, "pt") }}
+        >
+          {taClasses.map((c) => (
+            <ClassCard
+              key={c.ClassID}
+              variant="ta"
+              href={getHref(c.ClassID)}
+              name={c.ClassName}
+              description={c.Description}
+              teacherName={c.TeacherName}
+              studentCount={c.StudentCount}
+              kicker="Trợ giảng"
+              ctaLabel="Quản lý lớp"
+            />
+          ))}
+        </ClassSection>
       )}
 
-
       {allOther.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Các lớp học khác ({allOther.length})</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {otherClasses.map((c) => (
-              <div
-                key={c.ClassID}
-                className="relative flex flex-col justify-between card card-hover p-5"
-              >
-                <div>
-                  <span className="text-xs font-medium text-fg-muted">
-                    {c.IsPublic ? "Lớp học công khai" : "Lớp học riêng tư"}
-                  </span>
-                  <h3 className="mt-1 text-lg font-semibold text-fg">
-                    <Link href={`/user/classes/${c.ClassID}`} className="hover:underline after:absolute after:inset-0">
-                      {c.ClassName}
-                    </Link>
-                  </h3>
-                  <p className="mt-1 text-sm text-fg-muted line-clamp-2">
-                    {c.Description || "Không có mô tả."}
-                  </p>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between border-t border-line pt-3 text-xs text-fg-muted">
-                  <span>GV: {c.TeacherName}</span>
-                  <Link
-                    href={`/user/classes/${c.ClassID}`}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Xem chi tiết →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Pager page={otherPage.page} pageSize={CLASS_PAGE_SIZE} total={otherPage.total} buildHref={hrefFor("po")} />
-        </div>
+        <ClassSection
+          title={`Các lớp học khác (${allOther.length})`}
+          empty=""
+          isEmpty={false}
+          pager={{ page: otherPage.page, pageSize: CLASS_PAGE_SIZE, total: otherPage.total, buildHref: pageHrefBuilder(sp, "po") }}
+        >
+          {otherClasses.map((c) => (
+            <ClassCard
+              key={c.ClassID}
+              href={getHref(c.ClassID)}
+              name={c.ClassName}
+              description={c.Description}
+              teacherName={c.TeacherName}
+              kicker={c.IsPublic ? "Lớp học công khai" : "Lớp học riêng tư"}
+              kickerTone="muted"
+              ctaLabel="Xem chi tiết"
+            />
+          ))}
+        </ClassSection>
       )}
     </div>
   );

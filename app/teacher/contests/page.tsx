@@ -1,9 +1,12 @@
 import { Select } from "@/components/select";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
 import { classRepository } from "@/modules/class/repo";
 import { Pager } from "@/components/pager";
+import { ContestStatusBadge } from "@/components/badge";
 import { CreateContestDialog } from "./create-contest-dialog";
 import { DeleteContestDialog } from "./delete-contest-dialog";
 
@@ -26,29 +29,6 @@ function formatTime(iso: string) {
     minute: "2-digit",
     timeZone: "Asia/Ho_Chi_Minh",
   });
-}
-
-function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
-  if (status === "Ongoing") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        Đang diễn ra
-      </span>
-    );
-  }
-  if (status === "Upcoming") {
-    return (
-      <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary border border-primary/20">
-        Sắp diễn ra
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-fg-muted border border-line">
-      Đã kết thúc
-    </span>
-  );
 }
 
 export default async function TeacherContestsPage({
@@ -102,15 +82,11 @@ export default async function TeacherContestsPage({
 
   return (
     <div className="flex flex-col gap-6 pt-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">Danh sách kỳ thi</h1>
-          <p className="mt-1 text-sm text-fg-muted">
-            Quản lý các kỳ thi bạn tổ chức.
-          </p>
-        </div>
-        <CreateContestDialog classes={classOptions} />
-      </div>
+      <PageHeader
+        title="Danh sách kỳ thi"
+        description="Quản lý các kỳ thi bạn tổ chức."
+        action={<CreateContestDialog classes={classOptions} />}
+      />
 
       <nav aria-label="Lọc danh sách kỳ thi" className="flex gap-5 border-b border-line pb-2">
         <Link
@@ -232,11 +208,7 @@ export default async function TeacherContestsPage({
           </thead>
           <tbody className="divide-y divide-line">
             {contests.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-fg-muted">
-                  Không tìm thấy kỳ thi nào phù hợp.
-                </td>
-              </tr>
+              <EmptyState variant="cell" colSpan={8}>Không tìm thấy kỳ thi nào phù hợp.</EmptyState>
             ) : (
               contests.map((c, idx) => {
                 const canManage = actor.role === "Admin" || c.creatorId === actor.userId;
@@ -294,7 +266,7 @@ export default async function TeacherContestsPage({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={c.status} />
+                      <ContestStatusBadge status={c.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">

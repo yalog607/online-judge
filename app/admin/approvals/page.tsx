@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
 import { Pager } from "@/components/pager";
@@ -32,10 +34,7 @@ export default async function AdminApprovalsPage({
 
   return (
     <div className="flex flex-col gap-5 pt-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Duyệt yêu cầu</h1>
-        <p className="mt-1 text-fg-muted">Quản lý các yêu cầu từ Giáo viên và Trợ giảng.</p>
-      </div>
+      <PageHeader title="Duyệt yêu cầu" description="Quản lý các yêu cầu từ Giáo viên và Trợ giảng." />
 
       <div className="flex gap-4 border-b border-line pb-2">
         <Link 
@@ -93,11 +92,7 @@ export default async function AdminApprovalsPage({
                 </tr>
               ))}
               {taRequests.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-fg-muted">
-                    Chưa có yêu cầu nào.
-                  </td>
-                </tr>
+                <EmptyState variant="cell" colSpan={6}>Chưa có yêu cầu nào.</EmptyState>
               )}
             </tbody>
           </table>
@@ -144,11 +139,7 @@ export default async function AdminApprovalsPage({
                 </tr>
               ))}
               {classRequests.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-fg-muted">
-                    Chưa có yêu cầu nào.
-                  </td>
-                </tr>
+                <EmptyState variant="cell" colSpan={5}>Chưa có yêu cầu nào.</EmptyState>
               )}
             </tbody>
           </table>
