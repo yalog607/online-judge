@@ -797,44 +797,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE app.usp_Class_DowngradeFromTA
-    @ClassID INT,
-    @UserID INT,
-    @TeacherID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-
-    IF NOT EXISTS (
-        SELECT 1 
-        FROM dbo.Classes c
-        JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
-    )
-        THROW 50027, N'Bạn không có quyền gỡ trợ giảng khỏi lớp này.', 1;
-
-    BEGIN TRY
-        BEGIN TRANSACTION;
-        
-        DELETE FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID;
-        
-        -- If user is no longer a TA in any class, and they are a TA, downgrade them to User
-        IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE UserID_TA = @UserID)
-           AND EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'TA')
-        BEGIN
-            UPDATE dbo.Users SET Role = 'User' WHERE UserID = @UserID;
-        END
-        
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE app.usp_Class_GetForTA
     @TAUserID INT
 AS

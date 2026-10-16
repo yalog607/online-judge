@@ -15,7 +15,6 @@ DELETE FROM dbo.CommentLikes;
 UPDATE dbo.Comments SET ParentID = NULL;
 DELETE FROM dbo.Comments;
 
-DELETE FROM dbo.Reports;
 DELETE FROM dbo.SubmissionResults;
 DISABLE TRIGGER trg_Submission_PreventDelete ON dbo.Submissions;
 DELETE FROM dbo.Submissions;
@@ -51,7 +50,6 @@ DBCC CHECKIDENT ('dbo.Contests', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Documents', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Submissions', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Comments', RESEED, 0) WITH NO_INFOMSGS;
-DBCC CHECKIDENT ('dbo.Reports', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Notifications', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.TA_Requests', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.OtpCodes', RESEED, 0) WITH NO_INFOMSGS;
