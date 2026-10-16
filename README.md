@@ -88,6 +88,8 @@ deploy/                 Cấu hình triển khai và Caddy
 
 ### Thông báo
 
+Các loại thông báo in-app: `judge_result`, `problem_approved`, `problem_rejected`, `class_student_added`, `class_student_removed`, `class_document_added`, `comment_reply`, `comment_like`, `contest_joined`, `contest_started`, `ta_request_submitted` (admin nhận khi giáo viên đề xuất trợ giảng), `ta_request_approved` (giáo viên và trợ giảng nhận khi admin duyệt), `class_created` (admin nhận khi giáo viên tạo lớp chờ duyệt). Email chỉ dùng cho OTP, không dùng cho thông báo.
+
 1. Mã nghiệp vụ gọi `notify(...)` (hoặc một helper trong `src/modules/notification/events.ts`); thông báo được lưu vào `dbo.Notifications` qua `app.usp_Notification_Create`. SQL Server là nguồn sự thật.
 2. Sau khi lưu, thông báo được publish lên Redis kênh `notif:user:<userId>`; lỗi Redis không làm hỏng thao tác gốc.
 3. Trình duyệt giữ một kết nối SSE `/api/notifications/stream` (component `NotificationCenter`) để hiện popup và cập nhật chuông ngay; nếu SSE lỗi sẽ tự nối lại và đồng bộ số chưa đọc qua `/api/notifications/unread`.

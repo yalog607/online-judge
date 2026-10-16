@@ -204,11 +204,13 @@ export interface IClassRepository {
 
   resubmitClass(classId: number, teacherId: number): Promise<void>;
 
-  requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<void>;
+  // true when a new request was created; false when a Pending one already existed.
+  requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<boolean>;
 
   listTARequests(adminId: number): Promise<any[]>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void>;
+  // true when a Pending request was actually decided; false when it was no longer Pending.
+  approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<boolean>;
 
   getClassesForTA(taUserId: number): Promise<ClassItem[]>;
 
@@ -441,12 +443,13 @@ export class ClassRepository implements IClassRepository {
     });
   }
 
-  async requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<void> {
-    await execProc("usp_Class_RequestUpgradeToTA", {
+  async requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<boolean> {
+    const { rows } = await execProc<{ Created: boolean }>("usp_Class_RequestUpgradeToTA", {
       ClassID: classId,
       UserID: studentId,
       TeacherID: teacherId,
     });
+    return Boolean(rows[0]?.Created);
   }
 
   async listTARequests(adminId: number) {
@@ -456,13 +459,14 @@ export class ClassRepository implements IClassRepository {
     return rows;
   }
 
-  async approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<void> {
-    await execProc("usp_Admin_ApproveTA", {
+  async approveTARequest(adminId: number, requestId: number, isApproved: boolean, rejectionReason?: string): Promise<boolean> {
+    const { rows } = await execProc<{ Changed: boolean }>("usp_Admin_ApproveTA", {
       AdminID: adminId,
       RequestID: requestId,
       IsApproved: isApproved,
       RejectionReason: rejectionReason ?? null,
     });
+    return Boolean(rows[0]?.Changed);
   }
 
   async getClassesForTA(taUserId: number): Promise<ClassItem[]> {

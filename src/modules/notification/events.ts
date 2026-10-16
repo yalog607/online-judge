@@ -108,6 +108,10 @@ export function notifyClassDocument(classId: number, fileName: string, actorId: 
   });
 }
 
+function commentLink(c: { ProblemID: number | null; ContestID: number | null }) {
+  return c.ContestID ? `/user/contests/${c.ContestID}` : `/user/problems/${c.ProblemID}`;
+}
+
 export function notifyCommentReply(parentCommentId: number, actorId: number, actorName: string) {
   return safely(async () => {
     const parent = await repo.commentInfo(parentCommentId, actorId);
@@ -116,7 +120,7 @@ export function notifyCommentReply(parentCommentId: number, actorId: number, act
       userIds: [parent.AuthorID],
       type: "comment_reply",
       title: clip(`${clip(actorName, 100)} đã trả lời bình luận của bạn`, 200),
-      link: `/user/problems/${parent.ProblemID}`,
+      link: commentLink(parent),
     });
   });
 }
@@ -130,7 +134,7 @@ export function notifyCommentLike(commentId: number, actorId: number, actorName:
       userIds: [comment.AuthorID],
       type: "comment_like",
       title: clip(`${clip(actorName, 100)} đã thích bình luận của bạn`, 200),
-      link: `/user/problems/${comment.ProblemID}`,
+      link: commentLink(comment),
     });
   });
 }
@@ -147,6 +151,56 @@ export function notifyContestJoined(contestId: number, userId: number, userName:
       body: clip(`Mới nhất: ${userName}`, 500),
       link: `/teacher/contests/${contestId}`,
       count: contest.ParticipantCount > 0 ? contest.ParticipantCount : undefined,
+    });
+  });
+}
+
+export function notifyTARequestSubmitted(classId: number, studentId: number, actorId: number) {
+  return safely(async () => {
+    const [info, admins] = await Promise.all([repo.taRequestInfo(classId, studentId), repo.adminIds()]);
+    if (!info) return;
+    await notify({
+      userIds: admins.filter((id) => id !== actorId),
+      type: "ta_request_submitted",
+      title: clip(`Yêu cầu nâng trợ giảng: ${clip(info.StudentName, 80)} (lớp "${clip(info.ClassName, 80)}")`, 200),
+      body: clip(`Gửi bởi ${info.TeacherName}`, 500),
+      link: "/admin/approvals",
+    });
+  });
+}
+
+// Tells both the teacher who asked and the student who became a TA.
+export function notifyTAApproved(requestId: number) {
+  return safely(async () => {
+    const info = await repo.taRequestById(requestId);
+    if (!info || info.Status !== "Approved") return;
+    const className = clip(info.ClassName, 120);
+    await notify({
+      userIds: [info.RequestedBy],
+      type: "ta_request_approved",
+      title: clip(`${clip(info.StudentName, 80)} đã được duyệt làm trợ giảng lớp "${className}"`, 200),
+      link: `/teacher/classes/${info.ClassID}`,
+    });
+    if (info.UserID === info.RequestedBy) return;
+    await notify({
+      userIds: [info.UserID],
+      type: "ta_request_approved",
+      title: clip(`Bạn đã trở thành trợ giảng của lớp "${className}"`, 200),
+      link: `/user/classes/${info.ClassID}`,
+    });
+  });
+}
+
+export function notifyClassCreated(classId: number, actorId: number) {
+  return safely(async () => {
+    const [cls, admins] = await Promise.all([repo.classCreatedInfo(classId), repo.adminIds()]);
+    if (!cls) return;
+    await notify({
+      userIds: admins.filter((id) => id !== actorId),
+      type: "class_created",
+      title: clip(`Lớp mới chờ duyệt: "${clip(cls.ClassName, 150)}"`, 200),
+      body: clip(`Giáo viên: ${cls.TeacherName}`, 500),
+      link: "/admin/approvals?tab=class",
     });
   });
 }
