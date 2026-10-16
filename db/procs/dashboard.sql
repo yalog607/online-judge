@@ -11,7 +11,6 @@ BEGIN
     DECLARE @Today DATE = CAST(DATEADD(HOUR, 7, @Now) AS DATE);
     DECLARE @Solved INT, @SolvedWeek INT, @Total INT, @AC INT;
     DECLARE @Current INT = 0, @Longest INT = 0;
-    DECLARE @Rank INT = NULL, @Ranked INT = 0;
 
     SELECT @Total = COUNT(*),
            @AC = ISNULL(SUM(CASE WHEN Result = 'AC' THEN 1 ELSE 0 END), 0)
@@ -39,18 +38,6 @@ BEGIN
            @Current = ISNULL(MAX(CASE WHEN EndDay >= DATEADD(DAY, -1, @Today) THEN Len END), 0)
     FROM Islands;
 
-    -- Xếp hạng theo số bài khác nhau đã giải trong toàn hệ thống.
-    ;WITH SolvedPer AS (
-        SELECT s.UserID, COUNT(DISTINCT s.ProblemID) AS N
-        FROM dbo.Submissions s
-        JOIN dbo.Users u ON u.UserID = s.UserID AND u.Role IN ('User', 'TA')
-        WHERE s.Result = 'AC'
-        GROUP BY s.UserID
-    )
-    SELECT @Ranked = COUNT(*),
-           @Rank = CASE WHEN @Solved > 0 THEN 1 + ISNULL(SUM(CASE WHEN N > @Solved THEN 1 ELSE 0 END), 0) END
-    FROM SolvedPer;
-
     SELECT
         @Solved AS ProblemsSolved,
         @SolvedWeek AS SolvedThisWeek,
@@ -58,8 +45,6 @@ BEGIN
         @AC AS TotalAC,
         @Current AS CurrentStreak,
         @Longest AS LongestStreak,
-        @Rank AS [Rank],
-        @Ranked AS RankedUsers,
         CONVERT(VARCHAR(10), @Today, 23) AS Today;
 
     IF @SummaryOnly = 1 RETURN; -- chỉ dùng cho kiểm thử
