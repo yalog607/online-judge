@@ -107,6 +107,12 @@ export default async function ProblemDetailPage({
     </div>
   );
 
+  const subQuery = new URLSearchParams();
+  if (canAccessContest && contestId) subQuery.set("contestId", String(contestId));
+  if (classId && !isNaN(classId)) subQuery.set("classId", String(classId));
+  if (sParams?.from) subQuery.set("from", sParams.from);
+  const subQueryStr = subQuery.toString();
+
   const submissions = (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[420px] text-sm">
@@ -122,7 +128,7 @@ export default async function ProblemDetailPage({
           {history.rows.map((s) => (
             <tr key={s.SubmissionID} className="border-t border-line hover:bg-muted">
               <td className="px-5 py-3">
-                <Link href={`/submissions/${s.SubmissionID}`}>
+                <Link href={`/submissions/${s.SubmissionID}${subQueryStr ? `?${subQueryStr}` : ""}`}>
                   <VerdictBadge value={s.Result} />
                 </Link>
               </td>
@@ -249,6 +255,8 @@ export default async function ProblemDetailPage({
           <SubmitForm
             problemId={problem.ProblemID}
             contestId={canAccessContest ? contestId : undefined}
+            classId={classId && !isNaN(classId) ? classId : undefined}
+            from={sParams?.from}
             starters={starters}
             functionName={functionSpec.name}
           />

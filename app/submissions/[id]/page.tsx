@@ -9,11 +9,14 @@ import { RejudgeButton } from "./rejudge-button";
 
 export default async function SubmissionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ contestId?: string; classId?: string; from?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
+  const sParams = await searchParams;
 
   let detail, testcases;
   try {
@@ -26,17 +29,91 @@ export default async function SubmissionDetailPage({
 
   const isPending = detail.Result === "Pending" || detail.Result === "Judging";
 
+  const rawContestId = sParams?.contestId ? Number(sParams.contestId) : (detail.ContestID ?? undefined);
+  const contestId = rawContestId && !isNaN(rawContestId) ? rawContestId : undefined;
+  const rawClassId = sParams?.classId ? Number(sParams.classId) : undefined;
+  const classId = rawClassId && !isNaN(rawClassId) ? rawClassId : undefined;
+  const from = sParams?.from;
+
+  const problemQuery = new URLSearchParams();
+  if (contestId) problemQuery.set("contestId", String(contestId));
+  if (classId) problemQuery.set("classId", String(classId));
+  if (from) problemQuery.set("from", from);
+  const problemQueryStr = problemQuery.toString();
+
+  const problemHref = (user.role === "Teacher" || user.role === "Admin") && !contestId && !classId && from !== "preview"
+    ? `/teacher/problems/${detail.ProblemID}`
+    : `/user/problems/${detail.ProblemID}${problemQueryStr ? `?${problemQueryStr}` : ""}`;
+
+  const contestHref = user.role === "Admin"
+    ? `/admin/contests/${contestId}`
+    : user.role === "Teacher"
+      ? `/teacher/contests/${contestId}`
+      : `/user/contests/${contestId}`;
+
   return (
     <div className="flex flex-col gap-6 pt-8">
       {isPending && <SubmissionLive submissionId={detail.SubmissionID} />}
       <div className="flex items-center justify-between">
         <div>
-          <Link
-            href={user.role === "Teacher" || user.role === "Admin" ? `/teacher/problems/${detail.ProblemID}` : `/user/problems/${detail.ProblemID}`}
-            className="text-sm text-fg-muted underline"
-          >
-            ← {detail.ProblemTitle}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
+            {contestId ? (
+              <>
+                <Link
+                  href={contestHref}
+                  className="font-medium text-fg-muted hover:text-fg hover:underline"
+                >
+                  ← Quay lại kỳ thi
+                </Link>
+                <span>/</span>
+                <Link
+                  href={problemHref}
+                  className="font-medium text-fg hover:underline"
+                >
+                  {detail.ProblemTitle}
+                </Link>
+              </>
+            ) : classId ? (
+              <>
+                <Link
+                  href={`/user/classes/${classId}`}
+                  className="font-medium text-fg-muted hover:text-fg hover:underline"
+                >
+                  ← Quay lại lớp học
+                </Link>
+                <span>/</span>
+                <Link
+                  href={problemHref}
+                  className="font-medium text-fg hover:underline"
+                >
+                  {detail.ProblemTitle}
+                </Link>
+              </>
+            ) : from === "preview" ? (
+              <>
+                <Link
+                  href={user.role === "Admin" ? `/admin/problems/${detail.ProblemID}` : `/teacher/problems/${detail.ProblemID}`}
+                  className="font-medium text-fg-muted hover:text-fg hover:underline"
+                >
+                  ← Quay lại chi tiết bài tập
+                </Link>
+                <span>/</span>
+                <Link
+                  href={problemHref}
+                  className="font-medium text-fg hover:underline"
+                >
+                  {detail.ProblemTitle}
+                </Link>
+              </>
+            ) : (
+              <Link
+                href={problemHref}
+                className="font-medium text-fg-muted hover:text-fg hover:underline"
+              >
+                ← {detail.ProblemTitle}
+              </Link>
+            )}
+          </div>
           <div className="mt-1 flex items-center gap-3">
             <h1 className="text-2xl font-semibold">Bài nộp #{detail.SubmissionID}</h1>
             {["Teacher", "Admin", "TA"].includes(user.role) && (

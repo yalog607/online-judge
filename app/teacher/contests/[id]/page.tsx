@@ -566,7 +566,7 @@ export default async function TeacherContestDetailPage({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          href={`/submissions/${s.SubmissionID}`}
+                          href={`/submissions/${s.SubmissionID}?contestId=${contestId}`}
                           className="text-xs font-semibold text-primary hover:underline"
                         >
                           Xem bài làm →
