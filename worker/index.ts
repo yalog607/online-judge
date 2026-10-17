@@ -41,6 +41,7 @@ async function main() {
           maxAttempts: job.opts.attempts ?? JUDGE_JOB_ATTEMPTS,
         },
         WORKER_ID,
+        { earlyStop: env().JUDGE_EARLY_STOP },
       );
     },
     { connection: createRedisConnection(), concurrency: env().JUDGE_CONCURRENCY },

@@ -44,11 +44,21 @@ const BYTES_PER_MB = 1024 * 1024;
 export const toMegabytes = (bytes: number | null) =>
   bytes === null ? null : Math.round((bytes / BYTES_PER_MB) * 10) / 10;
 
+export type EarlyStopMode = "off" | "priority" | "first-failure";
+
+// Whether the remaining testcases can be skipped after `verdict`. "priority" only stops on the
+// verdict that VERDICT_PRIORITY ranks first, so the final verdict equals that of a full run.
+export function shouldStopEarly(mode: EarlyStopMode, verdict: string): boolean {
+  if (mode === "off" || verdict === "AC") return false;
+  return mode === "first-failure" || verdict === VERDICT_PRIORITY[0];
+}
+
 type Outcome = { result: string; passedCases: string };
 
 async function judgeSubmission(
   submission: ClaimedSubmission,
   workerId: string,
+  earlyStop: EarlyStopMode,
 ): Promise<Outcome> {
   const lang = LANGUAGES[submission.Language];
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), `itoj-${submission.SubmissionID}-`));
@@ -135,13 +145,15 @@ async function judgeSubmission(
       maxRuntime = Math.max(maxRuntime, runtime);
       if (memory !== null) maxMemory = Math.max(maxMemory ?? 0, memory);
       results.push({ testCaseId: tc.TestCaseID, verdict, runtime, memory });
+      // Skipped testcases are neither run nor stored; they still count in the total below.
+      if (shouldStopEarly(earlyStop, verdict)) break;
     }
 
     const overall =
       VERDICT_PRIORITY.find((v) => results.some((r) => r.verdict === v)) ??
       (results.length > 0 ? "AC" : "IE");
 
-    return await finish(overall, `${passed}/${results.length}`, { runtime: maxRuntime, memory: maxMemory, results });
+    return await finish(overall, `${passed}/${testcases.length}`, { runtime: maxRuntime, memory: maxMemory, results });
   } finally {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => {});
   }
@@ -153,13 +165,14 @@ async function judgeSubmission(
 export async function judgeJob(
   job: { submissionId: number; attempt: number; maxAttempts: number },
   workerId: string,
+  options: { earlyStop?: EarlyStopMode } = {},
 ): Promise<JudgeJobResult> {
   const { submissionId } = job;
   const submission = await claimSubmission(submissionId, workerId);
   if (!submission) return { submissionId, result: "skipped" };
 
   try {
-    const outcome = await judgeSubmission(submission, workerId);
+    const outcome = await judgeSubmission(submission, workerId, options.earlyStop ?? "off");
     return { submissionId, result: outcome.result };
   } catch (e) {
     if (e instanceof DomainError && e.code === LOST_CLAIM_ERROR) {
