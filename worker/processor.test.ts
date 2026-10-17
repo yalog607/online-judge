@@ -11,7 +11,11 @@ const sandbox = vi.hoisted(() => ({ runInSandbox: vi.fn() }));
 vi.mock("@/modules/judge/repo", () => repo);
 vi.mock("./sandbox", async () => {
   class InfraError extends Error {}
-  return { InfraError, runInSandbox: sandbox.runInSandbox };
+  return {
+    InfraError,
+    runInSandbox: sandbox.runInSandbox,
+    prepareWorkDir: async () => undefined,
+  };
 });
 
 import { judgeJob } from "./processor";

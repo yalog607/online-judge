@@ -11,7 +11,7 @@ import {
 } from "@/modules/judge/repo";
 import type { JudgeJobResult } from "@/modules/judge/schema";
 import { LANGUAGES } from "./languages";
-import { InfraError, runInSandbox } from "./sandbox";
+import { InfraError, prepareWorkDir, runInSandbox } from "./sandbox";
 import { notifyJudgeResult } from "@/modules/notification/events";
 import { functionOutputsMatch } from "./compare";
 import { buildFunctionFiles } from "@/modules/problem/harness";
@@ -62,7 +62,7 @@ async function judgeSubmission(
     for (const [name, content] of Object.entries(files)) {
       await fs.writeFile(path.join(dir, name), content, "utf8");
     }
-    await fs.chmod(dir, 0o777).catch(() => {});
+    const user = await prepareWorkDir(dir);
 
     if (lang.compile) {
       const compileResult = await runInSandbox({
@@ -72,6 +72,8 @@ async function judgeSubmission(
         stdin: "",
         timeoutMs: lang.compileTimeoutMs ?? COMPILE_TIMEOUT_MS,
         memoryMb: COMPILE_MEMORY_MB,
+        writable: true,
+        user,
       });
       if (compileResult.exitCode !== 0 || compileResult.timedOut) return await finish("CE", "0/0");
     }
@@ -89,6 +91,7 @@ async function judgeSubmission(
         stdin: tc.InputData,
         timeoutMs: submission.TimeLimit,
         memoryMb: submission.MemoryLimit,
+        user,
       });
 
       let verdict: string;
