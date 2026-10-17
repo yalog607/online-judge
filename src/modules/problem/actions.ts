@@ -5,7 +5,7 @@ import { firstIssue } from "@/lib/form-errors";
 import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
-import { createSubmission } from "@/modules/submission/repo";
+import { submitCode } from "@/modules/submission/service";
 import { dispatchSubmission } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
@@ -184,7 +184,7 @@ export async function submitCodeAction(_prev: FormState, formData: FormData): Pr
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   try {
-    const submissionId = await createSubmission({ userId: user.userId, ...parsed.data });
+    const submissionId = await submitCode({ userId: user.userId, ...parsed.data });
     await dispatchSubmission(submissionId);
     return { ok: true, submissionId };
   } catch (e) {

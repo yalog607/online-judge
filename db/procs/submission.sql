@@ -8,6 +8,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        IF LEN(@SourceCode) > 65536
+            THROW 50046, N'Mã nguồn tối đa 64KB.', 1;
+
+        IF (SELECT COUNT(*) FROM dbo.Submissions WHERE UserID = @UserID AND Result IN ('Pending', 'Judging')) >= 5
+            THROW 50047, N'Bạn có quá nhiều bài đang chờ chấm, vui lòng đợi kết quả rồi nộp tiếp.', 1;
+
         DECLARE @Status VARCHAR(20), @CreatorID INT;
         SELECT @Status = Status, @CreatorID = CreatorID FROM dbo.Problems WHERE ProblemID = @ProblemID;
 
