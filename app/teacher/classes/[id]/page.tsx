@@ -454,7 +454,7 @@ export default async function TeacherClassDetailPage({
                         {s.Runtime !== null && s.Runtime !== undefined ? `${s.Runtime}ms` : "—"}
                       </td>
                       <td className="px-4 py-3 text-xs text-fg-muted">
-                        {s.Memory !== null && s.Memory !== undefined ? `${(s.Memory / 1024).toFixed(1)}MB` : "—"}
+                        {s.Memory !== null && s.Memory !== undefined ? `${s.Memory.toFixed(1)}MB` : "—"}
                       </td>
                       <td className="px-4 py-3 text-fg-muted">
                         {new Date(s.SubmitTime).toLocaleString("vi-VN")}

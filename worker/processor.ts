@@ -8,6 +8,7 @@ import {
   releaseSubmission,
   saveResult,
   type ClaimedSubmission,
+  type TestcaseResult,
 } from "@/modules/judge/repo";
 import type { JudgeJobResult } from "@/modules/judge/schema";
 import { LANGUAGES } from "./languages";
@@ -21,7 +22,27 @@ const COMPILE_TIMEOUT_MS = 10000;
 const COMPILE_MEMORY_MB = 512;
 const LOST_CLAIM_ERROR = 50090;
 
+// The container is killed only when wall time passes this multiple of the limit plus a fixed
+// allowance for `docker run` start-up; it is a safety net for programs that sleep or block.
+// The TLE verdict itself is based on CPU time measured inside the container.
+const WALL_TIMEOUT_FACTOR = 2;
+const WALL_TIMEOUT_OVERHEAD_MS = 2000;
+
 const VERDICT_PRIORITY = ["TLE", "MLE", "RE", "WA"] as const;
+
+export const wallTimeoutMs = (timeLimitMs: number, startupMs = 0) =>
+  timeLimitMs * WALL_TIMEOUT_FACTOR + startupMs + WALL_TIMEOUT_OVERHEAD_MS;
+
+// CPU time charged to the submission: container CPU minus the runtime's own start-up cost.
+// Falls back to wall time when the host does not expose cgroup counters.
+export const chargedTimeMs = (
+  run: { cpuTimeMs: number | null; wallTimeMs: number },
+  startupMs = 0,
+) => Math.max(0, (run.cpuTimeMs ?? run.wallTimeMs) - startupMs);
+
+const BYTES_PER_MB = 1024 * 1024;
+export const toMegabytes = (bytes: number | null) =>
+  bytes === null ? null : Math.round((bytes / BYTES_PER_MB) * 10) / 10;
 
 type Outcome = { result: string; passedCases: string };
 
@@ -34,14 +55,18 @@ async function judgeSubmission(
   const finish = async (
     result: string,
     passedCases: string,
-    extra: { runtime?: number | null; results?: Parameters<typeof saveResult>[0]["results"] } = {},
+    extra: {
+      runtime?: number | null;
+      memory?: number | null;
+      results?: Parameters<typeof saveResult>[0]["results"];
+    } = {},
   ): Promise<Outcome> => {
     await saveResult({
       submissionId: submission.SubmissionID,
       workerId,
       result,
       runtime: extra.runtime ?? null,
-      memory: null,
+      memory: extra.memory ?? null,
       passedCases,
       results: extra.results ?? [],
     });
@@ -78,9 +103,11 @@ async function judgeSubmission(
       if (compileResult.exitCode !== 0 || compileResult.timedOut) return await finish("CE", "0/0");
     }
 
+    const startupMs = lang.startupMs ?? 0;
     const testcases = await listTestcases(submission.ProblemID);
-    const results: { testCaseId: number; verdict: string; runtime: number; memory: number }[] = [];
+    const results: TestcaseResult[] = [];
     let maxRuntime = 0;
+    let maxMemory: number | null = null;
     let passed = 0;
 
     for (const tc of testcases) {
@@ -89,28 +116,32 @@ async function judgeSubmission(
         hostDir: dir,
         cmd: lang.run,
         stdin: tc.InputData,
-        timeoutMs: submission.TimeLimit,
+        timeoutMs: wallTimeoutMs(submission.TimeLimit, startupMs),
         memoryMb: submission.MemoryLimit,
+        measure: true,
         user,
       });
+      const runtime = chargedTimeMs(run, startupMs);
+      const memory = toMegabytes(run.memoryBytes);
 
       let verdict: string;
-      if (run.timedOut) verdict = "TLE";
+      if (run.timedOut || runtime > submission.TimeLimit) verdict = "TLE";
       else if (run.oomKilled) verdict = "MLE";
       else if (run.exitCode !== 0) verdict = "RE";
       else if (functionOutputsMatch(run.stdout, tc.ExpectedOutput, spec.returns)) verdict = "AC";
       else verdict = "WA";
 
       if (verdict === "AC") passed++;
-      maxRuntime = Math.max(maxRuntime, run.wallTimeMs);
-      results.push({ testCaseId: tc.TestCaseID, verdict, runtime: run.wallTimeMs, memory: 0 });
+      maxRuntime = Math.max(maxRuntime, runtime);
+      if (memory !== null) maxMemory = Math.max(maxMemory ?? 0, memory);
+      results.push({ testCaseId: tc.TestCaseID, verdict, runtime, memory });
     }
 
     const overall =
       VERDICT_PRIORITY.find((v) => results.some((r) => r.verdict === v)) ??
       (results.length > 0 ? "AC" : "IE");
 
-    return await finish(overall, `${passed}/${results.length}`, { runtime: maxRuntime, results });
+    return await finish(overall, `${passed}/${results.length}`, { runtime: maxRuntime, memory: maxMemory, results });
   } finally {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => {});
   }

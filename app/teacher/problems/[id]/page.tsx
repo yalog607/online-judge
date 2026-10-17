@@ -268,7 +268,7 @@ export default async function TeacherProblemPreviewPage({
                           {s.Runtime !== null ? `${s.Runtime}ms` : "—"}
                         </td>
                         <td className="px-4 py-3">
-                          {s.Memory !== null ? `${(s.Memory / 1024).toFixed(1)}MB` : "—"}
+                          {s.Memory !== null ? `${s.Memory.toFixed(1)}MB` : "—"}
                         </td>
                         <td className="px-4 py-3 text-fg-muted">
                           {new Date(s.SubmitTime).toLocaleString("vi-VN")}
