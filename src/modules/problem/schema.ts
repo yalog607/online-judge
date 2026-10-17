@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_SOURCE_BYTES } from "@/modules/submission/limits";
 
 export const DIFFICULTY_LABEL: Record<string, string> = {
   Easy: "Dễ",
@@ -50,6 +51,12 @@ export const testcaseInputSchema = z.object({
 export const submitCodeSchema = z.object({
   problemId: z.coerce.number().int().positive(),
   language: z.enum(["cpp", "c", "java", "python", "javascript", "go", "csharp"]),
-  sourceCode: z.string().trim().min(1, "Vui lòng nhập mã nguồn"),
+  sourceCode: z
+    .string()
+    .trim()
+    .min(1, "Vui lòng nhập mã nguồn")
+    .refine((v) => new TextEncoder().encode(v).length <= MAX_SOURCE_BYTES, {
+      message: `Mã nguồn tối đa ${MAX_SOURCE_BYTES / 1024}KB.`,
+    }),
   contestId: z.coerce.number().int().positive().optional(),
 });
