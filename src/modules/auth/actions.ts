@@ -18,6 +18,7 @@ import {
 import * as service from "./service";
 import { AuthError } from "./service";
 import { createDbSession, getUserById, revokeDbSession, validateImpersonate } from "./repo";
+import { clientIp } from "@/lib/client-ip";
 import { firstIssue } from "@/lib/form-errors";
 
 export type FormState = { error?: string; field?: string; ok?: boolean; submissionId?: number };
@@ -35,7 +36,7 @@ export async function requestRegisterOtpAction(
   const parsed = requestRegisterOtpSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return firstIssue(parsed.error);
   try {
-    await service.requestRegisterOtp(parsed.data.email);
+    await service.requestRegisterOtp(parsed.data.email, await clientIp());
     return { ok: true };
   } catch (e) {
     return { error: e instanceof AuthError ? e.message : "Không gửi được mã OTP." };
@@ -58,7 +59,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   if (!parsed.success) return firstIssue(parsed.error);
   let user;
   try {
-    user = await service.login(parsed.data.email, parsed.data.password);
+    user = await service.login(parsed.data.email, parsed.data.password, await clientIp());
   } catch (e) {
     return { error: e instanceof AuthError ? e.message : "Đăng nhập thất bại." };
   }
@@ -80,7 +81,7 @@ export async function requestResetOtpAction(
   const parsed = requestResetOtpSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return firstIssue(parsed.error);
   try {
-    await service.requestResetOtp(parsed.data.email);
+    await service.requestResetOtp(parsed.data.email, await clientIp());
     return { ok: true };
   } catch (e) {
     return { error: e instanceof AuthError ? e.message : "Không gửi được mã OTP." };

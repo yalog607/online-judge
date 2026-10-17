@@ -4,14 +4,18 @@ import fs from "node:fs/promises";
 import { DomainError } from "@/db/exec";
 import {
   claimSubmission,
+  getChecker,
+  listGroups,
   listTestcases,
   releaseSubmission,
   saveResult,
   type ClaimedSubmission,
+  type JudgeGroup,
+  type TestcaseResult,
 } from "@/modules/judge/repo";
 import type { JudgeJobResult } from "@/modules/judge/schema";
 import { LANGUAGES } from "./languages";
-import { InfraError, runInSandbox } from "./sandbox";
+import { InfraError, prepareWorkDir, runInSandbox } from "./sandbox";
 import { notifyJudgeResult } from "@/modules/notification/events";
 import { functionOutputsMatch } from "./compare";
 import { buildFunctionFiles } from "@/modules/problem/harness";
@@ -21,27 +25,85 @@ const COMPILE_TIMEOUT_MS = 10000;
 const COMPILE_MEMORY_MB = 512;
 const LOST_CLAIM_ERROR = 50090;
 
+// The container is killed only when wall time passes this multiple of the limit plus a fixed
+// allowance for `docker run` start-up; it is a safety net for programs that sleep or block.
+// The TLE verdict itself is based on CPU time measured inside the container.
+const WALL_TIMEOUT_FACTOR = 2;
+const WALL_TIMEOUT_OVERHEAD_MS = 2000;
+
 const VERDICT_PRIORITY = ["TLE", "MLE", "RE", "WA"] as const;
+
+export const wallTimeoutMs = (timeLimitMs: number, startupMs = 0) =>
+  timeLimitMs * WALL_TIMEOUT_FACTOR + startupMs + WALL_TIMEOUT_OVERHEAD_MS;
+
+// CPU time charged to the submission: container CPU minus the runtime's own start-up cost.
+// Falls back to wall time when the host does not expose cgroup counters.
+export const chargedTimeMs = (
+  run: { cpuTimeMs: number | null; wallTimeMs: number },
+  startupMs = 0,
+) => Math.max(0, (run.cpuTimeMs ?? run.wallTimeMs) - startupMs);
+
+const BYTES_PER_MB = 1024 * 1024;
+export const toMegabytes = (bytes: number | null) =>
+  bytes === null ? null : Math.round((bytes / BYTES_PER_MB) * 10) / 10;
+
+export type EarlyStopMode = "off" | "priority" | "first-failure";
+
+// Whether the remaining testcases can be skipped after `verdict`. "priority" only stops on the
+// verdict that VERDICT_PRIORITY ranks first, so the final verdict equals that of a full run.
+export function shouldStopEarly(mode: EarlyStopMode, verdict: string): boolean {
+  if (mode === "off" || verdict === "AC") return false;
+  return mode === "first-failure" || verdict === VERDICT_PRIORITY[0];
+}
+
+// Score of a graded problem: a group earns its points only when every one of its testcases is AC.
+// Returns null when no declared group has testcases (the problem is not scored).
+export function scoreGroups(
+  groups: JudgeGroup[],
+  testcases: { TestCaseID: number; GroupNo: number | null }[],
+  verdicts: Map<number, string>,
+): { score: number; maxScore: number } | null {
+  let score = 0;
+  let maxScore = 0;
+  let scored = false;
+  for (const g of groups) {
+    const members = testcases.filter((t) => t.GroupNo === g.GroupNo);
+    if (members.length === 0) continue;
+    scored = true;
+    maxScore += g.Points;
+    if (members.every((t) => verdicts.get(t.TestCaseID) === "AC")) score += g.Points;
+  }
+  return scored ? { score, maxScore } : null;
+}
 
 type Outcome = { result: string; passedCases: string };
 
 async function judgeSubmission(
   submission: ClaimedSubmission,
   workerId: string,
+  earlyStop: EarlyStopMode,
 ): Promise<Outcome> {
   const lang = LANGUAGES[submission.Language];
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), `itoj-${submission.SubmissionID}-`));
   const finish = async (
     result: string,
     passedCases: string,
-    extra: { runtime?: number | null; results?: Parameters<typeof saveResult>[0]["results"] } = {},
+    extra: {
+      runtime?: number | null;
+      memory?: number | null;
+      score?: number | null;
+      maxScore?: number | null;
+      results?: Parameters<typeof saveResult>[0]["results"];
+    } = {},
   ): Promise<Outcome> => {
     await saveResult({
       submissionId: submission.SubmissionID,
       workerId,
       result,
       runtime: extra.runtime ?? null,
-      memory: null,
+      memory: extra.memory ?? null,
+      score: extra.score ?? null,
+      maxScore: extra.maxScore ?? null,
       passedCases,
       results: extra.results ?? [],
     });
@@ -62,7 +124,7 @@ async function judgeSubmission(
     for (const [name, content] of Object.entries(files)) {
       await fs.writeFile(path.join(dir, name), content, "utf8");
     }
-    await fs.chmod(dir, 0o777).catch(() => {});
+    const user = await prepareWorkDir(dir);
 
     if (lang.compile) {
       const compileResult = await runInSandbox({
@@ -72,42 +134,78 @@ async function judgeSubmission(
         stdin: "",
         timeoutMs: lang.compileTimeoutMs ?? COMPILE_TIMEOUT_MS,
         memoryMb: COMPILE_MEMORY_MB,
+        writable: true,
+        user,
       });
       if (compileResult.exitCode !== 0 || compileResult.timedOut) return await finish("CE", "0/0");
     }
 
+    const startupMs = lang.startupMs ?? 0;
     const testcases = await listTestcases(submission.ProblemID);
-    const results: { testCaseId: number; verdict: string; runtime: number; memory: number }[] = [];
+    const checker = await getChecker(submission.ProblemID);
+    const groups = await listGroups(submission.ProblemID);
+    const scored = groups.length > 0;
+    const failedGroups = new Set<number>();
+    const verdicts = new Map<number, string>();
+    const results: TestcaseResult[] = [];
     let maxRuntime = 0;
+    let maxMemory: number | null = null;
     let passed = 0;
 
     for (const tc of testcases) {
+      // With groups, a failed group skips its remaining testcases (it can no longer score) but
+      // the other groups still run, so early stop never costs points.
+      if (tc.GroupNo !== null && failedGroups.has(tc.GroupNo)) continue;
       const run = await runInSandbox({
         image: lang.image,
         hostDir: dir,
         cmd: lang.run,
         stdin: tc.InputData,
-        timeoutMs: submission.TimeLimit,
+        timeoutMs: wallTimeoutMs(submission.TimeLimit, startupMs),
         memoryMb: submission.MemoryLimit,
+        measure: true,
+        user,
       });
+      const runtime = chargedTimeMs(run, startupMs);
+      const memory = toMegabytes(run.memoryBytes);
 
       let verdict: string;
-      if (run.timedOut) verdict = "TLE";
+      if (run.timedOut || runtime > submission.TimeLimit) verdict = "TLE";
       else if (run.oomKilled) verdict = "MLE";
       else if (run.exitCode !== 0) verdict = "RE";
-      else if (functionOutputsMatch(run.stdout, tc.ExpectedOutput, spec.returns)) verdict = "AC";
+      else if (
+        functionOutputsMatch(run.stdout, tc.ExpectedOutput, spec.returns, {
+          mode: checker.CompareMode,
+          epsilon: checker.FloatEpsilon,
+        })
+      )
+        verdict = "AC";
       else verdict = "WA";
 
       if (verdict === "AC") passed++;
-      maxRuntime = Math.max(maxRuntime, run.wallTimeMs);
-      results.push({ testCaseId: tc.TestCaseID, verdict, runtime: run.wallTimeMs, memory: 0 });
+      maxRuntime = Math.max(maxRuntime, runtime);
+      if (memory !== null) maxMemory = Math.max(maxMemory ?? 0, memory);
+      results.push({ testCaseId: tc.TestCaseID, verdict, runtime, memory });
+      verdicts.set(tc.TestCaseID, verdict);
+      // Skipped testcases are neither run nor stored; they still count in the total below.
+      if (shouldStopEarly(earlyStop, verdict)) {
+        if (!scored) break;
+        if (tc.GroupNo !== null) failedGroups.add(tc.GroupNo);
+      }
     }
 
     const overall =
       VERDICT_PRIORITY.find((v) => results.some((r) => r.verdict === v)) ??
       (results.length > 0 ? "AC" : "IE");
 
-    return await finish(overall, `${passed}/${results.length}`, { runtime: maxRuntime, results });
+    const scoring = scoreGroups(groups, testcases, verdicts);
+    return await finish(overall, `${passed}/${testcases.length}`, {
+      runtime: maxRuntime,
+      memory: maxMemory,
+      score: scoring?.score,
+      maxScore: scoring?.maxScore,
+      results,
+    });
   } finally {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => {});
   }
@@ -119,13 +217,14 @@ async function judgeSubmission(
 export async function judgeJob(
   job: { submissionId: number; attempt: number; maxAttempts: number },
   workerId: string,
+  options: { earlyStop?: EarlyStopMode } = {},
 ): Promise<JudgeJobResult> {
   const { submissionId } = job;
   const submission = await claimSubmission(submissionId, workerId);
   if (!submission) return { submissionId, result: "skipped" };
 
   try {
-    const outcome = await judgeSubmission(submission, workerId);
+    const outcome = await judgeSubmission(submission, workerId, options.earlyStop ?? "off");
     return { submissionId, result: outcome.result };
   } catch (e) {
     if (e instanceof DomainError && e.code === LOST_CLAIM_ERROR) {

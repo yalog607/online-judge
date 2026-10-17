@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const repo = vi.hoisted(() => ({
+  getChecker: vi.fn(),
+  listGroups: vi.fn(),
   claimSubmission: vi.fn(),
   listTestcases: vi.fn(),
   releaseSubmission: vi.fn(),
@@ -11,10 +13,14 @@ const sandbox = vi.hoisted(() => ({ runInSandbox: vi.fn() }));
 vi.mock("@/modules/judge/repo", () => repo);
 vi.mock("./sandbox", async () => {
   class InfraError extends Error {}
-  return { InfraError, runInSandbox: sandbox.runInSandbox };
+  return {
+    InfraError,
+    runInSandbox: sandbox.runInSandbox,
+    prepareWorkDir: async () => undefined,
+  };
 });
 
-import { judgeJob } from "./processor";
+import { judgeJob, scoreGroups, shouldStopEarly, wallTimeoutMs } from "./processor";
 import { InfraError } from "./sandbox";
 
 const submission = {
@@ -41,6 +47,8 @@ const run = (over: Record<string, unknown> = {}) => ({
   timedOut: false,
   oomKilled: false,
   wallTimeMs: 5,
+  cpuTimeMs: 5,
+  memoryBytes: 8 * 1024 * 1024,
   ...over,
 });
 const job = { submissionId: 7, attempt: 1, maxAttempts: 3 };
@@ -49,8 +57,10 @@ beforeEach(() => {
   vi.resetAllMocks();
   repo.claimSubmission.mockResolvedValue(submission);
   repo.listTestcases.mockResolvedValue([
-    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]" },
+    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: null },
   ]);
+  repo.getChecker.mockResolvedValue({ CompareMode: "exact", FloatEpsilon: null });
+  repo.listGroups.mockResolvedValue([]);
   repo.saveResult.mockResolvedValue(undefined);
   repo.releaseSubmission.mockResolvedValue(undefined);
 });
@@ -97,6 +107,55 @@ describe("judgeJob", () => {
   });
 });
 
+describe("measurement", () => {
+  it("stores CPU time and peak memory, not wall time", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run({ wallTimeMs: 900, cpuTimeMs: 60 }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: "AC",
+        runtime: 40,
+        memory: 8,
+        results: [{ testCaseId: 1, verdict: "AC", runtime: 40, memory: 8 }],
+      }),
+    );
+  });
+
+  it("gives TLE by CPU time even though the container exited normally", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run({ cpuTimeMs: 1500 }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "TLE" }));
+  });
+
+  it("does not charge JVM start-up against the time limit", async () => {
+    repo.claimSubmission.mockResolvedValue({ ...submission, Language: "java" });
+    sandbox.runInSandbox.mockResolvedValue(run({ cpuTimeMs: 1200, wallTimeMs: 1900 }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({ result: "AC", runtime: 900 }),
+    );
+  });
+
+  it("kills on a wall-time safety limit above the CPU limit", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run());
+    await judgeJob(job, "w1");
+    expect(sandbox.runInSandbox).toHaveBeenCalledWith(
+      expect.objectContaining({ timeoutMs: wallTimeoutMs(1000, 20), measure: true }),
+    );
+    expect(wallTimeoutMs(1000)).toBeGreaterThan(1000);
+  });
+
+  it("falls back to wall time and null memory when cgroup stats are unavailable", async () => {
+    sandbox.runInSandbox.mockResolvedValue(
+      run({ cpuTimeMs: null, memoryBytes: null, wallTimeMs: 50 }),
+    );
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({ runtime: 30, memory: null }),
+    );
+  });
+});
+
 describe("function judging", () => {
   it("gives WA when the result marker is missing", async () => {
     sandbox.runInSandbox.mockResolvedValue(run({ stdout: "[0,1]\n" }));
@@ -109,5 +168,111 @@ describe("function judging", () => {
     await judgeJob(job, "w1");
     expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "IE" }));
     expect(sandbox.runInSandbox).not.toHaveBeenCalled();
+  });
+});
+
+describe("early stop", () => {
+  const three = [1, 2, 3].map((id) => ({
+    TestCaseID: id,
+    InputData: "[2,7]\n9",
+    ExpectedOutput: "[0,1]",
+    GroupNo: null,
+  }));
+  const verdictsRun = () => sandbox.runInSandbox.mock.calls.length;
+
+  beforeEach(() => repo.listTestcases.mockResolvedValue(three));
+
+  it("runs every testcase by default", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: marked("[1,0]") }));
+    await judgeJob(job, "w1");
+    expect(verdictsRun()).toBe(3);
+  });
+
+  it("first-failure stops after the first failing testcase and keeps the total as denominator", async () => {
+    sandbox.runInSandbox
+      .mockResolvedValueOnce(run())
+      .mockResolvedValueOnce(run({ stdout: marked("[1,0]") }));
+    await judgeJob(job, "w1", { earlyStop: "first-failure" });
+    expect(verdictsRun()).toBe(2);
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: "WA",
+        passedCases: "1/3",
+        results: [
+          expect.objectContaining({ testCaseId: 1, verdict: "AC" }),
+          expect.objectContaining({ testCaseId: 2, verdict: "WA" }),
+        ],
+      }),
+    );
+  });
+
+  it("priority mode keeps running past WA but stops on TLE, so the verdict matches a full run", async () => {
+    sandbox.runInSandbox
+      .mockResolvedValueOnce(run({ stdout: marked("[1,0]") }))
+      .mockResolvedValueOnce(run({ timedOut: true }));
+    await judgeJob(job, "w1", { earlyStop: "priority" });
+    expect(verdictsRun()).toBe(2);
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "TLE" }));
+  });
+
+  it("decides per mode and verdict", () => {
+    expect(shouldStopEarly("off", "TLE")).toBe(false);
+    expect(shouldStopEarly("first-failure", "AC")).toBe(false);
+    expect(shouldStopEarly("first-failure", "RE")).toBe(true);
+    expect(shouldStopEarly("priority", "WA")).toBe(false);
+    expect(shouldStopEarly("priority", "TLE")).toBe(true);
+  });
+});
+
+describe("checker and group scoring", () => {
+  const tcs = [
+    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: 1 },
+    { TestCaseID: 2, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: 1 },
+    { TestCaseID: 3, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: 2 },
+    { TestCaseID: 4, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: null },
+  ];
+  const groups = [
+    { GroupNo: 1, Points: 40 },
+    { GroupNo: 2, Points: 60 },
+  ];
+
+  it("passes the problem's compare mode and epsilon to the comparison", async () => {
+    repo.getChecker.mockResolvedValue({ CompareMode: "unordered", FloatEpsilon: null });
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: marked("[1,0]") }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "AC" }));
+  });
+
+  it("scores only fully accepted groups and ignores ungrouped testcases", () => {
+    const verdicts = new Map([
+      [1, "AC"],
+      [2, "WA"],
+      [3, "AC"],
+      [4, "WA"],
+    ]);
+    expect(scoreGroups(groups, tcs, verdicts)).toEqual({ score: 60, maxScore: 100 });
+    expect(scoreGroups([], tcs, verdicts)).toBeNull();
+  });
+
+  it("saves the score and keeps judging other groups when a group fails early", async () => {
+    repo.listTestcases.mockResolvedValue(tcs);
+    repo.listGroups.mockResolvedValue(groups);
+    sandbox.runInSandbox
+      .mockResolvedValueOnce(run({ stdout: marked("[1,0]") })) // tc1 WA -> group 1 fails
+      .mockResolvedValue(run());
+    await judgeJob(job, "w1", { earlyStop: "first-failure" });
+    // tc2 skipped; tc3 and tc4 still run
+    expect(sandbox.runInSandbox).toHaveBeenCalledTimes(3);
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({ result: "WA", score: 60, maxScore: 100, passedCases: "2/4" }),
+    );
+  });
+
+  it("leaves the score null when the problem has no groups", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run());
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({ score: null, maxScore: null }),
+    );
   });
 });

@@ -193,6 +193,8 @@ npm run worker:start # Chạy Judge Worker trực tiếp
 
 Judge Worker và web cùng cần Redis (`REDIS_URL`, `JUDGE_CONCURRENCY` trong `.env`). Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
 
+`JUDGE_EARLY_STOP` (mặc định `off`): `priority` chỉ dừng khi gặp TLE (verdict cuối không đổi so với chấm đủ), `first-failure` dừng ở testcase lỗi đầu tiên. Các testcase bị bỏ qua không được lưu nhưng vẫn tính vào mẫu số của `PassedCases` (ví dụ `2/10`).
+
 ## Thiết kế giao diện
 
 Giao diện của ITOJ lấy từ artifact thiết kế: https://claude.ai/artifact/YXSCQak2cxUESw416gBd1Y

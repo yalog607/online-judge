@@ -2,7 +2,9 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { DomainError } from "@/db/exec";
 import { sendOtpMail } from "@/lib/mail";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import * as repo from "./repo";
+import { LOGIN_RATE_MESSAGE, OTP_RATE_MESSAGE, loginRules, otpRules } from "./limits";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
 const MAX_OTP_ATTEMPTS = 5;
@@ -13,7 +15,17 @@ function randomOtp(): string {
 
 export class AuthError extends Error {}
 
-async function issueOtp(email: string, purpose: "Register" | "Reset", payload?: string) {
+async function throttle(rules: Parameters<typeof enforceRateLimit>[0], message: string) {
+  try {
+    await enforceRateLimit(rules, message);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
+async function issueOtp(email: string, purpose: "Register" | "Reset", ip: string, payload?: string) {
+  await throttle(otpRules(ip, email), OTP_RATE_MESSAGE);
   const code = randomOtp();
   const codeHash = await bcrypt.hash(code, 10);
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
@@ -26,12 +38,12 @@ async function issueOtp(email: string, purpose: "Register" | "Reset", payload?: 
   await sendOtpMail(email, code, purpose);
 }
 
-export function requestRegisterOtp(email: string) {
-  return issueOtp(email, "Register");
+export function requestRegisterOtp(email: string, ip: string) {
+  return issueOtp(email, "Register", ip);
 }
 
-export function requestResetOtp(email: string) {
-  return issueOtp(email, "Reset");
+export function requestResetOtp(email: string, ip: string) {
+  return issueOtp(email, "Reset", ip);
 }
 
 async function verifyOtp(email: string, purpose: "Register" | "Reset", code: string) {
@@ -86,7 +98,8 @@ export async function resetPassword(input: { email: string; otp: string; passwor
   await repo.consumeOtpAndResetPassword({ otpId, email: input.email, passwordHash });
 }
 
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string, ip: string) {
+  await throttle(loginRules(ip, email), LOGIN_RATE_MESSAGE);
   const user = await repo.getUserByEmail(email);
   if (!user) throw new AuthError("Email hoặc mật khẩu không đúng.");
   const ok = await bcrypt.compare(password, user.Password);
