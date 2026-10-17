@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
-import { DifficultyBadge } from "@/components/badge";
+import { ContestStatusBadge, DifficultyBadge } from "@/components/badge";
 import { JoinContestDialog } from "../../../app/user/contests/join-contest-dialog";
 import { listComments } from "@/modules/comment/repo";
 import { Comments } from "@/components/comments";
@@ -26,28 +26,6 @@ function formatDateTime(iso: string) {
   });
 }
 
-function StatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
-  if (status === "Ongoing") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500 border border-emerald-500/20">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        Đang diễn ra
-      </span>
-    );
-  }
-  if (status === "Upcoming") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20">
-        Sắp diễn ra
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20">
-      Đã kết thúc
-    </span>
-  );
-}
 
 export async function ContestParticipantPage({
   params,
@@ -91,7 +69,7 @@ export async function ContestParticipantPage({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-fg">{contest.contestName}</h1>
-              <StatusBadge status={contest.status} />
+              <ContestStatusBadge status={contest.status} />
               <ContestTimer
                 startTime={contest.startTime}
                 endTime={contest.endTime}

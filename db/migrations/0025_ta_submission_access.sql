@@ -19,7 +19,7 @@ BEGIN
        )
         THROW 50023, N'Ban khong co quyen xem bai nop nay.', 1;
 
-    SELECT s.SubmissionID, s.UserID, u.Username, u.FullName, s.ProblemID, p.Title AS ProblemTitle, s.SourceCode,
+    SELECT s.SubmissionID, s.UserID, u.Username, u.FullName, s.ProblemID, s.ContestID, p.Title AS ProblemTitle, s.SourceCode,
            s.Language, s.SubmitTime, s.Result, s.Runtime, s.Memory, s.PassedCases
     FROM dbo.Submissions s
     JOIN dbo.Problems p ON p.ProblemID = s.ProblemID

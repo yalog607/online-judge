@@ -20,6 +20,7 @@ export type SubmissionDetail = {
   SubmissionID: number;
   UserID: number;
   ProblemID: number;
+  ContestID?: number | null;
   ProblemTitle: string;
   SourceCode: string;
   Language: Language;

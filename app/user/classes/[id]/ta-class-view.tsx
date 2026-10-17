@@ -185,7 +185,7 @@ export async function TAClassView({
                         <td className="px-4 py-3 text-fg-muted">{idx + 1}</td>
                         <td className="px-4 py-3 font-medium text-fg">
                           <Link
-                            href={`/user/problems/${p.ProblemID}`}
+                            href={`/user/problems/${p.ProblemID}?classId=${classId}`}
                             className="hover:text-primary hover:underline"
                             target="_blank"
                           >
@@ -335,7 +335,7 @@ export async function TAClassView({
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Link
-                            href={`/submissions/${s.SubmissionID}`}
+                            href={`/submissions/${s.SubmissionID}?classId=${classId}`}
                             className="text-xs font-semibold text-primary hover:underline"
                           >
                             Xem mã nguồn →

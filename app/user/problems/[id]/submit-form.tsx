@@ -73,14 +73,16 @@ function functionNotes(language: string, name: string): string[] {
 export function SubmitForm({
   problemId,
   contestId,
+  classId,
+  from,
   starters,
   functionName,
 }: {
   problemId: number;
   contestId?: number;
-  // Initial code per language (generated signature stub).
+  classId?: number;
+  from?: string;
   starters: Record<string, string>;
-  // Required function name, shown in the submission notes.
   functionName: string;
 }) {
   const [state, action] = useActionState(submitCodeAction, initial);
@@ -91,8 +93,15 @@ export function SubmitForm({
   const [clientError, setClientError] = useState<string>();
 
   useEffect(() => {
-    if (state.ok && state.submissionId) router.push(`/submissions/${state.submissionId}`);
-  }, [state, router]);
+    if (state.ok && state.submissionId) {
+      const query = new URLSearchParams();
+      if (contestId) query.set("contestId", String(contestId));
+      if (classId) query.set("classId", String(classId));
+      if (from) query.set("from", from);
+      const qs = query.toString();
+      router.push(`/submissions/${state.submissionId}${qs ? `?${qs}` : ""}`);
+    }
+  }, [state, router, contestId, classId, from]);
 
   return (
     <form

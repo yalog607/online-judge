@@ -275,7 +275,7 @@ export default async function TeacherProblemPreviewPage({
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Link
-                            href={`/submissions/${s.SubmissionID}`}
+                            href={`/submissions/${s.SubmissionID}?from=preview`}
                             className="text-xs font-semibold text-primary hover:underline"
                             target="_blank"
                           >

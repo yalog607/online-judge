@@ -369,7 +369,7 @@ export function StudentProgressModal({
                               </td>
                               <td className="px-4 py-3 text-right">
                                 <Link
-                                  href={`/submissions/${s.SubmissionID}`}
+                                  href={`/submissions/${s.SubmissionID}?classId=${classId}`}
                                   target="_blank"
                                   className="font-medium text-primary hover:underline"
                                 >

@@ -189,7 +189,7 @@ export default async function AdminContestsPage({
                   <p className="mt-0.5 text-xs text-fg-muted line-clamp-1">{c.description}</p>
                 )}
               </td>
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 whitespace-nowrap">
                 <ContestStatusBadge status={c.status} />
               </td>
               <td className="px-4 py-3 text-xs text-fg-muted">

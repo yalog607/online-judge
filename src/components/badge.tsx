@@ -15,7 +15,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${KIND_CLASS[kind]}`}
+      className={`inline-flex items-center whitespace-nowrap shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${KIND_CLASS[kind]}`}
     >
       {children}
     </span>
@@ -98,17 +98,39 @@ export function VerdictBadge({ value }: { value: string }) {
   return <Badge kind={VERDICT_KIND[value] ?? "neutral"}>{VERDICT_LABEL[value] ?? value}</Badge>;
 }
 
-export function ContestStatusBadge({ status }: { status: "Upcoming" | "Ongoing" | "Ended" }) {
+export function ContestStatusBadge({
+  status,
+  className,
+}: {
+  status: "Upcoming" | "Ongoing" | "Ended";
+  className?: string;
+}) {
   if (status === "Ongoing") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-ok/20 bg-ok-soft px-2 py-0.5 text-xs font-medium text-ok">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500 border border-emerald-500/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         Đang diễn ra
       </span>
     );
   }
-  if (status === "Upcoming") return <Badge kind="info">Sắp diễn ra</Badge>;
-  return <Badge>Đã kết thúc</Badge>;
+  if (status === "Upcoming") {
+    return (
+      <span
+        className={`inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
+      >
+        Sắp diễn ra
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
+    >
+      Đã kết thúc
+    </span>
+  );
 }
 
 const APPROVAL_KIND: Record<string, keyof typeof KIND_CLASS> = {

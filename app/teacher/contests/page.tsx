@@ -192,7 +192,7 @@ export default async function TeacherContestsPage({
         </div>
       )}
 
-      <div className="card overflow-hidden">
+      <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-line bg-muted/40 text-fg-muted text-xs font-semibold uppercase tracking-wider">
             <tr>
@@ -202,7 +202,7 @@ export default async function TeacherContestsPage({
               <th className="px-4 py-3 w-40">NGƯỜI TẠO</th>
               <th className="px-4 py-3 w-40">MÔN</th>
               <th className="px-4 py-3 w-36">NGÀY THI</th>
-              <th className="px-4 py-3 w-32">TRẠNG THÁI</th>
+              <th className="px-4 py-3 w-36 whitespace-nowrap">TRẠNG THÁI</th>
               <th className="px-4 py-3 w-24 text-right">HÀNH ĐỘNG</th>
             </tr>
           </thead>
@@ -265,7 +265,7 @@ export default async function TeacherContestsPage({
                         {formatTime(c.startTime)} - {formatTime(c.endTime)}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <ContestStatusBadge status={c.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
