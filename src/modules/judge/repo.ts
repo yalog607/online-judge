@@ -17,7 +17,8 @@ export type TestcaseResult = {
   testCaseId: number;
   verdict: string;
   runtime: number;
-  memory: number;
+  // Peak memory in MB; null when the host could not measure it.
+  memory: number | null;
 };
 
 export async function claimSubmission(

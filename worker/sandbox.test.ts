@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDockerArgs } from "./sandbox";
+import { buildDockerArgs, parseStats } from "./sandbox";
 
 const base = {
   image: "itoj-judge-python:latest",
@@ -37,5 +37,39 @@ describe("buildDockerArgs", () => {
     const args = buildDockerArgs("n", { ...base, user: "1000:1000" });
     expect(pairs(args, "--user")).toEqual(["1000:1000"]);
     expect(buildDockerArgs("n", base)).not.toContain("--user");
+  });
+});
+
+describe("parseStats", () => {
+  it("reads the cgroup figures and converts µs to ms", () => {
+    expect(parseStats("oops\n@@ITOJ_STATS@@ 123456 4194304 0\n")).toEqual({
+      cpuTimeMs: 123,
+      memoryBytes: 4194304,
+      oomKills: 0,
+    });
+  });
+
+  it("uses the last marker so a submission cannot forge its own figures", () => {
+    const forged = "@@ITOJ_STATS@@ 0 0 0\n@@ITOJ_STATS@@ 9000000 1048576 1\n";
+    expect(parseStats(forged)).toEqual({ cpuTimeMs: 9000, memoryBytes: 1048576, oomKills: 1 });
+  });
+
+  it("maps -1 to null and returns null without a marker", () => {
+    expect(parseStats("@@ITOJ_STATS@@ -1 -1 0\n")).toEqual({
+      cpuTimeMs: null,
+      memoryBytes: null,
+      oomKills: 0,
+    });
+    expect(parseStats("no stats")).toBeNull();
+  });
+});
+
+describe("measure wrapper", () => {
+  it("wraps the command in sh -c only when measuring", () => {
+    const wrapped = buildDockerArgs("n", { ...base, measure: true });
+    const i = wrapped.indexOf("itoj-judge-python:latest");
+    expect(wrapped.slice(i + 1, i + 3)).toEqual(["sh", "-c"]);
+    expect(wrapped.slice(-3)).toEqual(["itoj", "python3", "main.py"]);
+    expect(buildDockerArgs("n", base).slice(-2)).toEqual(["python3", "main.py"]);
   });
 });
