@@ -12,6 +12,16 @@ BEGIN
     IF @Purpose = 'Reset' AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
         THROW 50002, N'Email chưa được đăng ký.', 1;
 
+    DECLARE @WaitSeconds INT;
+    SELECT @WaitSeconds = 60 - IIF(DATEDIFF(SECOND, MAX(CreatedAt), SYSUTCDATETIME()) < 0, 0, DATEDIFF(SECOND, MAX(CreatedAt), SYSUTCDATETIME()))
+    FROM dbo.OtpCodes
+    WHERE Email = @Email AND Purpose = @Purpose;
+    IF @WaitSeconds > 0
+    BEGIN
+        DECLARE @Msg NVARCHAR(200) = CONCAT(N'Vui lòng đợi ', @WaitSeconds, N' giây trước khi yêu cầu mã mới.');
+        THROW 50003, @Msg, 1;
+    END
+
     UPDATE dbo.OtpCodes SET ConsumedAt = SYSUTCDATETIME()
     WHERE Email = @Email AND Purpose = @Purpose AND ConsumedAt IS NULL;
 
