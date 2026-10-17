@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { getUserDashboard } from "@/modules/dashboard/service";
 import { getUserPersonalProgress } from "@/modules/report/repo";
-import { Badge } from "@/components/badge";
+import { Badge, ContestStatusBadge } from "@/components/badge";
 import { Icon } from "@/components/icon";
 import { StatCard, Panel } from "@/components/stat-card";
 import { Heatmap } from "@/components/dashboard-charts";
@@ -105,9 +105,7 @@ export default async function UserDashboard() {
                 {contest.ProblemCount} bài
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge kind={contest.Status === "Ongoing" ? "ok" : "info"}>
-                  {contest.Status === "Ongoing" ? "Đang diễn ra" : "Sắp diễn ra"}
-                </Badge>
+                <ContestStatusBadge status={contest.Status} />
                 {contest.IsProtected ? <Badge>Có mật khẩu</Badge> : null}
               </div>
               <Link
