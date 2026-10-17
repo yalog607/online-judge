@@ -53,3 +53,39 @@ export const submitCodeSchema = z.object({
   sourceCode: z.string().trim().min(1, "Vui lòng nhập mã nguồn"),
   contestId: z.coerce.number().int().positive().optional(),
 });
+
+export const COMPARE_MODES = ["exact", "unordered", "float"] as const;
+export type CompareMode = (typeof COMPARE_MODES)[number];
+
+// Checker settings and testcase groups saved together with the testcases.
+export const scoringSchema = z
+  .object({
+    compareMode: z.enum(COMPARE_MODES).default("exact"),
+    floatEpsilon: z.number().positive().max(1).optional(),
+    groups: z
+      .array(
+        z.object({
+          groupNo: z.number().int().positive(),
+          points: z.number().int().min(0).max(1000),
+        }),
+      )
+      .max(100)
+      .default([]),
+  })
+  .refine((v) => new Set(v.groups.map((g) => g.groupNo)).size === v.groups.length, {
+    message: "Số nhóm testcase bị trùng",
+    path: ["groups"],
+  });
+
+export type Scoring = z.infer<typeof scoringSchema>;
+
+// Returns an error message when a testcase points to a group that has no declared points.
+// Callers validate with scoringSchema first, then run this before saving.
+export function validateTestcaseGroups(
+  testcases: { groupNo?: number }[],
+  scoring: Scoring,
+): string | null {
+  const declared = new Set(scoring.groups.map((g) => g.groupNo));
+  const bad = testcases.findIndex((t) => t.groupNo !== undefined && !declared.has(t.groupNo));
+  return bad >= 0 ? `Testcase #${bad + 1} thuộc nhóm chưa khai báo điểm` : null;
+}

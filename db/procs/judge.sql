@@ -25,9 +25,27 @@ CREATE OR ALTER PROCEDURE app.usp_Testcase_ListForJudge
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT TestCaseID, InputData, ExpectedOutput
+    SELECT TestCaseID, InputData, ExpectedOutput, GroupNo
     FROM dbo.Testcases WHERE ProblemID = @ProblemID
     ORDER BY OrderIndex;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Judge_GetChecker
+    @ProblemID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT CompareMode, FloatEpsilon FROM dbo.Problems WHERE ProblemID = @ProblemID;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Judge_ListGroups
+    @ProblemID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT GroupNo, Points FROM dbo.TestcaseGroups WHERE ProblemID = @ProblemID ORDER BY GroupNo;
 END
 GO
 
@@ -39,7 +57,9 @@ CREATE OR ALTER PROCEDURE app.usp_Judge_SaveResult
     @Memory FLOAT,
     @PassedCases VARCHAR(50),
     @ResultsJson NVARCHAR(MAX),
-    @WorkerID VARCHAR(100)
+    @WorkerID VARCHAR(100),
+    @Score INT = NULL,
+    @MaxScore INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -48,7 +68,7 @@ BEGIN
 
     UPDATE dbo.Submissions
     SET Result = @Result, Runtime = @Runtime, Memory = @Memory,
-        PassedCases = @PassedCases, JudgedAt = SYSUTCDATETIME(),
+        PassedCases = @PassedCases, Score = @Score, MaxScore = @MaxScore, JudgedAt = SYSUTCDATETIME(),
         ClaimedBy = NULL, ClaimedAt = NULL
     WHERE SubmissionID = @SubmissionID AND Result = 'Judging' AND ClaimedBy = @WorkerID;
 

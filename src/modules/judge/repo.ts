@@ -11,7 +11,18 @@ export type ClaimedSubmission = {
   FunctionSpec: string | null;
 };
 
-export type JudgeTestcase = { TestCaseID: number; InputData: string; ExpectedOutput: string };
+export type JudgeTestcase = {
+  TestCaseID: number;
+  InputData: string;
+  ExpectedOutput: string;
+  GroupNo: number | null;
+};
+
+export type JudgeChecker = {
+  CompareMode: "exact" | "unordered" | "float";
+  FloatEpsilon: number | null;
+};
+export type JudgeGroup = { GroupNo: number; Points: number };
 
 export type TestcaseResult = {
   testCaseId: number;
@@ -50,6 +61,16 @@ export async function listTestcases(problemId: number): Promise<JudgeTestcase[]>
   return rows;
 }
 
+export async function getChecker(problemId: number): Promise<JudgeChecker> {
+  const { rows } = await execProc<JudgeChecker>("usp_Judge_GetChecker", { ProblemID: problemId });
+  return rows[0] ?? { CompareMode: "exact", FloatEpsilon: null };
+}
+
+export async function listGroups(problemId: number): Promise<JudgeGroup[]> {
+  const { rows } = await execProc<JudgeGroup>("usp_Judge_ListGroups", { ProblemID: problemId });
+  return rows;
+}
+
 export async function saveResult(input: {
   submissionId: number;
   workerId: string;
@@ -58,6 +79,8 @@ export async function saveResult(input: {
   memory: number | null;
   passedCases: string;
   results: TestcaseResult[];
+  score?: number | null;
+  maxScore?: number | null;
 }) {
   await execProc("usp_Judge_SaveResult", {
     SubmissionID: input.submissionId,
@@ -67,6 +90,8 @@ export async function saveResult(input: {
     PassedCases: input.passedCases,
     ResultsJson: JSON.stringify(input.results),
     WorkerID: input.workerId,
+    Score: input.score ?? null,
+    MaxScore: input.maxScore ?? null,
   });
 }
 

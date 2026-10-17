@@ -439,7 +439,10 @@ GO
 CREATE OR ALTER PROCEDURE app.usp_Testcase_ReplaceAll
     @ProblemID INT,
     @ActorID INT,
-    @TestcasesJson NVARCHAR(MAX)
+    @TestcasesJson NVARCHAR(MAX),
+    -- Optional: {"compareMode":"float","floatEpsilon":1e-6,"groups":[{"groupNo":1,"points":40}]}.
+    -- NULL keeps the current checker settings and groups.
+    @ScoringJson NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -486,14 +489,31 @@ BEGIN
 
     DELETE FROM dbo.Testcases WHERE ProblemID = @ProblemID;
 
-    INSERT dbo.Testcases (ProblemID, InputData, ExpectedOutput, IsHidden, OrderIndex)
-    SELECT @ProblemID, t.input, t.expectedOutput, t.isHidden, CAST(o.[key] AS INT)
+    INSERT dbo.Testcases (ProblemID, InputData, ExpectedOutput, IsHidden, OrderIndex, GroupNo)
+    SELECT @ProblemID, t.input, t.expectedOutput, t.isHidden, CAST(o.[key] AS INT), t.groupNo
     FROM OPENJSON(@TestcasesJson) o
     CROSS APPLY OPENJSON(o.value) WITH (
         input NVARCHAR(MAX) '$.input',
         expectedOutput NVARCHAR(MAX) '$.expectedOutput',
-        isHidden BIT '$.isHidden'
+        isHidden BIT '$.isHidden',
+        groupNo INT '$.groupNo'
     ) t;
+
+    IF @ScoringJson IS NOT NULL
+    BEGIN
+        UPDATE dbo.Problems
+        SET CompareMode = COALESCE(JSON_VALUE(@ScoringJson, '$.compareMode'), 'exact'),
+            FloatEpsilon = TRY_CAST(JSON_VALUE(@ScoringJson, '$.floatEpsilon') AS FLOAT)
+        WHERE ProblemID = @ProblemID;
+
+        DELETE FROM dbo.TestcaseGroups WHERE ProblemID = @ProblemID;
+        INSERT dbo.TestcaseGroups (ProblemID, GroupNo, Points)
+        SELECT @ProblemID, g.groupNo, g.points
+        FROM OPENJSON(@ScoringJson, '$.groups') WITH (
+            groupNo INT '$.groupNo',
+            points INT '$.points'
+        ) g;
+    END
 
     COMMIT TRANSACTION;
 END
