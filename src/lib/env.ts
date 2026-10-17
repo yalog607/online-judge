@@ -14,6 +14,9 @@ const schema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().min(1),
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
+  // off: run every testcase. priority: stop once the verdict is already the highest-priority
+  // failure (result identical to a full run). first-failure: stop at the first non-AC testcase.
+  JUDGE_EARLY_STOP: z.enum(["off", "priority", "first-failure"]).default("off"),
   JUDGE_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(1),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),

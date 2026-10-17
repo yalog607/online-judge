@@ -18,7 +18,7 @@ vi.mock("./sandbox", async () => {
   };
 });
 
-import { judgeJob, wallTimeoutMs } from "./processor";
+import { judgeJob, shouldStopEarly, wallTimeoutMs } from "./processor";
 import { InfraError } from "./sandbox";
 
 const submission = {
@@ -164,5 +164,57 @@ describe("function judging", () => {
     await judgeJob(job, "w1");
     expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "IE" }));
     expect(sandbox.runInSandbox).not.toHaveBeenCalled();
+  });
+});
+
+describe("early stop", () => {
+  const three = [1, 2, 3].map((id) => ({
+    TestCaseID: id,
+    InputData: "[2,7]\n9",
+    ExpectedOutput: "[0,1]",
+  }));
+  const verdictsRun = () => sandbox.runInSandbox.mock.calls.length;
+
+  beforeEach(() => repo.listTestcases.mockResolvedValue(three));
+
+  it("runs every testcase by default", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: marked("[1,0]") }));
+    await judgeJob(job, "w1");
+    expect(verdictsRun()).toBe(3);
+  });
+
+  it("first-failure stops after the first failing testcase and keeps the total as denominator", async () => {
+    sandbox.runInSandbox
+      .mockResolvedValueOnce(run())
+      .mockResolvedValueOnce(run({ stdout: marked("[1,0]") }));
+    await judgeJob(job, "w1", { earlyStop: "first-failure" });
+    expect(verdictsRun()).toBe(2);
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: "WA",
+        passedCases: "1/3",
+        results: [
+          expect.objectContaining({ testCaseId: 1, verdict: "AC" }),
+          expect.objectContaining({ testCaseId: 2, verdict: "WA" }),
+        ],
+      }),
+    );
+  });
+
+  it("priority mode keeps running past WA but stops on TLE, so the verdict matches a full run", async () => {
+    sandbox.runInSandbox
+      .mockResolvedValueOnce(run({ stdout: marked("[1,0]") }))
+      .mockResolvedValueOnce(run({ timedOut: true }));
+    await judgeJob(job, "w1", { earlyStop: "priority" });
+    expect(verdictsRun()).toBe(2);
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "TLE" }));
+  });
+
+  it("decides per mode and verdict", () => {
+    expect(shouldStopEarly("off", "TLE")).toBe(false);
+    expect(shouldStopEarly("first-failure", "AC")).toBe(false);
+    expect(shouldStopEarly("first-failure", "RE")).toBe(true);
+    expect(shouldStopEarly("priority", "WA")).toBe(false);
+    expect(shouldStopEarly("priority", "TLE")).toBe(true);
   });
 });
