@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const repo = vi.hoisted(() => ({
+  getChecker: vi.fn(),
+  listGroups: vi.fn(),
   claimSubmission: vi.fn(),
   listTestcases: vi.fn(),
   releaseSubmission: vi.fn(),
@@ -18,7 +20,7 @@ vi.mock("./sandbox", async () => {
   };
 });
 
-import { judgeJob, shouldStopEarly, wallTimeoutMs } from "./processor";
+import { judgeJob, scoreGroups, shouldStopEarly, wallTimeoutMs } from "./processor";
 import { InfraError } from "./sandbox";
 
 const submission = {
@@ -55,8 +57,10 @@ beforeEach(() => {
   vi.resetAllMocks();
   repo.claimSubmission.mockResolvedValue(submission);
   repo.listTestcases.mockResolvedValue([
-    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]" },
+    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: null },
   ]);
+  repo.getChecker.mockResolvedValue({ CompareMode: "exact", FloatEpsilon: null });
+  repo.listGroups.mockResolvedValue([]);
   repo.saveResult.mockResolvedValue(undefined);
   repo.releaseSubmission.mockResolvedValue(undefined);
 });
@@ -172,6 +176,7 @@ describe("early stop", () => {
     TestCaseID: id,
     InputData: "[2,7]\n9",
     ExpectedOutput: "[0,1]",
+    GroupNo: null,
   }));
   const verdictsRun = () => sandbox.runInSandbox.mock.calls.length;
 
@@ -216,5 +221,58 @@ describe("early stop", () => {
     expect(shouldStopEarly("first-failure", "RE")).toBe(true);
     expect(shouldStopEarly("priority", "WA")).toBe(false);
     expect(shouldStopEarly("priority", "TLE")).toBe(true);
+  });
+});
+
+describe("checker and group scoring", () => {
+  const tcs = [
+    { TestCaseID: 1, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: 1 },
+    { TestCaseID: 2, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: 1 },
+    { TestCaseID: 3, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: 2 },
+    { TestCaseID: 4, InputData: "[2,7]\n9", ExpectedOutput: "[0,1]", GroupNo: null },
+  ];
+  const groups = [
+    { GroupNo: 1, Points: 40 },
+    { GroupNo: 2, Points: 60 },
+  ];
+
+  it("passes the problem's compare mode and epsilon to the comparison", async () => {
+    repo.getChecker.mockResolvedValue({ CompareMode: "unordered", FloatEpsilon: null });
+    sandbox.runInSandbox.mockResolvedValue(run({ stdout: marked("[1,0]") }));
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(expect.objectContaining({ result: "AC" }));
+  });
+
+  it("scores only fully accepted groups and ignores ungrouped testcases", () => {
+    const verdicts = new Map([
+      [1, "AC"],
+      [2, "WA"],
+      [3, "AC"],
+      [4, "WA"],
+    ]);
+    expect(scoreGroups(groups, tcs, verdicts)).toEqual({ score: 60, maxScore: 100 });
+    expect(scoreGroups([], tcs, verdicts)).toBeNull();
+  });
+
+  it("saves the score and keeps judging other groups when a group fails early", async () => {
+    repo.listTestcases.mockResolvedValue(tcs);
+    repo.listGroups.mockResolvedValue(groups);
+    sandbox.runInSandbox
+      .mockResolvedValueOnce(run({ stdout: marked("[1,0]") })) // tc1 WA -> group 1 fails
+      .mockResolvedValue(run());
+    await judgeJob(job, "w1", { earlyStop: "first-failure" });
+    // tc2 skipped; tc3 and tc4 still run
+    expect(sandbox.runInSandbox).toHaveBeenCalledTimes(3);
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({ result: "WA", score: 60, maxScore: 100, passedCases: "2/4" }),
+    );
+  });
+
+  it("leaves the score null when the problem has no groups", async () => {
+    sandbox.runInSandbox.mockResolvedValue(run());
+    await judgeJob(job, "w1");
+    expect(repo.saveResult).toHaveBeenCalledWith(
+      expect.objectContaining({ score: null, maxScore: null }),
+    );
   });
 });

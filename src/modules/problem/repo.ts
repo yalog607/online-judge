@@ -1,5 +1,6 @@
 import "server-only";
 import { execProc } from "@/db/exec";
+import type { Scoring } from "./schema";
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
 export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejected";
@@ -224,12 +225,14 @@ export async function listOwnerTestcases(
 export async function replaceTestcases(
   problemId: number,
   actorId: number,
-  testcases: { input: string; expectedOutput: string; isHidden: boolean }[],
+  testcases: { input: string; expectedOutput: string; isHidden: boolean; groupNo?: number }[],
+  scoring?: Scoring,
 ) {
   await execProc("usp_Testcase_ReplaceAll", {
     ProblemID: problemId,
     ActorID: actorId,
     TestcasesJson: JSON.stringify(testcases),
+    ...(scoring ? { ScoringJson: JSON.stringify(scoring) } : {}),
   });
 }
 

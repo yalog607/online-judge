@@ -64,7 +64,11 @@ fi
 printf '\n${STATS_MARKER} %s %s %s\n' "$cpu" "$mem" "$oom" >&2
 exit $c`;
 
-export type SandboxStats = { cpuTimeMs: number | null; memoryBytes: number | null; oomKills: number };
+export type SandboxStats = {
+  cpuTimeMs: number | null;
+  memoryBytes: number | null;
+  oomKills: number;
+};
 
 // Takes the LAST marker so output printed by the submission cannot override the real figures.
 export function parseStats(stderr: string): SandboxStats | null {
