@@ -31,6 +31,7 @@ const SLICE_COLORS = [
 const ACTIONS: Record<string, string> = {
   SetUserRole: "Đổi vai trò người dùng",
   SetUserStatus: "Đổi trạng thái tài khoản",
+  TransferOwnership: "Chuyển quyền sở hữu",
   ImpersonateStart: "Đăng nhập thay người dùng",
   IMPERSONATE_SESSION_START: "Đăng nhập thay người dùng",
   CONTEST_CREATE: "Tạo kỳ thi",

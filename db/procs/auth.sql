@@ -271,6 +271,112 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListTeachers
+    @ActorID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50030, N'Bạn không có quyền thực hiện thao tác này.', 1;
+
+    SELECT UserID, FullName, Username
+    FROM dbo.Users
+    WHERE Role = 'Teacher' AND Status = 'Active'
+    ORDER BY FullName;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListOwnedItems
+    @ActorID INT,
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50030, N'Bạn không có quyền thực hiện thao tác này.', 1;
+
+    SELECT 'Class' AS ItemType, ClassID AS ItemID, ClassName AS Name
+    FROM dbo.Classes
+    WHERE TeacherID = @UserID AND IsCancelled = 0
+    UNION ALL
+    SELECT 'Contest', ContestID, ContestName
+    FROM dbo.Contests
+    WHERE CreatorID = @UserID AND EndTime > SYSUTCDATETIME()
+    UNION ALL
+    SELECT 'Problem', ProblemID, Title
+    FROM dbo.Problems
+    WHERE CreatorID = @UserID
+    ORDER BY ItemType, Name;
+END
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Admin_TransferOwnership
+    @ActorID INT,
+    @ItemType VARCHAR(20),
+    @ItemID INT,
+    @NewOwnerID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50030, N'Bạn không có quyền thực hiện thao tác này.', 1;
+
+    IF @ItemType NOT IN ('Class', 'Contest', 'Problem')
+        THROW 50060, N'Loại đối tượng không hợp lệ.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @NewOwnerID AND Role = 'Teacher' AND Status = 'Active')
+        THROW 50061, N'Người nhận phải là giảng viên đang hoạt động.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @OldOwnerID INT;
+
+        IF @ItemType = 'Class'
+        BEGIN
+            SELECT @OldOwnerID = TeacherID FROM dbo.Classes WHERE ClassID = @ItemID AND IsCancelled = 0;
+            IF @OldOwnerID IS NULL THROW 50062, N'Lớp học không tồn tại hoặc đã bị hủy.', 1;
+            IF @OldOwnerID = @NewOwnerID THROW 50063, N'Người nhận đã là chủ sở hữu hiện tại.', 1;
+            IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ItemID AND UserID = @NewOwnerID)
+                THROW 50064, N'Người nhận đang là học viên của lớp này.', 1;
+
+            DELETE FROM dbo.Class_TA WHERE ClassID = @ItemID AND UserID_TA = @NewOwnerID;
+            UPDATE dbo.Classes SET TeacherID = @NewOwnerID WHERE ClassID = @ItemID;
+        END
+        ELSE IF @ItemType = 'Contest'
+        BEGIN
+            SELECT @OldOwnerID = CreatorID FROM dbo.Contests WHERE ContestID = @ItemID;
+            IF @OldOwnerID IS NULL THROW 50062, N'Kỳ thi không tồn tại.', 1;
+            IF @OldOwnerID = @NewOwnerID THROW 50063, N'Người nhận đã là chủ sở hữu hiện tại.', 1;
+
+            UPDATE dbo.Contests SET CreatorID = @NewOwnerID WHERE ContestID = @ItemID;
+        END
+        ELSE
+        BEGIN
+            SELECT @OldOwnerID = CreatorID FROM dbo.Problems WHERE ProblemID = @ItemID;
+            IF @OldOwnerID IS NULL THROW 50062, N'Bài tập không tồn tại.', 1;
+            IF @OldOwnerID = @NewOwnerID THROW 50063, N'Người nhận đã là chủ sở hữu hiện tại.', 1;
+
+            UPDATE dbo.Problems SET CreatorID = @NewOwnerID WHERE ProblemID = @ItemID;
+        END;
+
+        INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID, Detail)
+        VALUES (@ActorID, 'TransferOwnership', @ItemType, @ItemID,
+                CONCAT(@OldOwnerID, N'->', @NewOwnerID));
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END
+GO
+
 CREATE OR ALTER PROCEDURE app.usp_Admin_ListUsers
     @ActorID INT,
     @Search NVARCHAR(100) = NULL,

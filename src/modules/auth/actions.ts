@@ -12,6 +12,8 @@ import {
   requestResetOtpSchema,
   resetPasswordSchema,
   setUserRoleSchema,
+  transferOwnershipSchema,
+  ownedItemsSchema,
   setUserStatusSchema,
   updateProfileSchema,
 } from "./schema";
@@ -208,4 +210,47 @@ export async function setUserRoleAction(
   }
 }
 
+export type OwnershipData = {
+  items: { ItemType: "Class" | "Contest" | "Problem"; ItemID: number; Name: string }[];
+  teachers: { UserID: number; FullName: string; Username: string }[];
+};
 
+export async function loadOwnershipDataAction(
+  userId: number,
+): Promise<{ error?: string; data?: OwnershipData }> {
+  const admin = await requireRole("Admin");
+  const parsed = ownedItemsSchema.safeParse({ userId });
+  if (!parsed.success) return firstIssue(parsed.error);
+
+  try {
+    const [items, teachers] = await Promise.all([
+      service.listOwnedItems(admin.userId, parsed.data.userId),
+      service.listTeachers(admin.userId),
+    ]);
+    return { data: { items, teachers } };
+  } catch (e) {
+    return { error: e instanceof AuthError ? e.message : "Không tải được dữ liệu." };
+  }
+}
+
+export async function transferOwnershipAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireRole("Admin");
+  const parsed = transferOwnershipSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return firstIssue(parsed.error);
+
+  try {
+    await service.transferOwnership(
+      admin.userId,
+      parsed.data.itemType,
+      parsed.data.itemId,
+      parsed.data.newOwnerId,
+    );
+    revalidatePath("/admin/users");
+    return { ok: true };
+  } catch (e) {
+    return { error: e instanceof AuthError ? e.message : "Thao tác thất bại." };
+  }
+}

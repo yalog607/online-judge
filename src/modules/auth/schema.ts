@@ -76,3 +76,12 @@ export const setUserRoleSchema = z.object({
   role: z.enum(["User", "TA", "Teacher"], { message: "Vai trò không hợp lệ" }),
 });
 
+export const transferOwnershipSchema = z.object({
+  itemType: z.enum(["Class", "Contest", "Problem"], { message: "Loại đối tượng không hợp lệ" }),
+  itemId: z.coerce.number().int().positive("ID không hợp lệ"),
+  newOwnerId: z.coerce.number().int().positive("Hãy chọn giảng viên nhận bàn giao"),
+});
+
+export const ownedItemsSchema = z.object({
+  userId: z.coerce.number().int().positive("ID người dùng không hợp lệ"),
+});
