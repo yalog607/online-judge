@@ -909,7 +909,11 @@ export function AdminUsersManager({
                 disabled={isPending || checkedItems.size === 0 || !newOwnerId}
                 className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
               >
-                {isPending ? "Đang chuyển..." : `Chuyển ${checkedItems.size || ""} mục`.trim()}
+                {isPending
+                  ? "Đang chuyển..."
+                  : checkedItems.size > 0
+                    ? `Chuyển ${checkedItems.size} mục`
+                    : "Chuyển mục"}
               </button>
             </div>
           </div>
