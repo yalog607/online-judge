@@ -120,7 +120,6 @@ BEGIN
     DECLARE @Status VARCHAR(20), @ProblemStatus VARCHAR(20), @ProblemCreatorID INT, @ContestClassID INT;
     DECLARE @CreatorID INT;
     DECLARE @IsAdmin BIT = 0;
-    DECLARE @CreatorRole VARCHAR(20);
 
     IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
         SET @IsAdmin = 1;
@@ -142,26 +141,8 @@ BEGIN
     IF @ProblemStatus NOT IN ('Public', 'Private')
         RETURN 0;
 
-    IF @ProblemStatus = 'Private'
-    BEGIN
-        SELECT @CreatorRole = Role FROM dbo.Users WHERE UserID = @CreatorID;
-        IF @IsAdmin = 0 AND NOT (
-            @CreatorRole = 'Admin'
-            OR (
-                @CreatorRole = 'Teacher'
-                AND (
-                    @ProblemCreatorID = @CreatorID
-                    OR EXISTS (
-                        SELECT 1
-                        FROM dbo.Class_Problem cp
-                        JOIN dbo.Classes c ON c.ClassID = cp.ClassID
-                        WHERE cp.ProblemID = @ProblemID AND c.TeacherID = @CreatorID
-                    )
-                )
-            )
-        )
-            RETURN 0;
-    END;
+    -- Bài Riêng tư chỉ vào được kỳ thi khi người thêm còn đủ quyền (kiểm tra ở usp_Contest_AddProblem);
+    -- quyền xem sau đó không phụ thuộc vai trò hiện tại của người tạo kỳ thi.
 
     IF @Status = 'Upcoming' AND @CreatorID <> @UserID AND @IsAdmin = 0
         RETURN 0;

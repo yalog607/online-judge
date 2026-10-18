@@ -189,6 +189,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID)
         THROW 50033, N'Người dùng không tồn tại.', 1;
 
+    IF @Status = 'Locked' AND EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
+        THROW 50032, N'Không thể khóa tài khoản quản trị viên.', 1;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
@@ -236,6 +239,23 @@ BEGIN
 
     BEGIN TRY
         BEGIN TRANSACTION;
+
+        DECLARE @OldRole VARCHAR(20);
+        SELECT @OldRole = Role FROM dbo.Users WHERE UserID = @UserID;
+
+        -- Giáng chức giảng viên: chuyển lớp và kỳ thi chưa kết thúc cho admin thực hiện.
+        IF @OldRole = 'Teacher' AND @Role <> 'Teacher'
+        BEGIN
+            UPDATE dbo.Classes SET TeacherID = @ActorID
+            WHERE TeacherID = @UserID AND IsCancelled = 0;
+
+            UPDATE dbo.Contests SET CreatorID = @ActorID
+            WHERE CreatorID = @UserID AND EndTime > SYSUTCDATETIME();
+        END;
+
+        -- Rời vai TA: gỡ quyền hỗ trợ ở mọi lớp.
+        IF @OldRole = 'TA' AND @Role <> 'TA'
+            DELETE FROM dbo.Class_TA WHERE UserID_TA = @UserID;
 
         UPDATE dbo.Users SET Role = @Role WHERE UserID = @UserID;
 

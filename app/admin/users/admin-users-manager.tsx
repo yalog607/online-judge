@@ -81,7 +81,7 @@ export function AdminUsersManager({
       selectedUser.Role !== "Admin" &&
       selectedUser.Status === "Active"
   );
-  const canChangeRole = Boolean(selectedUser && !isCurrentAdmin);
+  const canChangeRole = Boolean(selectedUser && !isCurrentAdmin && selectedUser.Role !== "Admin");
 
   const handleStatusChange = (nextStatus: "Active" | "Locked") => {
     if (!selectedUser) return;
@@ -694,7 +694,7 @@ export function AdminUsersManager({
               </p>
 
               <div className="space-y-2">
-                {(["User", "Teacher", "TA", "Admin"] as Role[]).map((r) => (
+                {(["User", "Teacher", "TA"] as Role[]).map((r) => (
                   <label
                     key={r}
                     className={`flex items-center justify-between rounded-lg border p-3 cursor-pointer transition ${
