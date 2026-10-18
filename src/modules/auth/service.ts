@@ -164,5 +164,37 @@ export async function setUserRole(
   }
 }
 
+export async function listOwnedItems(actorId: number, userId: number) {
+  try {
+    return await repo.listOwnedItems(actorId, userId);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
+export async function listTeachers(actorId: number) {
+  try {
+    return await repo.listTeachers(actorId);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
+export async function transferOwnership(
+  actorId: number,
+  itemType: "Class" | "Contest" | "Problem",
+  itemId: number,
+  newOwnerId: number,
+) {
+  try {
+    await repo.transferOwnership(actorId, itemType, itemId, newOwnerId);
+  } catch (e) {
+    if (e instanceof DomainError) throw new AuthError(e.message);
+    throw e;
+  }
+}
+
 export { repo };
 

@@ -45,6 +45,10 @@ export async function POST(
       return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
     }
 
+    if (session.role === "User") {
+      return NextResponse.json({ error: "Bạn không có quyền thực hiện thao tác này." }, { status: 403 });
+    }
+
     const { id } = await params;
     const classId = parseInt(id, 10);
     if (isNaN(classId)) {

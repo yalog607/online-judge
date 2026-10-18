@@ -182,3 +182,32 @@ export async function listUsersForAdmin(params: {
   return { items: rows, total };
 }
 
+export type OwnedItem = { ItemType: "Class" | "Contest" | "Problem"; ItemID: number; Name: string };
+export type TeacherOption = { UserID: number; FullName: string; Username: string };
+
+export async function listOwnedItems(actorId: number, userId: number) {
+  const { rows } = await execProc<OwnedItem>("usp_Admin_ListOwnedItems", {
+    ActorID: actorId,
+    UserID: userId,
+  });
+  return rows;
+}
+
+export async function listTeachers(actorId: number) {
+  const { rows } = await execProc<TeacherOption>("usp_Admin_ListTeachers", { ActorID: actorId });
+  return rows;
+}
+
+export async function transferOwnership(
+  actorId: number,
+  itemType: "Class" | "Contest" | "Problem",
+  itemId: number,
+  newOwnerId: number,
+) {
+  await execProc("usp_Admin_TransferOwnership", {
+    ActorID: actorId,
+    ItemType: itemType,
+    ItemID: itemId,
+    NewOwnerID: newOwnerId,
+  });
+}

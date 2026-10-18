@@ -10,6 +10,9 @@ import {
   setUserStatusAction,
   setUserRoleAction,
   impersonateAction,
+  loadOwnershipDataAction,
+  transferOwnershipAction,
+  type OwnershipData,
 } from "@/modules/auth/actions";
 import { Modal } from "@/components/modal";
 import type { Role } from "@/lib/session";
@@ -66,6 +69,10 @@ export function AdminUsersManager({
   const [isImpersonateModalOpen, setIsImpersonateModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedNewRole, setSelectedNewRole] = useState<Role>("User");
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [ownership, setOwnership] = useState<OwnershipData | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [newOwnerId, setNewOwnerId] = useState("");
 
   const [modalError, setModalError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -81,7 +88,7 @@ export function AdminUsersManager({
       selectedUser.Role !== "Admin" &&
       selectedUser.Status === "Active"
   );
-  const canChangeRole = Boolean(selectedUser && !isCurrentAdmin);
+  const canChangeRole = Boolean(selectedUser && !isCurrentAdmin && selectedUser.Role !== "Admin");
 
   const handleStatusChange = (nextStatus: "Active" | "Locked") => {
     if (!selectedUser) return;
@@ -115,6 +122,54 @@ export function AdminUsersManager({
         setIsRoleModalOpen(false);
         router.refresh();
       }
+    });
+  };
+
+  const itemKey = (type: string, id: number) => `${type}:${id}`;
+  const itemTypeLabel = { Class: "Lớp học", Contest: "Kỳ thi", Problem: "Bài tập" } as const;
+
+  const openTransferModal = () => {
+    if (!selectedUser) return;
+    setModalError(null);
+    setOwnership(null);
+    setCheckedItems(new Set());
+    setNewOwnerId("");
+    setIsTransferModalOpen(true);
+    startTransition(async () => {
+      const res = await loadOwnershipDataAction(selectedUser.UserID);
+      if (res.error || !res.data) setModalError(res.error ?? "Không tải được dữ liệu.");
+      else setOwnership(res.data);
+    });
+  };
+
+  const toggleItem = (key: string) => {
+    setCheckedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleTransfer = () => {
+    if (!ownership || checkedItems.size === 0 || !newOwnerId) return;
+    setModalError(null);
+    startTransition(async () => {
+      for (const key of checkedItems) {
+        const [itemType, itemId] = key.split(":");
+        const fd = new FormData();
+        fd.append("itemType", itemType);
+        fd.append("itemId", itemId);
+        fd.append("newOwnerId", newOwnerId);
+        const res = await transferOwnershipAction({}, fd);
+        if (res?.error) {
+          setModalError(res.error);
+          router.refresh();
+          return;
+        }
+      }
+      setIsTransferModalOpen(false);
+      router.refresh();
     });
   };
 
@@ -269,6 +324,24 @@ export function AdminUsersManager({
                   />
                 </svg>
                 Phân quyền
+              </button>
+            )}
+
+            {selectedUser && selectedUser.Status === "Active" && (
+              <button
+                type="button"
+                onClick={openTransferModal}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg hover:bg-muted transition-colors"
+              >
+                <svg className="h-4 w-4 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4-4m-4 4l4 4"
+                  />
+                </svg>
+                Chuyển quyền sở hữu
               </button>
             )}
 
@@ -694,7 +767,7 @@ export function AdminUsersManager({
               </p>
 
               <div className="space-y-2">
-                {(["User", "Teacher", "TA", "Admin"] as Role[]).map((r) => (
+                {(["User", "Teacher", "TA"] as Role[]).map((r) => (
                   <label
                     key={r}
                     className={`flex items-center justify-between rounded-lg border p-3 cursor-pointer transition ${
@@ -735,6 +808,112 @@ export function AdminUsersManager({
                 className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
               >
                 {isPending ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={Boolean(isTransferModalOpen && selectedUser)} onClose={() => setIsTransferModalOpen(false)}>
+        {selectedUser && (
+          <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
+              <h3 className="text-lg font-semibold text-fg">Chuyển quyền sở hữu</h3>
+              <button
+                type="button"
+                onClick={() => setIsTransferModalOpen(false)}
+                className="text-fg-muted hover:text-fg text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {modalError && (
+              <div className="mt-4 rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-500">
+                {modalError}
+              </div>
+            )}
+
+            <div className="mt-4 space-y-4 text-sm text-fg-muted">
+              <p>
+                Chọn lớp học, kỳ thi, bài tập của{" "}
+                <strong className="text-fg font-semibold">{selectedUser.FullName}</strong>{" "}
+                <span className="font-mono text-xs">(@{selectedUser.Username})</span> để bàn giao:
+              </p>
+
+              {!ownership && !modalError && <p>Đang tải...</p>}
+
+              {ownership && ownership.items.length === 0 && (
+                <p>Người dùng này không sở hữu lớp học, kỳ thi đang diễn ra hoặc bài tập nào.</p>
+              )}
+
+              {ownership && ownership.items.length > 0 && (
+                <div className="max-h-64 space-y-1.5 overflow-y-auto pr-1">
+                  {ownership.items.map((it) => {
+                    const key = itemKey(it.ItemType, it.ItemID);
+                    const checked = checkedItems.has(key);
+                    return (
+                      <label
+                        key={key}
+                        className={`flex items-center gap-2 rounded-lg border p-2.5 cursor-pointer transition ${
+                          checked ? "border-primary bg-primary/5" : "border-line bg-surface hover:bg-muted"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleItem(key)}
+                          className="accent-primary"
+                        />
+                        <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-fg-muted">
+                          {itemTypeLabel[it.ItemType]}
+                        </span>
+                        <span className="truncate text-sm text-fg">{it.Name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+
+              {ownership && ownership.items.length > 0 && (
+                <Select
+                  label="Giảng viên nhận bàn giao"
+                  value={newOwnerId}
+                  onChange={(e) => setNewOwnerId(e.target.value)}
+                  className="w-full rounded-lg border border-line bg-muted/50 px-3 py-2 text-sm text-fg focus:border-primary focus:bg-surface focus:outline-none"
+                >
+                  <option value="">Chọn giảng viên...</option>
+                  {ownership.teachers
+                    .filter((tch) => tch.UserID !== selectedUser.UserID)
+                    .map((tch) => (
+                      <option key={tch.UserID} value={tch.UserID}>
+                        {tch.FullName} (@{tch.Username})
+                      </option>
+                    ))}
+                </Select>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-line">
+              <button
+                type="button"
+                onClick={() => setIsTransferModalOpen(false)}
+                disabled={isPending}
+                className="rounded-lg border border-line bg-muted px-4 py-2 text-xs font-semibold text-fg hover:bg-muted/80 transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleTransfer}
+                disabled={isPending || checkedItems.size === 0 || !newOwnerId}
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
+              >
+                {isPending
+                  ? "Đang chuyển..."
+                  : checkedItems.size > 0
+                    ? `Chuyển ${checkedItems.size} mục`
+                    : "Chuyển mục"}
               </button>
             </div>
           </div>
