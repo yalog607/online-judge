@@ -3,6 +3,7 @@ import {
   adminListUsersQuerySchema,
   directRegisterSchema,
   setUserRoleSchema,
+  transferOwnershipSchema,
   setUserStatusSchema,
 } from "./schema";
 
@@ -79,4 +80,17 @@ describe("setUserRoleSchema", () => {
   });
 });
 
+describe("transferOwnershipSchema", () => {
+  it("accepts class, contest and problem", () => {
+    for (const itemType of ["Class", "Contest", "Problem"]) {
+      const parsed = transferOwnershipSchema.parse({ itemType, itemId: "5", newOwnerId: "9" });
+      expect(parsed).toEqual({ itemType, itemId: 5, newOwnerId: 9 });
+    }
+  });
 
+  it("rejects unknown types and non-positive ids", () => {
+    expect(() => transferOwnershipSchema.parse({ itemType: "User", itemId: 1, newOwnerId: 2 })).toThrow();
+    expect(() => transferOwnershipSchema.parse({ itemType: "Class", itemId: 0, newOwnerId: 2 })).toThrow();
+    expect(() => transferOwnershipSchema.parse({ itemType: "Class", itemId: 1, newOwnerId: "" })).toThrow();
+  });
+});

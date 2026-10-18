@@ -475,7 +475,7 @@ BEGIN
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
             WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
-                c.TeacherID = @TeacherID OR 
+                (c.TeacherID = @TeacherID AND u.Role IN ('Teacher', 'Admin')) OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
             )

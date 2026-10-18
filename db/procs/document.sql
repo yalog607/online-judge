@@ -17,7 +17,7 @@ BEGIN
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @UserID
         WHERE c.ClassID = @ClassID AND c.IsCancelled = 0
-              AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+              AND ((c.TeacherID = @UserID AND u.Role = 'Teacher') OR u.Role = 'Admin'
                    OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
@@ -76,7 +76,7 @@ BEGIN
             JOIN dbo.Classes c ON d.ClassID = c.ClassID
             JOIN dbo.Users u ON u.UserID = @UserID
         WHERE d.DocumentID = @DocumentID AND c.IsCancelled = 0
-              AND (c.TeacherID = @UserID OR u.Role = 'Admin'
+              AND ((c.TeacherID = @UserID AND u.Role = 'Teacher') OR u.Role = 'Admin'
                    OR EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID))
         )
         BEGIN
