@@ -2,7 +2,12 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import sql from "mssql";
 import { env } from "../src/lib/env";
-import { validateFunctionTestcase, type FunctionSpec } from "../src/modules/problem/function-spec";
+import { validateFunctionTestcase } from "../src/modules/problem/function-spec";
+import { extraClasses } from "./seed-data/classes";
+import { extraContests } from "./seed-data/contests";
+import { extraProblems } from "./seed-data/problems";
+import { contestSubmissions, practiceSubmissions } from "./seed-data/submissions";
+import { badSources, type ClassDef, type ContestDef, type SampleProblem, type Sub } from "./seed-data/types";
 
 // Bộ dữ liệu ban đầu cho bản deploy. Idempotent: chạy lại không nhân đôi dữ liệu.
 // Mật khẩu không nằm trong source: truyền qua biến môi trường SEED_PASSWORD khi chạy.
@@ -13,20 +18,6 @@ if (PASSWORD.length < 8) {
   process.exit(1);
 }
 const CONTEST_PASSWORD = PASSWORD;
-
-type Tc = { input: string[]; expected: string; hidden: boolean };
-type SampleProblem = {
-  key: string;
-  title: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  status: "Public" | "Private" | "Hidden";
-  tags: string;
-  statement: string;
-  inputFormat: string;
-  outputFormat: string;
-  spec: FunctionSpec;
-  testcases: Tc[];
-};
 
 const problems: SampleProblem[] = [
   {
@@ -238,18 +229,11 @@ const sources: Record<string, { ok: string; wrong: string; loop: string; crash: 
     crash: "def uniquePaths(m, n):\n    return m // (n - n)\n",
   },
 };
+for (const p of extraProblems) {
+  if (p.ok) sources[p.key] = badSources(p.spec, p.ok);
+}
+const allProblems: SampleProblem[] = [...problems, ...extraProblems];
 const COMPILE_ERROR_SRC = "def broken(:\n    return\n";
-
-type Verdict = "AC" | "WA" | "TLE" | "RE" | "CE";
-type Sub = {
-  student: number; // 1..6
-  problem: string;
-  verdict: Verdict;
-  contest?: "A" | "B";
-  // phút so với thời điểm chạy seed (âm = đã qua)
-  at: number;
-  lang?: "python" | "cpp";
-};
 
 // Contest A: bắt đầu -4320 phút (3 ngày trước), kéo dài 120 phút. Contest B: bắt đầu -60 phút.
 const A0 = -4320;
@@ -312,7 +296,7 @@ async function connect(retries = 10, delayMs = 2000): Promise<sql.ConnectionPool
 }
 
 function validateProblems() {
-  for (const p of problems) {
+  for (const p of allProblems) {
     for (const [i, tc] of p.testcases.entries()) {
       const err = validateFunctionTestcase(p.spec, tc.input.join("\n"), tc.expected);
       if (err) throw new Error(`Testcase #${i + 1} của "${p.title}" không hợp lệ: ${err}`);
@@ -347,6 +331,9 @@ async function main() {
       { username: "teacher", fullName: "Giảng viên", role: "Teacher" },
       { username: "assist", fullName: "Trợ giảng", role: "TA" },
       { username: "user", fullName: "Học viên", role: "User" },
+      { username: "teacher2", fullName: "Giảng viên 2", role: "Teacher" },
+      { username: "assist2", fullName: "Trợ giảng 2", role: "TA" },
+      { username: "user2", fullName: "Học viên 2", role: "User" },
     ];
     const userId: Record<string, number> = {};
     for (const u of userDefs) {
@@ -363,23 +350,26 @@ async function main() {
     }
     const teacher = userId.teacher;
     const ta = userId.assist;
-    // Chỉ có một tài khoản học viên; mọi hoạt động của học viên gán cho tài khoản này.
-    const student = (_i: number) => userId.user;
+    // Dữ liệu đợt đầu chỉ có một học viên nên gán hết cho `user`; dữ liệu bổ sung chia lẻ/chẵn cho user và user2.
+    const legacyStudent = (_i: number) => userId.user;
+    const student = (i: number) => (i % 2 === 1 ? userId.user : userId.user2);
+    const creatorId = (c?: "teacher" | "teacher2") => userId[c ?? "teacher"];
 
     // ---- Problems + testcases ----
     const problemId: Record<string, number> = {};
-    for (const p of problems) {
+    for (const p of allProblems) {
+      const creator = creatorId(p.creator);
       let id = await scalar(
         `SELECT ProblemID FROM dbo.Problems WHERE CreatorID = @creator AND Title = @title`,
-        { creator: teacher, title: p.title },
+        { creator, title: p.title },
       );
       if (id === undefined) {
         id = await scalar(
-          `INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, FunctionSpec)
-           VALUES (@creator, @title, @statement, @inputFormat, @outputFormat, 1000, 256, @tags, @difficulty, @status, @spec);
+          `INSERT dbo.Problems (CreatorID, Title, Statement, InputFormat, OutputFormat, TimeLimit, MemoryLimit, Tags, Difficulty, Status, FunctionSpec, RejectionReason, ProposedStatus, CompareMode, FloatEpsilon)
+           VALUES (@creator, @title, @statement, @inputFormat, @outputFormat, 1000, 256, @tags, @difficulty, @status, @spec, @rejection, @proposed, @compare, @epsilon);
            SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
-            creator: teacher,
+            creator,
             title: p.title,
             statement: p.statement,
             inputFormat: p.inputFormat,
@@ -388,6 +378,10 @@ async function main() {
             difficulty: p.difficulty,
             status: p.status,
             spec: JSON.stringify(p.spec),
+            rejection: p.rejectionReason ?? null,
+            proposed: p.proposedStatus ?? null,
+            compare: p.compareMode ?? "exact",
+            epsilon: p.floatEpsilon ?? null,
           },
         );
       }
@@ -396,21 +390,37 @@ async function main() {
       if (!hasTests) {
         for (const [i, tc] of p.testcases.entries()) {
           await q(
-            `INSERT dbo.Testcases (ProblemID, InputData, ExpectedOutput, IsHidden, OrderIndex)
-             VALUES (@id, @input, @expected, @hidden, @order)`,
-            { id, input: tc.input.join("\n"), expected: tc.expected, hidden: tc.hidden, order: i + 1 },
+            `INSERT dbo.Testcases (ProblemID, InputData, ExpectedOutput, IsHidden, OrderIndex, GroupNo)
+             VALUES (@id, @input, @expected, @hidden, @order, @group)`,
+            {
+              id,
+              input: tc.input.join("\n"),
+              expected: tc.expected,
+              hidden: tc.hidden,
+              order: i + 1,
+              group: tc.g ?? null,
+            },
           );
+        }
+        for (const g of p.groups ?? []) {
+          await q(`INSERT dbo.TestcaseGroups (ProblemID, GroupNo, Points) VALUES (@id, @no, @points)`, {
+            id,
+            no: g.groupNo,
+            points: g.points,
+          });
         }
       }
     }
 
     // ---- Classes ----
-    const classDefs = [
+    const legacyClasses: ClassDef[] = [
       {
         code: "NMLT2026",
         name: "Nhập môn lập trình",
         description: "Lớp công khai dành cho sinh viên năm nhất, có trợ giảng hỗ trợ.",
         isPublic: 1,
+        teacher: "teacher",
+        ta: "assist",
         students: [1, 2, 3, 4, 5],
         problems: [
           { key: "sum", due: 7 * 24 * 60 },
@@ -423,6 +433,8 @@ async function main() {
         name: "Cấu trúc dữ liệu và giải thuật",
         description: "Lớp riêng tư, tham gia bằng mã mời.",
         isPublic: 0,
+        teacher: "teacher",
+        ta: "assist",
         students: [3, 4, 5, 6],
         problems: [
           { key: "maxsub", due: 10 * 24 * 60 },
@@ -432,42 +444,80 @@ async function main() {
       },
     ];
     const classId: Record<string, number> = {};
-    for (const c of classDefs) {
+    for (const [classIdx, c] of [...legacyClasses, ...extraClasses].entries()) {
+      const isLegacy = classIdx < legacyClasses.length;
+      const toStudent = isLegacy ? legacyStudent : student;
+      const teacherId = creatorId(c.teacher);
+      const taId = userId[c.ta];
       let id = await scalar(`SELECT ClassID FROM dbo.Classes WHERE InviteCode = @code`, { code: c.code });
       if (id === undefined) {
         id = await scalar(
-          `INSERT dbo.Classes (TeacherID, InviteCode, ClassName, Description, IsPublic, ApprovalStatus)
-           VALUES (@teacher, @code, @name, @description, @isPublic, 'Approved');
+          `INSERT dbo.Classes (TeacherID, InviteCode, ClassName, Description, IsPublic, ApprovalStatus, RejectionReason, IsCancelled)
+           VALUES (@teacher, @code, @name, @description, @isPublic, @approval, @rejection, @cancelled);
            SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
-          { teacher, code: c.code, name: c.name, description: c.description, isPublic: c.isPublic },
+          {
+            teacher: teacherId,
+            code: c.code,
+            name: c.name,
+            description: c.description,
+            isPublic: c.isPublic,
+            approval: c.approval ?? "Approved",
+            rejection: c.rejectionReason ?? null,
+            cancelled: c.cancelled ? 1 : 0,
+          },
         );
       }
       classId[c.code] = id!;
-      for (const s of c.students) {
+      for (const [k, st] of c.students.entries()) {
         await q(
           `IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @id AND UserID = @u)
-             INSERT dbo.Class_Student (ClassID, UserID) VALUES (@id, @u)`,
-          { id, u: student(s) },
+             INSERT dbo.Class_Student (ClassID, UserID, ProgressPercent)
+             VALUES (@id, @u, @progress)`,
+          { id, u: toStudent(st), progress: isLegacy ? 0 : 25 + ((classIdx * 17 + k * 29) % 70) },
         );
       }
-      await q(
-        `IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @id AND UserID_TA = @ta)
-           INSERT dbo.Class_TA (ClassID, UserID_TA) VALUES (@id, @ta)`,
-        { id, ta },
-      );
+      if (c.approval === undefined || c.approval === "Approved") {
+        await q(
+          `IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @id AND UserID_TA = @ta)
+             INSERT dbo.Class_TA (ClassID, UserID_TA) VALUES (@id, @ta)`,
+          { id, ta: taId },
+        );
+      }
       for (const cp of c.problems) {
         // AssignedDate đặt sớm hơn hạn nộp để thỏa CK_CP_Due kể cả với bài quá hạn.
         await q(
           `IF NOT EXISTS (SELECT 1 FROM dbo.Class_Problem WHERE ClassID = @id AND ProblemID = @p)
              INSERT dbo.Class_Problem (ClassID, ProblemID, AssignedDate, DueDate)
-             VALUES (@id, @p, DATEADD(DAY, -14, SYSUTCDATETIME()),
+             VALUES (@id, @p, DATEADD(DAY, -45, SYSUTCDATETIME()),
                      CASE WHEN @due IS NULL THEN NULL ELSE DATEADD(MINUTE, CAST(@due AS INT), SYSUTCDATETIME()) END)`,
           { id, p: problemId[cp.key], due: cp.due },
         );
       }
     }
+
+    // ---- Yêu cầu tham gia lớp / trợ giảng (đang chờ duyệt hoặc đã xử lý) ----
+    const joinRequests = [
+      { code: "GTNC2026", u: 2, message: "Em muốn tham gia lớp để luyện thêm quy hoạch động ạ.", status: "Pending" },
+      { code: "OLPTIN2026", u: 1, message: "Em xin vào đội tuyển, em đã làm các bài DP cơ bản.", status: "Rejected" },
+    ];
+    for (const r of joinRequests) {
+      await q(
+        `IF NOT EXISTS (SELECT 1 FROM dbo.Class_JoinRequests WHERE ClassID = @c AND UserID = @u)
+           INSERT dbo.Class_JoinRequests (ClassID, UserID, Message, Status, ReviewedAt, ReviewedBy)
+           VALUES (@c, @u, @message, @status,
+                   CASE WHEN @status = 'Pending' THEN NULL ELSE SYSUTCDATETIME() END,
+                   CASE WHEN @status = 'Pending' THEN NULL ELSE @reviewer END)`,
+        { c: classId[r.code], u: student(r.u), message: r.message, status: r.status, reviewer: userId.teacher },
+      );
+    }
+    await q(
+      `IF NOT EXISTS (SELECT 1 FROM dbo.TA_Requests WHERE ClassID = @c AND UserID = @u)
+         INSERT dbo.TA_Requests (ClassID, UserID, RequestedBy, Status) VALUES (@c, @u, @by, 'Pending')`,
+      { c: classId.PYTHON2026, u: student(2), by: userId.teacher2 },
+    );
+
     // ---- Contests ----
-    const contestDefs = [
+    const legacyContests: ContestDef[] = [
       {
         key: "A",
         name: "Kỳ thi giữa kỳ",
@@ -515,20 +565,22 @@ async function main() {
       },
     ];
     const contestId: Record<string, number> = {};
-    for (const c of contestDefs) {
+    for (const [contestIdx, c] of [...legacyContests, ...extraContests].entries()) {
+      const toStudent = contestIdx < legacyContests.length ? legacyStudent : student;
+      const creator = creatorId(c.creator);
       let id = await scalar(
-        `SELECT ContestID FROM dbo.Contests WHERE CreatorID = @teacher AND ContestName = @name`,
-        { teacher, name: c.name },
+        `SELECT ContestID FROM dbo.Contests WHERE CreatorID = @creator AND ContestName = @name`,
+        { creator, name: c.name },
       );
       if (id === undefined) {
         id = await scalar(
           `INSERT dbo.Contests (CreatorID, ContestName, Description, StartTime, EndTime, [Password], ClassID)
-           VALUES (@teacher, @name, @description,
+           VALUES (@creator, @name, @description,
                    DATEADD(MINUTE, CAST(@start AS INT), SYSUTCDATETIME()), DATEADD(MINUTE, CAST(@end AS INT), SYSUTCDATETIME()),
                    @password, @classId);
            SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
-            teacher,
+            creator,
             name: c.name,
             description: c.description,
             start: c.start,
@@ -551,20 +603,19 @@ async function main() {
         await q(
           `IF NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @id AND UserID = @u)
              INSERT dbo.Contest_User (ContestID, UserID) VALUES (@id, @u)`,
-          { id, u: student(s) },
+          { id, u: toStudent(s) },
         );
       }
     }
 
-    // ---- Submissions (chỉ thêm khi chưa có bài nộp mẫu nào) ----
-    const sampleIds = Object.values(userId);
-    const idList = sampleIds.join(",");
-    const existingSubs = await scalar(
-      `SELECT COUNT(*) FROM dbo.Submissions WHERE UserID IN (${idList})`,
-    );
-    const subIds: number[] = [];
-    if (!existingSubs) {
-      const ordered = [...subs].sort((a, b) => a.at - b.at);
+    // ---- Submissions ----
+    // Đợt đầu (gán cho `user`) chỉ thêm khi 4 tài khoản gốc chưa có bài nộp; đợt bổ sung chỉ thêm khi `user2` chưa có.
+    const legacyIds = ["admin", "teacher", "assist", "user"].map((n) => userId[n]);
+    const idList = legacyIds.join(",");
+
+    async function insertSubmissions(list: Sub[], toStudent: (i: number) => number): Promise<number[]> {
+      const ids: number[] = [];
+      const ordered = [...list].sort((a, b) => a.at - b.at);
       for (const s of ordered) {
         const lang = s.lang ?? "python";
         const src = sources[s.problem];
@@ -580,8 +631,8 @@ async function main() {
                   : s.verdict === "TLE"
                     ? src.loop
                     : src.crash;
-        const tcs = await q<{ TestCaseID: number }>(
-          `SELECT TestCaseID FROM dbo.Testcases WHERE ProblemID = @p ORDER BY OrderIndex`,
+        const tcs = await q<{ TestCaseID: number; GroupNo: number | null }>(
+          `SELECT TestCaseID, GroupNo FROM dbo.Testcases WHERE ProblemID = @p ORDER BY OrderIndex`,
           { p: problemId[s.problem] },
         );
         const total = tcs.length;
@@ -590,12 +641,21 @@ async function main() {
         const runtime = s.verdict === "TLE" ? 1000 : s.verdict === "CE" ? null : 20 + ((s.at * 7) & 63);
         const memory = s.verdict === "CE" ? null : 8 + ((Math.abs(s.at) * 3) % 20);
 
+        // Điểm theo nhóm: nhóm tính điểm khi mọi testcase của nhóm đều qua.
+        const groups = allProblems.find((p) => p.key === s.problem)!.groups ?? [];
+        const score = groups.length
+          ? groups
+              .filter((g) => tcs.every((t, i) => t.GroupNo !== g.groupNo || i < passed))
+              .reduce((sum, g) => sum + g.points, 0)
+          : null;
+        const maxScore = groups.length ? groups.reduce((sum, g) => sum + g.points, 0) : null;
+
         const id = (await scalar(
           `INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language, SubmitTime, Result)
            VALUES (@u, @p, @c, @code, @lang, DATEADD(MINUTE, CAST(@at AS INT), SYSUTCDATETIME()), 'Pending');
            SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
           {
-            u: student(s.student),
+            u: toStudent(s.student),
             p: problemId[s.problem],
             c: s.contest ? contestId[s.contest] : null,
             code,
@@ -603,15 +663,16 @@ async function main() {
             at: s.at,
           },
         ))!;
-        subIds.push(id);
+        ids.push(id);
 
         // Đổi Pending -> kết quả cuối bằng UPDATE để trigger bảng xếp hạng kỳ thi tự tính.
         await q(
           `UPDATE dbo.Submissions
               SET Result = @result, Runtime = @runtime, Memory = @memory,
-                  PassedCases = @passed, JudgedAt = DATEADD(SECOND, 5, SubmitTime)
+                  PassedCases = @passed, JudgedAt = DATEADD(SECOND, 5, SubmitTime),
+                  Score = @score, MaxScore = @maxScore
             WHERE SubmissionID = @id`,
-          { id, result: s.verdict, runtime, memory, passed: `${passed}/${total}` },
+          { id, result: s.verdict, runtime, memory, passed: `${passed}/${total}`, score, maxScore },
         );
 
         const rows = s.verdict === "CE" ? 1 : s.verdict === "AC" ? total : Math.min(total, passed + 1);
@@ -630,21 +691,43 @@ async function main() {
           );
         }
       }
+      return ids;
+    }
 
-      // Thông báo kết quả chấm cho một vài bài nộp.
+    // Thông báo kết quả chấm cho một phần bài nộp (mỗi `every` bài).
+    async function notifyJudged(list: Sub[], ids: number[], toStudent: (i: number) => number, every: number) {
+      const ordered = [...list].sort((a, b) => a.at - b.at);
       for (const [idx, s] of ordered.entries()) {
-        if (!["AC", "WA"].includes(s.verdict) || idx % 3 !== 0) continue;
+        if (!["AC", "WA"].includes(s.verdict) || idx % every !== 0) continue;
         await q(
           `INSERT dbo.Notifications (UserID, Title, Body, Link, Type, IsRead)
-           VALUES (@u, @title, @body, @link, 'judge_result', 0)`,
+           VALUES (@u, @title, @body, @link, 'judge_result', @read)`,
           {
-            u: student(s.student),
+            u: toStudent(s.student),
             title: `Kết quả chấm: ${s.verdict}`,
-            body: `Bài nộp của bạn cho "${problems.find((p) => p.key === s.problem)!.title}" đã được chấm.`,
-            link: `/submissions/${subIds[idx]}`,
+            body: `Bài nộp của bạn cho "${allProblems.find((p) => p.key === s.problem)!.title}" đã được chấm.`,
+            link: `/submissions/${ids[idx]}`,
+            read: idx % 2 === 0 ? 1 : 0,
           },
         );
       }
+    }
+
+    const existingSubs = await scalar(`SELECT COUNT(*) FROM dbo.Submissions WHERE UserID IN (${idList})`);
+    if (!existingSubs) {
+      const ids = await insertSubmissions(subs, legacyStudent);
+      await notifyJudged(subs, ids, legacyStudent, 3);
+    }
+
+    const existingExtraSubs = await scalar(`SELECT COUNT(*) FROM dbo.Submissions WHERE UserID = @u`, {
+      u: userId.user2,
+    });
+    if (!existingExtraSubs) {
+      const endedExtra = extraContests.filter((c) => c.end < 0);
+      const practiceKeys = allProblems.filter((p) => p.status === "Public" && sources[p.key]).map((p) => p.key);
+      const extraSubs = [...contestSubmissions(endedExtra), ...practiceSubmissions(practiceKeys, 70)];
+      const ids = await insertSubmissions(extraSubs, student);
+      await notifyJudged(extraSubs, ids, student, 4);
     }
 
     // ---- Comments (bài tập) ----
@@ -656,17 +739,17 @@ async function main() {
         `INSERT dbo.Comments (UserID, ProblemID, Content)
          VALUES (@u, @p, @c);
          SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
-        { u: student(1), p: problemId.prime, c: "Gợi ý: chỉ cần kiểm tra ước đến căn bậc hai của n." },
+        { u: legacyStudent(1), p: problemId.prime, c: "Gợi ý: chỉ cần kiểm tra ước đến căn bậc hai của n." },
       ))!;
       await q(
         `INSERT dbo.Comments (UserID, ProblemID, ParentID, Content) VALUES (@u, @p, @parent, @c)`,
-        { u: student(2), p: problemId.prime, parent: root, c: "Cảm ơn bạn, mình qua bài rồi!" },
+        { u: legacyStudent(2), p: problemId.prime, parent: root, c: "Cảm ơn bạn, mình qua bài rồi!" },
       );
       for (const u of [teacher, ta]) {
         await q(`INSERT dbo.CommentLikes (CommentID, UserID) VALUES (@c, @u)`, { c: root, u });
       }
       await q(`INSERT dbo.Comments (UserID, ProblemID, Content) VALUES (@u, @p, @c)`, {
-        u: student(4),
+        u: legacyStudent(4),
         p: problemId.twosum,
         c: "Dùng hash map để đạt O(n) nhé.",
       });
@@ -681,7 +764,7 @@ async function main() {
         `INSERT dbo.Comments (ContestID, UserID, Content)
          VALUES (@c, @u, @text);
          SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
-        { c: contestId.A, u: student(1), text: "Đề năm nay vừa sức, bài 3 hơi khó." },
+        { c: contestId.A, u: legacyStudent(1), text: "Đề năm nay vừa sức, bài 3 hơi khó." },
       ))!;
       await q(
         `INSERT dbo.Comments (ContestID, UserID, ParentID, Content) VALUES (@c, @u, @parent, @text)`,
@@ -689,7 +772,7 @@ async function main() {
       );
       await q(`INSERT dbo.CommentLikes (CommentID, UserID) VALUES (@c, @u)`, {
         c: cc,
-        u: student(2),
+        u: legacyStudent(2),
       });
     }
 
@@ -703,7 +786,7 @@ async function main() {
           `INSERT dbo.Notifications (UserID, Title, Body, Link, Type, IsRead)
            VALUES (@u, @title, @body, @link, 'contest_started', 0)`,
           {
-            u: student(s),
+            u: legacyStudent(s),
             title: "Kỳ thi đã bắt đầu",
             body: "Kỳ thi thực hành tuần 5 vừa bắt đầu.",
             link: `/user/contests/${contestId.B}`,
@@ -714,7 +797,7 @@ async function main() {
         `INSERT dbo.Notifications (UserID, Title, Body, Link, Type, IsRead)
          VALUES (@u, @title, @body, @link, 'class_student_added', 1)`,
         {
-          u: student(5),
+          u: legacyStudent(5),
           title: "Bạn đã được thêm vào lớp",
           body: "Nhập môn lập trình",
           link: `/user/classes/${classId.NMLT2026}`,
@@ -722,11 +805,90 @@ async function main() {
       );
     }
 
+    // ---- Bình luận, thông báo bổ sung (chỉ thêm khi `user2` chưa có bình luận) ----
+    const existingExtraComments = await scalar(`SELECT COUNT(*) FROM dbo.Comments WHERE UserID = @u`, {
+      u: userId.user2,
+    });
+    if (!existingExtraComments) {
+      const teacher2 = userId.teacher2;
+      const ta2 = userId.assist2;
+      const addComment = async (
+        target: { problem?: string; contest?: string },
+        user: number,
+        content: string,
+        parent: number | null = null,
+      ) =>
+        (await scalar(
+          `INSERT dbo.Comments (UserID, ProblemID, ContestID, ParentID, Content)
+           VALUES (@u, @p, @c, @parent, @content);
+           SELECT CAST(SCOPE_IDENTITY() AS INT) AS id`,
+          {
+            u: user,
+            p: target.problem ? problemId[target.problem] : null,
+            c: target.contest ? contestId[target.contest] : null,
+            parent,
+            content,
+          },
+        ))!;
+      const like = (comment: number, user: number) =>
+        q(`INSERT dbo.CommentLikes (CommentID, UserID) VALUES (@c, @u)`, { c: comment, u: user });
+
+      const c1 = await addComment({ problem: "lis" }, student(2), "Bài này dùng O(n log n) với binary search được không ạ?");
+      await addComment({ problem: "lis" }, teacher2, "Được, nhưng giới hạn n ≤ 2500 nên O(n^2) là đủ.", c1);
+      await like(c1, student(1));
+      await like(c1, ta2);
+      const c2 = await addComment({ problem: "coin" }, student(1), "Chú ý trường hợp amount = 0 trả về 0.");
+      await like(c2, student(2));
+      await like(c2, teacher);
+      await addComment({ problem: "fizz" }, student(2), "Nhớ kiểm tra bội của 15 trước khi xét 3 và 5.");
+      const c3 = await addComment({ problem: "perm" }, student(1), "Kết quả không cần đúng thứ tự, mình thử itertools thì qua.");
+      await addComment({ problem: "perm" }, ta2, "Đúng rồi, bài này chấm theo chế độ không phân biệt thứ tự.", c3);
+      await like(c3, teacher2);
+      await addComment({ problem: "average" }, student(2), "Sai số cho phép 1e-6 nên không cần làm tròn.");
+      const c4 = await addComment({ contest: "G" }, student(2), "Bài lis khó nhất, mình chỉ ăn được nhóm 1 và 2.");
+      await addComment({ contest: "G" }, teacher, "Nhóm 3 có test lớn, em xem lại độ phức tạp nhé.", c4);
+      await like(c4, student(1));
+      await addComment({ contest: "E" }, student(1), "Kỳ thi vừa sức, cảm ơn thầy.");
+      await addComment({ contest: "F" }, student(2), "Mong có thêm kỳ thi mở như thế này.");
+
+      for (const key of ["H"]) {
+        for (const s of [1, 2]) {
+          await q(
+            `INSERT dbo.Notifications (UserID, Title, Body, Link, Type, IsRead)
+             VALUES (@u, @title, @body, @link, 'contest_started', 0)`,
+            {
+              u: student(s),
+              title: "Kỳ thi sắp diễn ra",
+              body: "Kỳ thi giữa học kỳ II sẽ diễn ra trong 9 ngày tới.",
+              link: `/user/contests/${contestId[key]}`,
+            },
+          );
+        }
+      }
+      for (const [code, s] of [
+        ["LTHDT2026", 1],
+        ["THCB2026", 2],
+        ["PYTHON2026", 2],
+      ] as const) {
+        await q(
+          `INSERT dbo.Notifications (UserID, Title, Body, Link, Type, IsRead)
+           VALUES (@u, @title, @body, @link, 'class_student_added', 1)`,
+          {
+            u: student(s),
+            title: "Bạn đã được thêm vào lớp",
+            body: extraClasses.find((c) => c.code === code)!.name,
+            link: `/user/classes/${classId[code]}`,
+          },
+        );
+      }
+    }
+
     await tx.commit();
     console.log("Seed data ready.");
-    console.log("  Accounts: admin, teacher, assist, user");
-    console.log(`  Classes:  NMLT2026 (public), CTDL2026 (private)`);
-    console.log("  Contests: 3 (ended / ongoing / upcoming; the upcoming one uses the seed password)");
+    console.log("  Accounts: admin, teacher, assist, user, teacher2, assist2, user2");
+    console.log(`  Problems: ${allProblems.length}`);
+    console.log(`  Classes:  ${legacyClasses.length + extraClasses.length}`);
+    console.log(`  Contests: ${legacyContests.length + extraContests.length} (the upcoming kỳ thi C uses the seed password)`);
   } catch (e) {
     await tx.rollback();
     throw e;
