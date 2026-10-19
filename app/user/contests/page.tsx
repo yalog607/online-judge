@@ -45,6 +45,23 @@ export default async function UserContestsPage({
     onlyJoined: joinedView,
   });
 
+  // Số kỳ thi hiển thị trên các tab (không phụ thuộc bộ lọc đang chọn).
+  const countFor = async (view: "mine" | "joined") =>
+    (
+      await contestRepository.listContests({
+        status: "All",
+        page: 1,
+        pageSize: 1,
+        userId: user.userId,
+        onlyMine: view === "mine",
+        onlyJoined: view === "joined",
+      })
+    ).total;
+  const [mineCount, joinedCount] = await Promise.all([
+    user.role === "TA" || user.role === "Admin" ? countFor("mine") : Promise.resolve(0),
+    countFor("joined"),
+  ]);
+
   const detailedContests = await Promise.all(
     contests.map(async (c) => {
       const detail = await contestRepository.getContest(c.contestId, user.userId);
@@ -118,7 +135,7 @@ export default async function UserContestsPage({
                   : "text-fg-muted hover:bg-muted hover:text-fg"
               }`}
             >
-              Kỳ thi của tôi
+              Kỳ thi của tôi<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-fg-muted">{mineCount}</span>
             </Link>
           )}
           <Link
@@ -130,7 +147,7 @@ export default async function UserContestsPage({
                 : "text-fg-muted hover:bg-muted hover:text-fg"
             }`}
           >
-            Kỳ thi tôi tham gia
+            Kỳ thi tôi tham gia<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-fg-muted">{joinedCount}</span>
           </Link>
         </div>
 

@@ -5,6 +5,7 @@ export type CommentView = {
   parentId: number | null;
   userId: number;
   fullName: string;
+  avatar: string | null;
   content: string;
   timeAgo: string;
   likes: number;
@@ -30,6 +31,7 @@ export function mapToCommentView(row: CommentRow): CommentView {
     parentId: row.ParentID,
     userId: row.UserID,
     fullName: row.FullName,
+    avatar: row.Avatar ?? null,
     content: row.Content,
     timeAgo: timeAgo(new Date(row.CreatedAt)),
     likes: row.LikeCount,
