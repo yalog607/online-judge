@@ -140,7 +140,7 @@ export default async function TeacherContestsPage({
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Select
             name="classId"
-          label="Môn học"
+          label="Lớp học"
             defaultValue={sp.classId ?? ""}
             className="w-full md:w-auto rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors cursor-pointer"
           >

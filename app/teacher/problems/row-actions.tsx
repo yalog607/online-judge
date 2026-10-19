@@ -6,7 +6,28 @@ import Link from "next/link";
 import { cloneProblemAction, deleteProblemAction, setProblemStatusAction } from "@/modules/problem/actions";
 import { Modal } from "@/components/modal";
 import { useDialog } from "@/components/dialog-provider";
+import { Icon, type IconName } from "@/components/icon";
 import type { ProblemStatus } from "@/modules/problem/repo";
+
+const iconBtn =
+  "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface transition-colors hover:bg-muted disabled:opacity-60";
+
+function IconAction({
+  icon,
+  label,
+  className = "text-fg-muted",
+  ...rest
+}: {
+  icon: IconName;
+  label: string;
+  className?: string;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" title={label} aria-label={label} className={`${iconBtn} ${className}`} {...rest}>
+      <Icon name={icon} size={16} />
+    </button>
+  );
+}
 
 export function RowActions({ 
   problemId, 
@@ -28,6 +49,7 @@ export function RowActions({
   const [rejectionReason, setRejectionReason] = useState("");
   const [cloneOpen, setCloneOpen] = useState(false);
   const [cloneTitle, setCloneTitle] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const dialog = useDialog();
 
@@ -50,8 +72,13 @@ export function RowActions({
       danger: true,
     });
     if (!ok) return;
+    setError(null);
     startTransition(async () => {
-      await deleteProblemAction(problemId);
+      const res = await deleteProblemAction(problemId);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
       router.refresh();
     });
   };
@@ -126,32 +153,42 @@ export function RowActions({
   }
 
   return (
+    <div className="flex flex-col items-end gap-1">
     <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
       {canClone && (
-        <button
-          type="button"
+        <IconAction
+          icon="copy"
+          label="Nhân bản bài tập"
           disabled={pending}
           onClick={() => {
             setCloneTitle(`[Bản sao] ${problemTitle || ""}`);
             setCloneOpen(true);
           }}
-          className="inline-flex min-h-9 items-center whitespace-nowrap rounded-lg border border-line bg-surface px-3 py-2 font-medium text-fg hover:bg-muted transition-colors disabled:opacity-60"
-          title="Nhân bản bài tập này vào ngân hàng của bạn"
-        >
-          Nhân bản
-        </button>
+        />
       )}
       {canEdit ? (
         <>
-          <Link href={`/teacher/problems/${problemId}/edit`} className="inline-flex min-h-9 items-center rounded-lg border border-line bg-surface px-3 py-2 font-medium text-primary transition-colors hover:bg-muted">
-            Sửa
+          <Link
+            href={`/teacher/problems/${problemId}/edit`}
+            title="Sửa bài tập"
+            aria-label="Sửa bài tập"
+            className={`${iconBtn} text-primary`}
+          >
+            <Icon name="edit" size={16} />
           </Link>
-          <button type="button" disabled={pending} onClick={toggleLock} className="inline-flex min-h-9 items-center whitespace-nowrap rounded-lg border border-line bg-surface px-3 py-2 text-fg-muted transition-colors hover:bg-muted disabled:opacity-60">
-            {isHidden ? "Mở khóa" : "Khóa bài"}
-          </button>
-          <button type="button" disabled={pending} onClick={remove} className="inline-flex min-h-9 items-center rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 font-medium text-bad transition-colors hover:bg-bad-soft/70 disabled:opacity-60">
-            Xóa
-          </button>
+          <IconAction
+            icon={isHidden ? "unlock" : "lock"}
+            label={isHidden ? "Mở khóa bài" : "Khóa bài"}
+            disabled={pending}
+            onClick={toggleLock}
+          />
+          <IconAction
+            icon="trash"
+            label="Xóa bài tập"
+            className="border-bad/30 bg-bad-soft text-bad hover:bg-bad-soft/70"
+            disabled={pending}
+            onClick={remove}
+          />
         </>
       ) : (
         <Link href={`/teacher/problems/${problemId}`} className="inline-flex min-h-9 items-center rounded-lg border border-line bg-muted px-3 py-2 text-fg-muted transition-colors hover:text-fg">
@@ -193,6 +230,8 @@ export function RowActions({
             </div>
           </section>
       </Modal>
+    </div>
+    {error && <p role="alert" className="max-w-xs text-right text-xs text-bad">{error}</p>}
     </div>
   );
 }

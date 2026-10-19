@@ -568,7 +568,7 @@ export function AdminUsersManager({
                 <strong className="text-fg font-semibold">{selectedUser.Role}</strong>.
               </p>
               <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                Lưu ý: Mọi thao tác thực hiện trong phiên mô phỏng sẽ mang danh nghĩa của tài khoản này và được lưu vào nhật ký kiểm toán. Bạn có thể quay lại phiên Admin bất kỳ lúc nào qua thanh cảnh báo ở đầu trang.
+                Lưu ý: Phiên mô phỏng chỉ để xem giao diện, bạn không thể thay đổi dữ liệu của tài khoản này. Việc bắt đầu mô phỏng được lưu vào nhật ký kiểm toán. Bạn có thể quay lại phiên Admin bất kỳ lúc nào qua thanh cảnh báo ở đầu trang.
               </div>
             </div>
 

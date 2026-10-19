@@ -242,8 +242,29 @@ BEGIN
     IF EXISTS (SELECT 1 FROM dbo.Submissions WHERE ProblemID = @ProblemID)
         THROW 50011, N'Bài tập đã có bài nộp, hãy khóa thay vì xóa.', 1;
 
-    DELETE FROM dbo.Testcases WHERE ProblemID = @ProblemID;
-    DELETE FROM dbo.Problems WHERE ProblemID = @ProblemID;
+    IF EXISTS (
+        SELECT 1 FROM dbo.Contest_Problem cp
+        JOIN dbo.Contests c ON c.ContestID = cp.ContestID
+        WHERE cp.ProblemID = @ProblemID AND c.StartTime <= SYSUTCDATETIME()
+    )
+        THROW 50012, N'Bài tập đang hoặc đã được dùng trong kỳ thi, hãy khóa thay vì xóa.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Gỡ bài khỏi lớp và kỳ thi chưa bắt đầu trước khi xóa (các khóa ngoại không tự xóa).
+        DELETE FROM dbo.ContestProblemResults WHERE ProblemID = @ProblemID;
+        DELETE FROM dbo.Contest_Problem WHERE ProblemID = @ProblemID;
+        DELETE FROM dbo.Class_Problem WHERE ProblemID = @ProblemID;
+        DELETE FROM dbo.Testcases WHERE ProblemID = @ProblemID;
+        DELETE FROM dbo.Problems WHERE ProblemID = @ProblemID;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 END
 GO
 

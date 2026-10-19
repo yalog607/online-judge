@@ -7,6 +7,7 @@ import { Field, Form, FormError, SubmitButton } from "@/components/form";
 import { MathContent } from "@/components/math-content";
 import type { FormState } from "@/modules/auth/actions";
 import type { ProblemDetail, ProblemStatus, TestcaseFull } from "@/modules/problem/repo";
+import { TestcaseZipInput } from "./testcase-zip-input";
 import { FUNCTION_TYPES, parseFunctionSpec } from "@/modules/problem/function-spec";
 
 type Row = { key: number; input: string; expectedOutput: string; isHidden: boolean };
@@ -470,10 +471,7 @@ export function ProblemForm({
             </div>
           ))}
         </div>
-        <label className="mt-3 flex flex-col gap-1.5 text-sm font-medium text-fg-muted">
-          <span>Hoặc tải file .zip (mỗi cặp file cùng tên: 1.in/1.out)</span>
-          <input name="testcaseZip" type="file" accept=".zip" className="text-sm" />
-        </label>
+        <TestcaseZipInput />
       </div>
 
       {state.ok && (

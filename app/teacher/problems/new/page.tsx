@@ -17,7 +17,9 @@ export default async function NewProblemPage() {
       <h1 className="mb-6 text-2xl font-semibold">Thêm bài tập</h1>
       <ProblemForm
         action={createProblemAction}
-        classes={classes.map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }))}
+        classes={classes
+          .filter((c) => !c.IsCancelled && c.ApprovalStatus === "Approved")
+          .map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }))}
       />
     </div>
   );
