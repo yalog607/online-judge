@@ -68,7 +68,7 @@ export function ImpersonateStudentButton({
               Bạn có chắc chắn muốn mô phỏng tài khoản của học viên{" "}
               <strong className="text-fg font-semibold">{studentName}</strong>{" "}
               <span className="font-mono text-xs text-fg-muted">(@{username})</span>? Hệ thống sẽ
-              tạm thời chuyển sang giao diện của học viên để bạn kiểm tra bài tập, nộp bài và xem tiến độ học tập. Bạn có thể quay lại giao diện giảng viên bất kỳ lúc nào bằng nút &quot;Thoát mô phỏng&quot; ở thanh thông báo đầu trang.
+              tạm thời chuyển sang giao diện của học viên để bạn xem bài tập và tiến độ học tập của học viên (chỉ xem, không thể nộp bài hay thay đổi dữ liệu). Bạn có thể quay lại giao diện giảng viên bất kỳ lúc nào bằng nút &quot;Thoát mô phỏng&quot; ở thanh thông báo đầu trang.
             </p>
 
             {error && (

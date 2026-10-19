@@ -191,6 +191,42 @@ export function notifyTAApproved(requestId: number) {
   });
 }
 
+// Tells the teacher who asked that the admin turned the TA request down, with the reason.
+export function notifyTARejected(requestId: number) {
+  return safely(async () => {
+    const info = await repo.taRequestById(requestId);
+    if (!info || info.Status !== "Rejected") return;
+    await notify({
+      userIds: [info.RequestedBy],
+      type: "ta_request_rejected",
+      title: clip(
+        `Yêu cầu nâng ${clip(info.StudentName, 80)} làm trợ giảng lớp "${clip(info.ClassName, 80)}" bị từ chối`,
+        200,
+      ),
+      body: info.RejectionReason ? clip(`Lý do: ${info.RejectionReason}`, 500) : undefined,
+      link: `/teacher/classes/${info.ClassID}`,
+    });
+  });
+}
+
+// Tells a user their TA role was removed, by a teacher (class given) or by an admin (no class).
+export function notifyTADemoted(userId: number, classId?: number) {
+  return safely(async () => {
+    const cls = classId ? await repo.classInfo(classId) : null;
+    await notify({
+      userIds: [userId],
+      type: "ta_demoted",
+      title: clip(
+        cls
+          ? `Bạn không còn là trợ giảng của lớp "${clip(cls.ClassName, 140)}"`
+          : "Quản trị viên đã gỡ vai trò trợ giảng của bạn",
+        200,
+      ),
+      link: cls ? `/user/classes/${classId}` : "/user/classes",
+    });
+  });
+}
+
 export function notifyClassCreated(classId: number, actorId: number) {
   return safely(async () => {
     const [cls, admins] = await Promise.all([repo.classCreatedInfo(classId), repo.adminIds()]);

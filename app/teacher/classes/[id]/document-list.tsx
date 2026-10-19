@@ -37,7 +37,8 @@ export function TeacherDocumentList({
 
   return (
     <div className="card overflow-hidden">
-      <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
         <thead className="border-b border-line bg-muted font-medium text-fg-muted">
           <tr>
             <th className="px-4 py-3">STT</th>
@@ -110,6 +111,7 @@ export function TeacherDocumentList({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

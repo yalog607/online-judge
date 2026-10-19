@@ -225,8 +225,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
         THROW 50030, N'Bạn không có quyền thực hiện thao tác này.', 1;
 
-    IF @Role NOT IN ('User', 'TA', 'Teacher')
-        THROW 50035, N'Vai trò không hợp lệ.', 1;
+    -- TA chỉ có được qua yêu cầu của giảng viên (usp_Class_RequestUpgradeToTA) và admin duyệt.
+    IF @Role NOT IN ('User', 'Teacher')
+        THROW 50035, N'Vai trò không hợp lệ. Trợ giảng chỉ được thăng cấp qua yêu cầu của giảng viên.', 1;
 
     IF @ActorID = @UserID
         THROW 50034, N'Không thể tự thay đổi vai trò của chính mình.', 1;

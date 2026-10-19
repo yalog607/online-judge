@@ -105,8 +105,7 @@ BEGIN
                 WHERE ContestID = @ContestID AND UserID = @UserID AND ProblemID = @ProblemID;
 
                 UPDATE dbo.Contest_User
-                SET TotalScore = TotalScore + @MaxScore,
-                    PenaltyTime = PenaltyTime + @SolveMinute + (@CurrentWrongCount * 20)
+                SET PenaltyTime = PenaltyTime + @SolveMinute + (@CurrentWrongCount * 20)
                 WHERE ContestID = @ContestID AND UserID = @UserID;
             END
             ELSE
@@ -116,6 +115,25 @@ BEGIN
                 WHERE ContestID = @ContestID AND UserID = @UserID AND ProblemID = @ProblemID;
             END;
         END;
+
+        -- Điểm của câu = tỉ lệ testcase đạt tốt nhất (trong các lần nộp của kỳ thi) x điểm của câu.
+        UPDATE dbo.ContestProblemResults
+        SET BestRatio = ISNULL((
+            SELECT MAX(app.ufn_SubmissionRatio(s.Result, s.Score, s.MaxScore, s.PassedCases))
+            FROM dbo.Submissions s
+            WHERE s.ContestID = @ContestID AND s.UserID = @UserID AND s.ProblemID = @ProblemID
+        ), 0)
+        WHERE ContestID = @ContestID AND UserID = @UserID AND ProblemID = @ProblemID;
+
+        UPDATE cu
+        SET TotalScore = ISNULL((
+            SELECT SUM(cpr.BestRatio * cp.MaxScore)
+            FROM dbo.ContestProblemResults cpr
+            JOIN dbo.Contest_Problem cp ON cp.ContestID = cpr.ContestID AND cp.ProblemID = cpr.ProblemID
+            WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID
+        ), 0)
+        FROM dbo.Contest_User cu
+        WHERE cu.ContestID = @ContestID AND cu.UserID = @UserID;
 
         FETCH NEXT FROM cur INTO @SubID, @ContestID, @UserID, @ProblemID, @Result, @SubmitTime, @StartTime, @MaxScore;
     END;

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useDialog } from "@/components/dialog-provider";
 import {
@@ -14,7 +15,30 @@ import type { CommentView } from "@/modules/comment/view";
 
 const initial: FormState = {};
 
-function Avatar({ userId, name, size = 34 }: { userId: number; name: string; size?: number }) {
+function Avatar({
+  userId,
+  name,
+  avatar,
+  size = 34,
+}: {
+  userId: number;
+  name: string;
+  avatar?: string | null;
+  size?: number;
+}) {
+  if (avatar) {
+    return (
+      <Image
+        src={avatar}
+        alt={name}
+        width={size}
+        height={size}
+        unoptimized
+        className="flex-none rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       aria-hidden
@@ -89,7 +113,7 @@ function CommentItem({
 
   return (
     <div className="flex gap-3">
-      <Avatar userId={c.userId} name={c.fullName} size={replies ? 34 : 28} />
+      <Avatar userId={c.userId} name={c.fullName} avatar={c.avatar} size={replies ? 34 : 28} />
       <div className="min-w-0 flex-1">
         <div className="text-sm flex items-center gap-2">
           <b>{c.fullName}</b>

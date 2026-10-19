@@ -156,6 +156,7 @@ type TARequestInfoRow = {
   RequestedBy: number;
   TeacherName: string;
   Status: string;
+  RejectionReason?: string | null;
 };
 
 export async function taRequestInfo(classId: number, userId: number) {

@@ -67,6 +67,20 @@ export default async function TeacherContestsPage({
     className: c.ClassName,
   }));
 
+  // Số kỳ thi hiển thị trên các tab (không phụ thuộc bộ lọc đang chọn).
+  const countFor = async (view: "mine" | "joined") =>
+    (
+      await contestRepository.listContests({
+        status: "All",
+        page: 1,
+        pageSize: 1,
+        userId: actor.userId,
+        onlyMine: view === "mine",
+        onlyJoined: view === "joined",
+      })
+    ).total;
+  const [mineCount, joinedCount] = await Promise.all([countFor("mine"), countFor("joined")]);
+
   const startRecord = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endRecord = Math.min(page * PAGE_SIZE, total);
 
@@ -88,7 +102,7 @@ export default async function TeacherContestsPage({
         action={<CreateContestDialog classes={classOptions} />}
       />
 
-      <nav aria-label="Lọc danh sách kỳ thi" className="flex gap-5 border-b border-line pb-2">
+      <nav aria-label="Lọc danh sách kỳ thi" className="flex gap-5 overflow-x-auto border-b border-line pb-2">
         <Link
           href={buildTabHref()}
           className={`whitespace-nowrap pb-2 -mb-[9px] font-medium transition-colors ${
@@ -107,7 +121,7 @@ export default async function TeacherContestsPage({
               : "text-fg-muted hover:text-fg"
           }`}
         >
-          Kỳ thi của tôi
+          Kỳ thi của tôi<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-fg-muted">{mineCount}</span>
         </Link>
         <Link
           href={buildTabHref("joined")}
@@ -117,7 +131,7 @@ export default async function TeacherContestsPage({
               : "text-fg-muted hover:text-fg"
           }`}
         >
-          Kỳ thi đã tham gia
+          Kỳ thi đã tham gia<span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-fg-muted">{joinedCount}</span>
         </Link>
       </nav>
 
@@ -137,10 +151,10 @@ export default async function TeacherContestsPage({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <Select
             name="classId"
-          label="Môn học"
+          label="Lớp học"
             defaultValue={sp.classId ?? ""}
             className="w-full md:w-auto rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors cursor-pointer"
           >

@@ -124,8 +124,8 @@ EXEC app.usp_Contest_UpdateProblemScore @ContestID, @PublicProblemID, @OwnerID, 
 INSERT @Results VALUES ('Owner can update problem max score during contest',
     CASE WHEN EXISTS (SELECT 1 FROM dbo.Contest_Problem WHERE ContestID = @ContestID AND ProblemID = @PublicProblemID AND MaxScore = 150) THEN 1 ELSE 0 END);
 
-INSERT dbo.ContestProblemResults (ContestID, UserID, ProblemID, WrongCount, Solved, SolveMinute)
-VALUES (@ContestID, @StudentID, @PublicProblemID, 1, 1, 15);
+INSERT dbo.ContestProblemResults (ContestID, UserID, ProblemID, WrongCount, Solved, SolveMinute, BestRatio)
+VALUES (@ContestID, @StudentID, @PublicProblemID, 1, 1, 15, 1);
 
 EXEC app.usp_Contest_UpdateProblemScore @ContestID, @PublicProblemID, @OwnerID, 200;
 INSERT @Results VALUES ('Updating problem score recalculates participants total score',

@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, type Role } from "@/lib/session";
 import { execProc } from "@/db/exec";
@@ -53,6 +54,10 @@ export async function redirectIfSignedIn() {
 export async function requireUser(): Promise<CurrentUser> {
   const user = await verifySession();
   if (!user) redirect("/login");
+  // Chế độ mô phỏng chỉ để xem: mọi Server Action cần người dùng đều bị chặn.
+  if (user.actorId && (await headers()).has("next-action")) {
+    throw new Error("Đang ở chế độ mô phỏng, chỉ được xem, không thể thay đổi dữ liệu.");
+  }
   return user;
 }
 

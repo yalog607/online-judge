@@ -41,14 +41,6 @@ export default async function AdminProblemsPage({
     return `/admin/problems?${params.toString()}`;
   };
 
-  const statusTabs = [
-    { label: "Tất cả", value: "" },
-    { label: "Công khai", value: "Public" },
-    { label: "Chờ duyệt", value: "Pending" },
-    { label: "Riêng tư", value: "Private" },
-    { label: "Đã khóa", value: "Hidden" },
-  ];
-
   return (
     <div className="flex flex-col gap-5 pt-8">
       <PageHeader
@@ -60,31 +52,6 @@ export default async function AdminProblemsPage({
         }
         description="Tra cứu và xem chi tiết bài tập trong hệ thống (không chỉnh sửa)."
       />
-
-      <div className="flex gap-4 border-b border-line pb-2 overflow-x-auto">
-        {statusTabs.map((tab) => {
-          const isActive = (sp.status || "") === tab.value;
-          const params = new URLSearchParams(sp as Record<string, string>);
-          if (tab.value) {
-            params.set("status", tab.value);
-          } else {
-            params.delete("status");
-          }
-          params.delete("page");
-
-          return (
-            <Link
-              key={tab.value}
-              href={`/admin/problems?${params.toString()}`}
-              className={`font-medium pb-2 -mb-[9px] text-sm whitespace-nowrap transition-colors ${
-                isActive ? "border-b-2 border-primary text-primary" : "text-fg-muted hover:text-fg"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </div>
 
       <SearchForm sp={sp} hidden={{}} resetHref={"/admin/problems"}>
         <input
@@ -145,9 +112,6 @@ export default async function AdminProblemsPage({
                   #{p.ProblemID}
                 </span>
               </div>
-              {p.ClassName && (
-                <div className="mt-1 text-xs text-fg-muted font-normal">Lớp: {p.ClassName}</div>
-              )}
             </td>
             <td className="px-5 py-3 text-fg-muted">{p.CreatorFullName ?? "-"}</td>
             <td className="px-5 py-3 text-fg-muted">

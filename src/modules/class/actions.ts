@@ -10,6 +10,8 @@ import {
   notifyStudentAdded,
   notifyStudentRemoved,
   notifyTAApproved,
+  notifyTARejected,
+  notifyTADemoted,
   notifyTARequestSubmitted,
 } from "@/modules/notification/events";
 import { createClassSchema, joinClassSchema, updateClassSchema, requestJoinClassSchema, reviewJoinRequestSchema } from "./schema";
@@ -18,7 +20,7 @@ import { firstIssue } from "@/lib/form-errors";
 export type FormState = { error?: string; field?: string; ok?: boolean; message?: string };
 
 export async function createClassAction(_prev: FormState, formData: FormData): Promise<FormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   const rawData = {
     className: formData.get("className"),
     description: formData.get("description") || undefined,
@@ -104,7 +106,7 @@ export async function addStudentAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   const identifier = String(formData.get("identifier") || "").trim();
   if (!identifier) {
     return { error: "Vui lòng nhập email hoặc tên đăng nhập của học sinh." };
@@ -124,7 +126,7 @@ export async function addStudentAction(
 }
 
 export async function removeStudentAction(classId: number, studentId: number): Promise<void> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   await classRepository.removeStudent(classId, actor.userId, studentId);
   await notifyStudentRemoved(classId, studentId);
   revalidatePath(`/teacher/classes/${classId}`);
@@ -135,7 +137,7 @@ export async function updateClassAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   const rawData = {
     className: formData.get("className"),
     description: formData.get("description") || null,
@@ -164,7 +166,7 @@ export async function updateClassAction(
 export async function cancelClassAction(
   classId: number,
 ): Promise<{ error?: string; ok?: boolean }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   try {
     await classRepository.cancelClass(classId, actor.userId);
     revalidatePath("/teacher/classes");
@@ -178,10 +180,44 @@ export async function cancelClassAction(
   }
 }
 
+export async function reopenClassAction(
+  classId: number,
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher");
+  try {
+    await classRepository.reopenClass(classId, actor.userId);
+    revalidatePath("/teacher/classes");
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath("/user/classes");
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
+  }
+}
+
+export async function removeTAAction(
+  classId: number,
+  userId: number,
+): Promise<{ error?: string; ok?: boolean }> {
+  const actor = await requireRole("Teacher");
+  try {
+    await classRepository.removeTA(classId, actor.userId, userId);
+    await notifyTADemoted(userId, classId);
+    revalidatePath(`/teacher/classes/${classId}`);
+    revalidatePath(`/user/classes/${classId}`);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    throw error;
+  }
+}
+
 export async function resubmitClassAction(
   classId: number,
 ): Promise<{ error?: string; ok?: boolean }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
   try {
     await classRepository.resubmitClass(classId, actor.userId);
     revalidatePath("/teacher/classes");
@@ -199,7 +235,7 @@ export async function assignClassProblemAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
   const problemId = Number(formData.get("problemId"));
   const dueDate = formData.get("dueDate") as string | null;
 
@@ -224,7 +260,7 @@ export async function removeClassProblemAction(
   classId: number,
   problemId: number,
 ): Promise<{ ok?: boolean; error?: string }> {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
 
   try {
     await classRepository.removeProblem(classId, actor.userId, problemId);
@@ -243,7 +279,7 @@ export async function requestTAUpgradeAction(
   classId: number,
   studentId: number,
 ): Promise<{ ok?: boolean; error?: string }> {
-  const actor = await requireRole("Teacher", "Admin");
+  const actor = await requireRole("Teacher");
 
   try {
     const created = await classRepository.requestUpgradeToTA(classId, actor.userId, studentId);
@@ -267,7 +303,7 @@ export async function approveTARequestAction(
 
   try {
     const changed = await classRepository.approveTARequest(actor.userId, requestId, isApproved, rejectionReason);
-    if (changed && isApproved) await notifyTAApproved(requestId);
+    if (changed) await (isApproved ? notifyTAApproved(requestId) : notifyTARejected(requestId));
     revalidatePath("/admin/approvals");
     return { ok: true };
   } catch (error) {
@@ -355,7 +391,7 @@ export async function reviewJoinRequestAction(
   action: "Approve" | "Reject",
   classId: number,
 ): Promise<{ ok?: boolean; error?: string }> {
-  const actor = await requireRole("Teacher", "TA", "Admin");
+  const actor = await requireRole("Teacher", "TA");
   const parsed = reviewJoinRequestSchema.safeParse({ requestId, action });
   if (!parsed.success) {
     return { error: "Dữ liệu yêu cầu không hợp lệ." };

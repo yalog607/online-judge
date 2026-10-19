@@ -13,7 +13,9 @@ export default async function NewProblemPage({
 
   let classes: { ClassID: number; ClassName: string }[] = [];
   if (actor.role === "TA") {
-    classes = await classRepository.getClassesForTA(actor.userId);
+    classes = (await classRepository.getClassesForTA(actor.userId)).filter(
+      (c) => !c.IsCancelled && c.ApprovalStatus === "Approved",
+    );
   } else if (actor.role === "Teacher") {
     const res = await classRepository.listClasses({
       userId: actor.userId,
@@ -21,7 +23,9 @@ export default async function NewProblemPage({
       page: 1,
       pageSize: 100,
     });
-    classes = res.classes.map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
+    classes = res.classes
+      .filter((c) => !c.IsCancelled && c.ApprovalStatus === "Approved")
+      .map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
   } else if (actor.role === "Admin") {
     const res = await classRepository.listClasses({ page: 1, pageSize: 100 });
     classes = res.classes.map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }));
@@ -47,12 +51,19 @@ export default async function NewProblemPage({
           viên cần duyệt trước khi hiển thị cho học sinh.
         </p>
       )}
+      {isTA && classes.length === 0 ? (
+        <div className="card p-5 text-sm text-fg-muted">
+          Bạn chưa là trợ giảng của lớp nào đang hoạt động nên chưa thể thêm bài tập. Hãy nhờ giảng viên
+          gửi yêu cầu thăng cấp trợ giảng cho bạn.
+        </div>
+      ) : (
       <ProblemForm
         action={createProblemAction}
         classes={classes.map((c) => ({ ClassID: c.ClassID, ClassName: c.ClassName }))}
         isTA={isTA}
         defaultClassId={defaultClassId}
       />
+      )}
     </div>
   );
 }

@@ -166,6 +166,42 @@ describe("events", () => {
     );
   });
 
+  it("tells the teacher when a TA request is rejected, with the reason", async () => {
+    repo.taRequestById.mockResolvedValue({
+      ClassName: "C1", StudentName: "HV", TeacherName: "GV", RequestedBy: 2, UserID: 9, ClassID: 5,
+      Status: "Rejected", RejectionReason: "Chưa đủ điều kiện",
+    });
+    await events.notifyTARejected(11);
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userIds: [2],
+        type: "ta_request_rejected",
+        link: "/teacher/classes/5",
+        body: expect.stringContaining("Chưa đủ điều kiện"),
+      }),
+    );
+  });
+
+  it("does not announce a rejection for a request that is not Rejected", async () => {
+    repo.taRequestById.mockResolvedValue({
+      ClassName: "C1", StudentName: "HV", TeacherName: "GV", RequestedBy: 2, UserID: 9, ClassID: 5, Status: "Approved",
+    });
+    await events.notifyTARejected(11);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("tells a TA they were demoted by an admin or by a class teacher", async () => {
+    await events.notifyTADemoted(9);
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ userIds: [9], type: "ta_demoted", link: "/user/classes" }),
+    );
+    repo.classInfo.mockResolvedValue({ ClassName: "C1" });
+    await events.notifyTADemoted(9, 5);
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ userIds: [9], type: "ta_demoted", link: "/user/classes/5" }),
+    );
+  });
+
   it("does not announce a TA approval that is not Approved", async () => {
     repo.taRequestById.mockResolvedValue({
       ClassName: "C1", StudentName: "HV", TeacherName: "GV", RequestedBy: 2, UserID: 9, ClassID: 5, Status: "Rejected",

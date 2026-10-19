@@ -63,7 +63,7 @@ INSERT @Results VALUES ('Approving again reports Changed = 0',
     CASE WHEN (SELECT Changed FROM @Ap2) = 0 THEN 1 ELSE 0 END);
 
 DECLARE @RB TABLE (RequestID INT, ClassID INT, ClassName NVARCHAR(150), UserID INT, StudentName NVARCHAR(100),
-                   RequestedBy INT, TeacherName NVARCHAR(100), Status VARCHAR(20));
+                   RequestedBy INT, TeacherName NVARCHAR(100), Status VARCHAR(20), RejectionReason NVARCHAR(MAX));
 INSERT @RB EXEC app.usp_Notification_TARequestById @RequestID = @RequestID;
 INSERT @Results VALUES ('TARequestById shows the request as Approved',
     CASE WHEN EXISTS (SELECT 1 FROM @RB WHERE Status = 'Approved' AND UserID = @StudentID) THEN 1 ELSE 0 END);

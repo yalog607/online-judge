@@ -196,7 +196,8 @@ export default async function UserClassDetailPage({
               <EmptyState>Lớp học hiện chưa có tài liệu nào được chia sẻ.</EmptyState>
             ) : (
               <div className="card overflow-hidden">
-                <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
                   <thead className="border-b border-line bg-muted text-xs uppercase text-fg-muted">
                     <tr>
                       <th className="px-5 py-3">STT</th>
@@ -251,6 +252,7 @@ export default async function UserClassDetailPage({
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>
@@ -264,7 +266,8 @@ export default async function UserClassDetailPage({
               <EmptyState>Lớp học hiện chưa có bài tập nào được giao. Vui lòng quay lại sau!</EmptyState>
             ) : (
               <div className="card overflow-hidden">
-                <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
                   <thead className="border-b border-line bg-muted text-xs uppercase text-fg-muted">
                     <tr>
                       <th className="px-5 py-3">Bài tập</th>
@@ -318,6 +321,7 @@ export default async function UserClassDetailPage({
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>

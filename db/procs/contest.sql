@@ -24,7 +24,7 @@ BEGIN
     IF @ClassID IS NOT NULL AND NOT EXISTS (
         SELECT 1 
         FROM dbo.Classes 
-        WHERE ClassID = @ClassID AND (TeacherID = @CreatorID OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
+        WHERE ClassID = @ClassID AND IsCancelled = 0 AND ApprovalStatus = 'Approved' AND (TeacherID = @CreatorID OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
     )
         THROW 50032, N'Lớp học không tồn tại hoặc bạn không có quyền gán kỳ thi vào lớp học này.', 1;
 
@@ -238,10 +238,10 @@ BEGIN
             SET TotalScore = ISNULL(scores.TotalScore, 0)
             FROM dbo.Contest_User cu
             OUTER APPLY (
-                SELECT SUM(cp.MaxScore) AS TotalScore
+                SELECT SUM(cpr.BestRatio * cp.MaxScore) AS TotalScore
                 FROM dbo.ContestProblemResults cpr
                 JOIN dbo.Contest_Problem cp ON cp.ContestID = cpr.ContestID AND cp.ProblemID = cpr.ProblemID
-                WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID AND cpr.Solved = 1
+                WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID
             ) scores
             WHERE cu.ContestID = @ContestID;
         END
@@ -296,10 +296,10 @@ BEGIN
         SET TotalScore = ISNULL(scores.TotalScore, 0)
         FROM dbo.Contest_User cu
         OUTER APPLY (
-            SELECT SUM(cp.MaxScore) AS TotalScore
+            SELECT SUM(cpr.BestRatio * cp.MaxScore) AS TotalScore
             FROM dbo.ContestProblemResults cpr
             JOIN dbo.Contest_Problem cp ON cp.ContestID = cpr.ContestID AND cp.ProblemID = cpr.ProblemID
-            WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID AND cpr.Solved = 1
+            WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID
         ) scores
         WHERE cu.ContestID = @ContestID;
 
@@ -349,11 +349,11 @@ BEGIN
         FROM dbo.Contest_User cu
         OUTER APPLY (
             SELECT 
-                SUM(cp.MaxScore) AS TotalScore,
-                SUM(cpr.SolveMinute + (cpr.WrongCount * 20)) AS TotalPenalty
+                SUM(cpr.BestRatio * cp.MaxScore) AS TotalScore,
+                SUM(CASE WHEN cpr.Solved = 1 THEN cpr.SolveMinute + (cpr.WrongCount * 20) ELSE 0 END) AS TotalPenalty
             FROM dbo.ContestProblemResults cpr
             JOIN dbo.Contest_Problem cp ON cp.ContestID = cpr.ContestID AND cp.ProblemID = cpr.ProblemID
-            WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID AND cpr.Solved = 1
+            WHERE cpr.ContestID = cu.ContestID AND cpr.UserID = cu.UserID
         ) scores
         WHERE cu.ContestID = @ContestID;
 
