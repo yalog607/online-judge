@@ -13,6 +13,8 @@ export const NOTIFICATION_TYPES = [
   "contest_started",
   "ta_request_submitted",
   "ta_request_approved",
+  "ta_request_rejected",
+  "ta_demoted",
   "class_created",
 ] as const;
 

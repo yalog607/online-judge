@@ -222,6 +222,10 @@ export interface IClassRepository {
 
   resubmitClass(classId: number, teacherId: number): Promise<void>;
 
+  reopenClass(classId: number, teacherId: number): Promise<void>;
+
+  removeTA(classId: number, actorId: number, userId: number): Promise<void>;
+
   // true when a new request was created; false when a Pending one already existed.
   requestUpgradeToTA(classId: number, teacherId: number, studentId: number): Promise<boolean>;
 
@@ -442,6 +446,14 @@ export class ClassRepository implements IClassRepository {
 
   async resubmitClass(classId: number, teacherId: number): Promise<void> {
     await execProc("usp_Class_Resubmit", { ClassID: classId, TeacherID: teacherId });
+  }
+
+  async reopenClass(classId: number, teacherId: number): Promise<void> {
+    await execProc("usp_Class_Reopen", { ClassID: classId, TeacherID: teacherId });
+  }
+
+  async removeTA(classId: number, actorId: number, userId: number): Promise<void> {
+    await execProc("usp_Class_RemoveTA", { ClassID: classId, ActorID: actorId, UserID: userId });
   }
 
   async assignProblem(

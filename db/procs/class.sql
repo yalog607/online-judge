@@ -24,6 +24,10 @@ BEGIN
         IF @InviteCode IS NULL OR LEN(RTRIM(LTRIM(@InviteCode))) = 0
         BEGIN
             SET @InviteCode = UPPER(SUBSTRING(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 1, 8));
+        END
+        ELSE IF EXISTS (SELECT 1 FROM dbo.Classes WHERE InviteCode = RTRIM(LTRIM(@InviteCode)))
+        BEGIN
+            THROW 50044, N'Mã mời này đã được dùng cho một lớp khác. Vui lòng chọn mã khác.', 1;
         END;
 
         WHILE EXISTS (SELECT 1 FROM dbo.Classes WHERE InviteCode = @InviteCode)
@@ -400,6 +404,32 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE app.usp_Class_Reopen
+    @ClassID INT,
+    @TeacherID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE c.ClassID = @ClassID
+          AND c.TeacherID = @TeacherID
+          AND u.Role IN ('Teacher', 'Admin')
+    )
+        THROW 50042, N'Chỉ giảng viên tạo lớp mới được mở lại lớp này.', 1;
+
+    UPDATE dbo.Classes
+    SET IsCancelled = 0
+    WHERE ClassID = @ClassID AND IsCancelled = 1;
+
+    IF @@ROWCOUNT = 0
+        THROW 50045, N'Lớp học không tồn tại hoặc chưa bị hủy.', 1;
+END;
+GO
+
 CREATE OR ALTER PROCEDURE app.usp_Class_Resubmit
     @ClassID INT,
     @TeacherID INT
@@ -755,6 +785,48 @@ BEGIN
         COMMIT TRANSACTION;
         -- Created = 0 when a Pending request already existed (used to avoid duplicate notifications).
         SELECT @Created AS Created;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- Giảng viên của lớp gỡ vai trò trợ giảng; học viên vẫn ở trong lớp.
+CREATE OR ALTER PROCEDURE app.usp_Class_RemoveTA
+    @ClassID INT,
+    @ActorID INT,
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.Classes c
+        JOIN dbo.Users u ON u.UserID = @ActorID
+        WHERE c.ClassID = @ClassID AND c.TeacherID = @ActorID AND u.Role = 'Teacher'
+    )
+        THROW 50027, N'Chỉ giảng viên của lớp mới được giáng chức trợ giảng.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID)
+        THROW 50046, N'Người này không phải trợ giảng của lớp.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DELETE FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID;
+
+        UPDATE dbo.Users SET Role = 'User'
+        WHERE UserID = @UserID AND Role = 'TA'
+          AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE UserID_TA = @UserID);
+
+        INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID, Detail)
+        VALUES (@ActorID, 'DemoteTA', 'User', @UserID, CONCAT('Class ', @ClassID));
+
+        COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;

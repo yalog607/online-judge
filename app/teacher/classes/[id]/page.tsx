@@ -16,6 +16,7 @@ import { RemoveClassProblemButton } from "./remove-class-problem-button";
 import { ApproveProblemButton } from "./approve-problem-button";
 import { TeacherClassStudentsManager } from "./teacher-class-students-manager";
 import { CancelClassButton } from "../cancel-class-button";
+import { ReopenClassButton } from "../reopen-class-button";
 import { ResubmitClassButton } from "../resubmit-class-button";
 import { TeacherClassJoinRequests } from "./teacher-class-join-requests";
 
@@ -153,6 +154,9 @@ export default async function TeacherClassDetailPage({
           )}
           {classDetail.TeacherID === actor.userId && !classDetail.IsCancelled && (
             <CancelClassButton classId={classId} className={classDetail.ClassName} />
+          )}
+          {classDetail.TeacherID === actor.userId && classDetail.IsCancelled && (
+            <ReopenClassButton classId={classId} className={classDetail.ClassName} />
           )}
         </div>
       </div>
