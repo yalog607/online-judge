@@ -53,7 +53,8 @@ export default async function AdminApprovalsPage({
 
       {tab === 'ta' && (
         <div className="card">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-fg-muted">
                 <th className="px-5 py-3">Lớp học</th>
@@ -96,13 +97,15 @@ export default async function AdminApprovalsPage({
               )}
             </tbody>
           </table>
+          </div>
           <Pager page={current.page} pageSize={PAGE_SIZE} total={current.total} buildHref={buildHref} />
         </div>
       )}
 
       {tab === 'class' && (
         <div className="card">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-fg-muted">
                 <th className="px-5 py-3">Lớp học</th>
@@ -143,6 +146,7 @@ export default async function AdminApprovalsPage({
               )}
             </tbody>
           </table>
+          </div>
           <Pager page={current.page} pageSize={PAGE_SIZE} total={current.total} buildHref={buildHref} />
         </div>
       )}

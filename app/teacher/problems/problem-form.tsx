@@ -76,7 +76,7 @@ export function ProblemForm({
 
   return (
     <Form action={formAction} state={state} className="flex flex-col gap-6">
-      <fieldset disabled={disabled} className="flex flex-col gap-6 group">
+      <fieldset disabled={disabled} className="flex min-w-0 flex-col gap-6 group">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field id="title" label="Tên bài tập" defaultValue={problem?.Title} required />
         <Field id="tags" label="Thẻ (phân cách bằng dấu phẩy)" defaultValue={problem?.Tags ?? ""} />

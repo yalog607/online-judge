@@ -308,7 +308,8 @@ export function ImportStudentsDialog({
                 </div>
 
                 <div className="max-h-60 overflow-y-auto rounded-xl border border-line">
-                  <table className="w-full text-left text-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
                     <thead className="sticky top-0 border-b border-line bg-muted font-medium text-fg-muted">
                       <tr>
                         <th className="px-3 py-2">Dòng</th>
@@ -371,6 +372,7 @@ export function ImportStudentsDialog({
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-line">

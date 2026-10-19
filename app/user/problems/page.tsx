@@ -92,7 +92,7 @@ export default async function ProblemListPage({
       />
 
       {isStaff && (
-        <nav aria-label="Danh sách bài tập" className="flex gap-5 border-b border-line pb-2">
+        <nav aria-label="Danh sách bài tập" className="flex gap-5 overflow-x-auto border-b border-line pb-2">
           <Link 
             href="/user/problems" 
             className={`whitespace-nowrap pb-2 -mb-[9px] font-medium ${!isApprovalView && sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}
@@ -229,7 +229,8 @@ export default async function ProblemListPage({
         <Pager page={page} pageSize={PAGE_SIZE} total={total} buildHref={buildHref} />
       </div>
       ) : <div className="card">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full">
           <thead>
             <tr className="border-b border-line text-left text-sm text-fg-muted">
               <th className="px-5 py-3">STT</th>
@@ -313,6 +314,7 @@ export default async function ProblemListPage({
             )}
           </tbody>
         </table>
+        </div>
         <Pager page={page} pageSize={PAGE_SIZE} total={total} buildHref={buildHref} />
       </div>
       }

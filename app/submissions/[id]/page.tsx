@@ -164,7 +164,8 @@ export default async function SubmissionDetailPage({
         </div>
         <div className="card">
           <h2 className="border-b border-line px-4 py-3 font-semibold">Kết quả từng testcase</h2>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-fg-muted">
                 <th className="px-4 py-2">Test</th>
@@ -219,6 +220,7 @@ export default async function SubmissionDetailPage({
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

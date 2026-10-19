@@ -102,7 +102,7 @@ export default async function TeacherContestsPage({
         action={<CreateContestDialog classes={classOptions} />}
       />
 
-      <nav aria-label="Lọc danh sách kỳ thi" className="flex gap-5 border-b border-line pb-2">
+      <nav aria-label="Lọc danh sách kỳ thi" className="flex gap-5 overflow-x-auto border-b border-line pb-2">
         <Link
           href={buildTabHref()}
           className={`whitespace-nowrap pb-2 -mb-[9px] font-medium transition-colors ${
@@ -151,7 +151,7 @@ export default async function TeacherContestsPage({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <Select
             name="classId"
           label="Lớp học"

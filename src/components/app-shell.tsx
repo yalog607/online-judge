@@ -116,6 +116,17 @@ export async function AppShell({
                 <span className="font-semibold">{fullName}</span>
                 <span className="text-xs text-fg-muted">{roleLabel}</span>
               </div>
+              {/* Thanh bên ẩn khối người dùng ở màn hình hẹp nên đăng xuất được đặt ở header. */}
+              <form action={logoutAction} className="hidden max-[820px]:block">
+                <button
+                  type="submit"
+                  aria-label="Đăng xuất"
+                  title="Đăng xuất"
+                  className="grid h-[38px] w-[38px] place-items-center rounded-[9px] border border-line bg-surface text-fg-muted hover:bg-muted hover:text-fg"
+                >
+                  <Icon name="logout" size={16} />
+                </button>
+              </form>
             </div>
           </header>
           <main className="flex-1 px-8 pb-14 max-[820px]:px-4">{children}</main>

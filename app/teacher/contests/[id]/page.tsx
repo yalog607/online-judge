@@ -267,7 +267,8 @@ export default async function TeacherContestDetailPage({
           )}
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>
                   <th className="px-4 py-3 w-16">STT</th>
@@ -341,6 +342,7 @@ export default async function TeacherContestDetailPage({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -358,7 +360,8 @@ export default async function TeacherContestDetailPage({
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>
                   <th className="px-4 py-3 w-16">Hạng</th>
@@ -410,6 +413,7 @@ export default async function TeacherContestDetailPage({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -494,7 +498,8 @@ export default async function TeacherContestDetailPage({
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
                   <th className="px-4 py-3">STT</th>
@@ -555,6 +560,7 @@ export default async function TeacherContestDetailPage({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
 
           {submissionsData.total > PAGE_SIZE && (
