@@ -131,6 +131,12 @@ BEGIN
         DELETE FROM dbo.Class_Student
         WHERE ClassID = @ClassID AND UserID = @UserID;
 
+        -- Rời lớp thì không còn là trợ giảng của lớp đó; hết lớp nào thì về vai trò User.
+        DELETE FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID;
+        UPDATE dbo.Users SET Role = 'User'
+        WHERE UserID = @UserID AND Role = 'TA'
+          AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE UserID_TA = @UserID);
+
         COMMIT TRANSACTION;
 
         SELECT 1 AS Success;
@@ -474,7 +480,7 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
+            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (
                 (c.TeacherID = @TeacherID AND u.Role IN ('Teacher', 'Admin')) OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -531,7 +537,7 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
+            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (
                 c.TeacherID = @TeacherID OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -548,6 +554,12 @@ BEGIN
 
         DELETE FROM dbo.Class_Student
         WHERE ClassID = @ClassID AND UserID = @StudentID;
+
+        -- Bị xóa khỏi lớp thì không còn là trợ giảng của lớp đó; hết lớp nào thì về vai trò User.
+        DELETE FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @StudentID;
+        UPDATE dbo.Users SET Role = 'User'
+        WHERE UserID = @StudentID AND Role = 'TA'
+          AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE UserID_TA = @StudentID);
 
         COMMIT TRANSACTION;
 
@@ -580,7 +592,7 @@ BEGIN
             SELECT 1 
             FROM dbo.Classes c
             JOIN dbo.Users u ON u.UserID = @TeacherID
-            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
+            WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (
                 c.TeacherID = @TeacherID OR 
                 u.Role = 'Admin' OR
                 EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -633,7 +645,7 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (
             c.TeacherID = @TeacherID OR 
             u.Role = 'Admin' OR
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -687,7 +699,7 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (
             c.TeacherID = @TeacherID OR 
             u.Role = 'Admin' OR
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @TeacherID)
@@ -723,7 +735,8 @@ BEGIN
         SELECT 1 
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @TeacherID
-        WHERE c.ClassID = @ClassID AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
+          AND (c.TeacherID = @TeacherID OR u.Role = 'Admin')
     )
         THROW 50027, N'Bạn không có quyền gửi yêu cầu nâng cấp cho lớp này.', 1;
 
@@ -977,7 +990,7 @@ BEGIN
         SELECT @TeacherID = c.TeacherID
         FROM dbo.Classes c
         JOIN dbo.Users u ON u.UserID = @ActorID
-        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (
+        WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (
             c.TeacherID = @ActorID OR 
             u.Role = 'Admin' OR
             EXISTS (SELECT 1 FROM dbo.Class_TA ta WHERE ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID)

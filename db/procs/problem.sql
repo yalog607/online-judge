@@ -48,7 +48,7 @@ BEGIN
             IF NOT EXISTS (
                 SELECT 1 FROM dbo.Classes c
                 LEFT JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @CreatorID
-                WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND (c.TeacherID = @CreatorID OR ta.UserID_TA IS NOT NULL OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
+                WHERE c.ClassID = @ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved' AND (c.TeacherID = @CreatorID OR ta.UserID_TA IS NOT NULL OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
             )
                 THROW 50012, N'Lớp học không tồn tại hoặc bạn không có quyền gán bài tập vào lớp học này.', 1;
 
@@ -97,7 +97,7 @@ BEGIN
                 SELECT 1 FROM dbo.Class_Problem cp
                 JOIN dbo.Classes c ON c.ClassID = cp.ClassID
                 JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID
-                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0
+                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
             ))
             OR (u.Role = 'Teacher' AND EXISTS (
                 SELECT 1 FROM dbo.Class_Problem cp
@@ -282,7 +282,7 @@ BEGIN
         FROM dbo.Problems p
         JOIN dbo.Users u ON u.UserID = @TAID AND u.Role = 'TA'
         JOIN dbo.Class_Problem cp ON cp.ProblemID = p.ProblemID
-        JOIN dbo.Classes c ON c.ClassID = cp.ClassID AND c.IsCancelled = 0
+        JOIN dbo.Classes c ON c.ClassID = cp.ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
         JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @TAID
         WHERE p.ProblemID = @ProblemID AND p.CreatorID = @TAID
     ) THEN 1 ELSE 0 END AS BIT) AS CanEdit;
@@ -419,7 +419,7 @@ BEGIN
                 SELECT 1 FROM dbo.Class_Problem cp
                 JOIN dbo.Classes c ON c.ClassID = cp.ClassID
                 JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID
-                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0
+                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
             ))
             OR (u.Role = 'Teacher' AND EXISTS (
                 SELECT 1 FROM dbo.Class_Problem cp
@@ -461,7 +461,7 @@ BEGIN
                 SELECT 1 FROM dbo.Class_Problem cp
                 JOIN dbo.Classes c ON c.ClassID = cp.ClassID
                 JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @ActorID
-                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0
+                WHERE cp.ProblemID = p.ProblemID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
             ))
             OR (u.Role = 'Teacher' AND EXISTS (
                 SELECT 1 FROM dbo.Class_Problem cp

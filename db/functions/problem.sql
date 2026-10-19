@@ -35,7 +35,7 @@ BEGIN
     IF @Role = 'TA' AND EXISTS (
         SELECT 1
         FROM dbo.Class_Problem cp
-        JOIN dbo.Classes c ON c.ClassID = cp.ClassID AND c.IsCancelled = 0
+        JOIN dbo.Classes c ON c.ClassID = cp.ClassID AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
         JOIN dbo.Class_TA ta ON ta.ClassID = c.ClassID AND ta.UserID_TA = @UserID
         WHERE cp.ProblemID = @ProblemID
     ) AND (@Status NOT IN ('Pending', 'Rejected') OR @CreatorID = @UserID)

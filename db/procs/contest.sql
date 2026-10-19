@@ -24,7 +24,7 @@ BEGIN
     IF @ClassID IS NOT NULL AND NOT EXISTS (
         SELECT 1 
         FROM dbo.Classes 
-        WHERE ClassID = @ClassID AND (TeacherID = @CreatorID OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
+        WHERE ClassID = @ClassID AND IsCancelled = 0 AND ApprovalStatus = 'Approved' AND (TeacherID = @CreatorID OR EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @CreatorID AND Role = 'Admin'))
     )
         THROW 50032, N'Lớp học không tồn tại hoặc bạn không có quyền gán kỳ thi vào lớp học này.', 1;
 

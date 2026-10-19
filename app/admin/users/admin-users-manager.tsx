@@ -308,7 +308,7 @@ export function AdminUsersManager({
                 type="button"
                 onClick={() => {
                   if (selectedUser) {
-                    setSelectedNewRole(selectedUser.Role);
+                    setSelectedNewRole(selectedUser.Role === "TA" ? "User" : selectedUser.Role);
                     setModalError(null);
                     setIsRoleModalOpen(true);
                   }
@@ -767,7 +767,7 @@ export function AdminUsersManager({
               </p>
 
               <div className="space-y-2">
-                {(["User", "Teacher", "TA"] as Role[]).map((r) => (
+                {(["User", "Teacher"] as Role[]).map((r) => (
                   <label
                     key={r}
                     className={`flex items-center justify-between rounded-lg border p-3 cursor-pointer transition ${
