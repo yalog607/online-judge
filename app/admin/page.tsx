@@ -2,7 +2,9 @@ import { getAdminDashboard } from "@/modules/dashboard/service";
 import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/dal";
 import { StatCard, Panel, EmptyNote } from "@/components/stat-card";
+import Link from "next/link";
 import { LineChart, DonutChart } from "@/components/dashboard-charts";
+import { auditLabel } from "./audit-labels";
 
 export const metadata = { title: "Tổng quan hệ thống - ITOJ Admin" };
 
@@ -27,22 +29,6 @@ const SLICE_COLORS = [
   "var(--fg-muted)",
   "var(--neutral-soft)",
 ];
-
-const ACTIONS: Record<string, string> = {
-  SetUserRole: "Đổi vai trò người dùng",
-  SetUserStatus: "Đổi trạng thái tài khoản",
-  TransferOwnership: "Chuyển quyền sở hữu",
-  ImpersonateStart: "Đăng nhập thay người dùng",
-  IMPERSONATE_SESSION_START: "Đăng nhập thay người dùng",
-  CONTEST_CREATE: "Tạo kỳ thi",
-  CONTEST_UPDATE: "Cập nhật kỳ thi",
-  CONTEST_DELETE: "Xóa kỳ thi",
-  DOCUMENT_UPLOAD: "Tải lên tài liệu",
-  DOCUMENT_DELETE: "Xóa tài liệu",
-  "CREATE:Problem": "Tạo bài tập",
-  "UPDATE:Problem": "Cập nhật bài tập",
-  "UPDATE:User": "Cập nhật tài khoản",
-};
 
 function relativeTime(d: Date) {
   const mins = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 60000));
@@ -108,7 +94,7 @@ export default async function AdminDashboard() {
           <div className="p-5">
             <LineChart
               values={hours.map((h) => h.Cnt)}
-              labels={hours.map((h) => `${h.StartHour}h`)}
+              labels={hours.map((h, i) => (i % 3 === 0 || i === hours.length - 1 ? `${h.StartHour}h` : ""))}
             />
           </div>
         </Panel>
@@ -123,7 +109,14 @@ export default async function AdminDashboard() {
         </Panel>
       </div>
 
-      <Panel title="Hoạt động gần đây">
+      <Panel
+        title="Hoạt động gần đây"
+        action={
+          <Link href="/admin/activity" className="text-sm font-medium text-primary hover:underline">
+            Xem tất cả
+          </Link>
+        }
+      >
         {audit.length === 0 ? (
           <EmptyNote>Chưa có hoạt động quản trị nào.</EmptyNote>
         ) : (
@@ -142,7 +135,7 @@ export default async function AdminDashboard() {
                   return (
                     <tr key={a.AuditID} className="border-b border-line last:border-0">
                       <td className="px-5 py-3.5">
-                        {ACTIONS[`${a.Action}:${a.TargetType}`] ?? ACTIONS[a.Action] ?? a.Action}
+                        {auditLabel(a.Action, a.TargetType)}
                         {target ? <span className="text-fg-muted"> · {target}</span> : null}
                       </td>
                       <td className="px-5 py-3.5">{a.ActorName}</td>

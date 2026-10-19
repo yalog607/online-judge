@@ -58,6 +58,10 @@ export async function getTeacherDashboard(teacherId: number) {
   return { ...data, series };
 }
 
+export async function listAdminAudit(actorId: number, page: number, pageSize: number) {
+  return repo.listAdminAudit(actorId, page, pageSize);
+}
+
 export async function getAdminDashboard() {
   return repo.getAdminDashboard();
 }

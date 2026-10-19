@@ -76,6 +76,15 @@ export type AdminAuditRow = {
   TargetName: string | null;
 };
 
+export async function listAdminAudit(actorId: number, page: number, pageSize: number) {
+  const { rows } = await execProc<AdminAuditRow & { TotalCount: number }>("usp_Admin_ListAudit", {
+    ActorID: actorId,
+    Page: page,
+    PageSize: pageSize,
+  });
+  return { rows, total: rows[0]?.TotalCount ?? 0 };
+}
+
 export async function getUserDashboard(userId: number) {
   const res = await execProc<unknown>("usp_Dashboard_User", { UserID: userId });
   return {

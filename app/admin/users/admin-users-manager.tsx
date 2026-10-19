@@ -60,9 +60,7 @@ export function AdminUsersManager({
   statusFilter,
 }: AdminUsersManagerProps) {
   const router = useRouter();
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(
-    users[0]?.UserID ?? null
-  );
+  const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
 
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
@@ -77,52 +75,107 @@ export function AdminUsersManager({
   const [modalError, setModalError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const selectedUser = users.find((u) => u.UserID === selectedUserId) ?? null;
+  // Chỉ tính các người dùng đang hiển thị trên trang hiện tại.
+  const targets = users.filter((u) => checkedIds.has(u.UserID));
+  // Thao tác một người (mô phỏng, chuyển quyền sở hữu) chỉ dùng khi chọn đúng một người.
+  const selectedUser = targets.length === 1 ? targets[0] : null;
   const isCurrentAdmin = selectedUser?.UserID === currentAdminId;
 
-  const canLock = Boolean(selectedUser && !isCurrentAdmin && selectedUser.Status === "Active");
-  const canUnlock = Boolean(selectedUser && !isCurrentAdmin && selectedUser.Status === "Locked");
+  const manageable = targets.filter((u) => u.UserID !== currentAdminId && u.Role !== "Admin");
+  const lockTargets = manageable.filter((u) => u.Status === "Active");
+  const unlockTargets = manageable.filter((u) => u.Status === "Locked");
+  const roleTargets = manageable;
+
+  const canLock = lockTargets.length > 0;
+  const canUnlock = unlockTargets.length > 0;
   const canImpersonate = Boolean(
     selectedUser &&
       !isCurrentAdmin &&
       selectedUser.Role !== "Admin" &&
       selectedUser.Status === "Active"
   );
-  const canChangeRole = Boolean(selectedUser && !isCurrentAdmin && selectedUser.Role !== "Admin");
+  const canChangeRole = roleTargets.length > 0;
 
-  const handleStatusChange = (nextStatus: "Active" | "Locked") => {
-    if (!selectedUser) return;
+  // Quản trị viên (kể cả chính mình) không thể bị khóa hay đổi vai trò nên không chọn được.
+  const selectableUsers = users.filter((u) => u.UserID !== currentAdminId && u.Role !== "Admin");
+  const allChecked = selectableUsers.length > 0 && selectableUsers.every((u) => checkedIds.has(u.UserID));
+  const toggleUser = (id: number) =>
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleAll = () =>
+    setCheckedIds(allChecked ? new Set() : new Set(selectableUsers.map((u) => u.UserID)));
+
+  const describeTargets = (list: AdminUserRow[]) =>
+    list.length === 1
+      ? `${list[0].FullName} (@${list[0].Username})`
+      : `${list.length} tài khoản đã chọn`;
+
+  // Áp dụng một thao tác cho từng người được chọn; báo số lượng thành công/thất bại.
+  const runBulk = (
+    list: AdminUserRow[],
+    run: (u: AdminUserRow) => Promise<{ error?: string } | undefined>,
+    onDone: () => void,
+  ) => {
+    if (list.length === 0) return;
     setModalError(null);
     startTransition(async () => {
-      const fd = new FormData();
-      fd.append("userId", String(selectedUser.UserID));
-      fd.append("status", nextStatus);
-      const res = await setUserStatusAction({}, fd);
-      if (res?.error) {
-        setModalError(res.error);
-      } else {
-        setIsLockModalOpen(false);
-        setIsUnlockModalOpen(false);
-        router.refresh();
+      const failed: string[] = [];
+      let firstError = "";
+      for (const u of list) {
+        const res = await run(u);
+        if (res?.error) {
+          failed.push(u.Username);
+          firstError ||= res.error;
+        }
       }
+      router.refresh();
+      if (failed.length === 0) {
+        onDone();
+        return;
+      }
+      setModalError(
+        list.length === 1
+          ? firstError
+          : `${list.length - failed.length}/${list.length} thành công. Thất bại: ${failed.join(", ")} (${firstError})`,
+      );
     });
   };
 
+  const handleStatusChange = (nextStatus: "Active" | "Locked") => {
+    runBulk(
+      nextStatus === "Locked" ? lockTargets : unlockTargets,
+      (u) => {
+        const fd = new FormData();
+        fd.append("userId", String(u.UserID));
+        fd.append("status", nextStatus);
+        return setUserStatusAction({}, fd);
+      },
+      () => {
+        setIsLockModalOpen(false);
+        setIsUnlockModalOpen(false);
+        setCheckedIds(new Set());
+      },
+    );
+  };
+
   const handleRoleChange = () => {
-    if (!selectedUser) return;
-    setModalError(null);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.append("userId", String(selectedUser.UserID));
-      fd.append("role", selectedNewRole);
-      const res = await setUserRoleAction({}, fd);
-      if (res?.error) {
-        setModalError(res.error);
-      } else {
+    runBulk(
+      roleTargets,
+      (u) => {
+        const fd = new FormData();
+        fd.append("userId", String(u.UserID));
+        fd.append("role", selectedNewRole);
+        return setUserRoleAction({}, fd);
+      },
+      () => {
         setIsRoleModalOpen(false);
-        router.refresh();
-      }
-    });
+        setCheckedIds(new Set());
+      },
+    );
   };
 
   const itemKey = (type: string, id: number) => `${type}:${id}`;
@@ -307,11 +360,11 @@ export function AdminUsersManager({
               <button
                 type="button"
                 onClick={() => {
-                  if (selectedUser) {
-                    setSelectedNewRole(selectedUser.Role === "TA" ? "User" : selectedUser.Role);
-                    setModalError(null);
-                    setIsRoleModalOpen(true);
-                  }
+                  setSelectedNewRole(
+                    roleTargets.length === 1 && roleTargets[0].Role === "Teacher" ? "Teacher" : "User",
+                  );
+                  setModalError(null);
+                  setIsRoleModalOpen(true);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -374,12 +427,37 @@ export function AdminUsersManager({
         </div>
       </div>
 
+      {checkedIds.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-sm text-primary">
+          <span>
+            Đã chọn <strong>{targets.length}</strong> người dùng
+            {targets.length > 1 && " — mô phỏng và chuyển quyền sở hữu chỉ dùng khi chọn một người"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCheckedIds(new Set())}
+            className="font-semibold hover:underline"
+          >
+            Bỏ chọn
+          </button>
+        </div>
+      )}
+
       <div className="card overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed text-sm">
             <thead>
               <tr className="border-b border-line bg-muted/40 text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                <th className="w-12 px-4 py-3.5 text-center"></th>
+                <th className="w-12 px-4 py-3.5 text-center">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn tất cả người dùng trên trang"
+                    checked={allChecked}
+                    disabled={selectableUsers.length === 0}
+                    onChange={toggleAll}
+                    className="h-4 w-4 cursor-pointer accent-primary"
+                  />
+                </th>
                 <th className="w-[30%] min-w-[200px] px-4 py-3.5 text-left">Người dùng</th>
                 <th className="w-[28%] min-w-[180px] px-4 py-3.5 text-left">Email</th>
                 <th className="w-[18%] min-w-[110px] px-4 py-3.5 text-center">Vai trò</th>
@@ -388,7 +466,7 @@ export function AdminUsersManager({
             </thead>
             <tbody className="divide-y divide-line">
               {users.map((u) => {
-                const isSelected = selectedUserId === u.UserID;
+                const isSelected = checkedIds.has(u.UserID);
                 const isUserCurrentAdmin = u.UserID === currentAdminId;
                 const initial = u.FullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase() ?? "?";
                 const avatarColor = AVATAR_COLORS[u.UserID % AVATAR_COLORS.length];
@@ -396,7 +474,7 @@ export function AdminUsersManager({
                 return (
                   <tr
                     key={u.UserID}
-                    onClick={() => setSelectedUserId(u.UserID)}
+                    onClick={() => u.Role !== "Admin" && !isUserCurrentAdmin && toggleUser(u.UserID)}
                     className={`cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-primary/10"
@@ -405,17 +483,15 @@ export function AdminUsersManager({
                   >
                     <td className="px-4 py-3.5 text-center">
                       <div className="flex items-center justify-center">
-                        <span
-                          className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors ${
-                            isSelected
-                              ? "border-primary bg-surface"
-                              : "border-line hover:border-fg-muted"
-                          }`}
-                        >
-                          {isSelected && (
-                            <span className="h-2 w-2 rounded-full bg-primary" />
-                          )}
-                        </span>
+                        <input
+                          type="checkbox"
+                          aria-label={`Chọn ${u.FullName}`}
+                          checked={isSelected}
+                          disabled={isUserCurrentAdmin || u.Role === "Admin"}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleUser(u.UserID)}
+                          className="h-4 w-4 cursor-pointer accent-primary disabled:cursor-not-allowed"
+                        />
                       </div>
                     </td>
 
@@ -595,10 +671,10 @@ export function AdminUsersManager({
       </Modal>
 
       <Modal
-        isOpen={Boolean(isLockModalOpen && selectedUser)}
+        isOpen={Boolean(isLockModalOpen && lockTargets.length > 0)}
         onClose={() => setIsLockModalOpen(false)}
       >
-        {selectedUser && (
+        {lockTargets.length > 0 && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-rose-600 font-semibold">
@@ -629,9 +705,8 @@ export function AdminUsersManager({
 
             <div className="mt-4 space-y-2 text-sm text-fg-muted">
               <p>
-                Bạn có chắc chắn muốn khóa tài khoản của{" "}
-                <strong className="text-fg font-semibold">{selectedUser.FullName}</strong>{" "}
-                <span className="font-mono text-xs text-fg-muted">(@{selectedUser.Username})</span>?
+                Bạn có chắc chắn muốn khóa{" "}
+                <strong className="text-fg font-semibold">{describeTargets(lockTargets)}</strong>?
               </p>
               <p className="text-xs text-fg-subtle">
                 Người dùng sẽ bị thu hồi toàn bộ phiên hoạt động ngay lập tức và không thể đăng nhập vào hệ thống.
@@ -661,10 +736,10 @@ export function AdminUsersManager({
       </Modal>
 
       <Modal
-        isOpen={Boolean(isUnlockModalOpen && selectedUser)}
+        isOpen={Boolean(isUnlockModalOpen && unlockTargets.length > 0)}
         onClose={() => setIsUnlockModalOpen(false)}
       >
-        {selectedUser && (
+        {unlockTargets.length > 0 && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-emerald-600 font-semibold">
@@ -695,9 +770,8 @@ export function AdminUsersManager({
 
             <div className="mt-4 space-y-2 text-sm text-fg-muted">
               <p>
-                Bạn có chắc chắn muốn mở khóa tài khoản của{" "}
-                <strong className="text-fg font-semibold">{selectedUser.FullName}</strong>{" "}
-                <span className="font-mono text-xs text-fg-muted">(@{selectedUser.Username})</span>?
+                Bạn có chắc chắn muốn mở khóa{" "}
+                <strong className="text-fg font-semibold">{describeTargets(unlockTargets)}</strong>?
               </p>
               <p className="text-xs text-fg-subtle">
                 Người dùng sẽ có thể đăng nhập và sử dụng hệ thống bình thường trở lại.
@@ -727,10 +801,10 @@ export function AdminUsersManager({
       </Modal>
 
       <Modal
-        isOpen={Boolean(isRoleModalOpen && selectedUser)}
+        isOpen={Boolean(isRoleModalOpen && roleTargets.length > 0)}
         onClose={() => setIsRoleModalOpen(false)}
       >
-        {selectedUser && (
+        {roleTargets.length > 0 && (
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-fg font-semibold">
@@ -762,8 +836,7 @@ export function AdminUsersManager({
             <div className="mt-4 space-y-3 text-sm text-fg-muted">
               <p>
                 Chọn vai trò mới cho{" "}
-                <strong className="text-fg font-semibold">{selectedUser.FullName}</strong>{" "}
-                <span className="font-mono text-xs text-fg-muted">(@{selectedUser.Username})</span>:
+                <strong className="text-fg font-semibold">{describeTargets(roleTargets)}</strong>:
               </p>
 
               <div className="space-y-2">

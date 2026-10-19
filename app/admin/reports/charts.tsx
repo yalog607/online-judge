@@ -64,7 +64,8 @@ export function PassFailDonutChart({
             />
           ) : (
             <>
-              {/* Pass segment (Green) */}
+              {/* Pass segment (Green). Không vẽ đoạn có độ dài 0: nét tròn (round cap) sẽ lộ thành chấm. */}
+              {passCount > 0 && (
               <circle
                 cx={size / 2}
                 cy={size / 2}
@@ -74,10 +75,12 @@ export function PassFailDonutChart({
                 fill="transparent"
                 strokeDasharray={`${passStrokeDash} ${circumference}`}
                 strokeDashoffset={0}
-                strokeLinecap="round"
+                strokeLinecap="butt"
                 className="transition-all duration-700 ease-out"
               />
+              )}
               {/* Fail segment (Red) */}
+              {failCount > 0 && (
               <circle
                 cx={size / 2}
                 cy={size / 2}
@@ -87,9 +90,10 @@ export function PassFailDonutChart({
                 fill="transparent"
                 strokeDasharray={`${failStrokeDash} ${circumference}`}
                 strokeDashoffset={-passStrokeDash}
-                strokeLinecap="round"
+                strokeLinecap="butt"
                 className="transition-all duration-700 ease-out"
               />
+              )}
             </>
           )}
         </svg>
