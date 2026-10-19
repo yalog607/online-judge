@@ -1,7 +1,9 @@
+import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { getSubmission } from "@/modules/submission/repo";
+import { listPublicTestcases } from "@/modules/problem/repo";
 import { VerdictBadge } from "@/components/badge";
 import { SubmissionLive } from "@/components/submission-live";
 import { DomainError } from "@/db/exec";
@@ -28,6 +30,16 @@ export default async function SubmissionDetailPage({
   if (!detail) notFound();
 
   const isPending = detail.Result === "Pending" || detail.Result === "Judging";
+  const publicCases = new Map(
+    (await listPublicTestcases(detail.ProblemID)).map((c) => [c.TestCaseID, c]),
+  );
+  const emptyMessage = isPending
+    ? "Đang chờ chấm…"
+    : detail.Result === "CE"
+      ? "Lỗi biên dịch: mã nguồn không biên dịch được nên chưa chạy testcase nào."
+      : detail.Result === "IE"
+        ? "Lỗi hệ thống khi chấm bài, chưa có kết quả testcase."
+        : "Không có kết quả testcase.";
 
   const rawContestId = sParams?.contestId ? Number(sParams.contestId) : (detail.ContestID ?? undefined);
   const contestId = rawContestId && !isNaN(rawContestId) ? rawContestId : undefined;
@@ -161,21 +173,47 @@ export default async function SubmissionDetailPage({
               </tr>
             </thead>
             <tbody>
-              {testcases.map((t, i) => (
-                <tr key={t.TestCaseID} className="border-t border-line">
-                  <td className="px-4 py-2">
-                    #{i + 1} {t.IsHidden && <span className="text-xs text-fg-muted">(ẩn)</span>}
-                  </td>
-                  <td className="px-4 py-2">
-                    <VerdictBadge value={t.Verdict} />
-                  </td>
-                  <td className="px-4 py-2">{t.Runtime ? `${t.Runtime} ms` : "—"}</td>
-                </tr>
-              ))}
+              {testcases.map((t, i) => {
+                const pub = !t.IsHidden ? publicCases.get(t.TestCaseID) : undefined;
+                return (
+                  <Fragment key={t.TestCaseID}>
+                    <tr className="border-t border-line">
+                      <td className="px-4 py-2">
+                        #{i + 1} {t.IsHidden && <span className="text-xs text-fg-muted">(ẩn)</span>}
+                      </td>
+                      <td className="px-4 py-2">
+                        <VerdictBadge value={t.Verdict} />
+                      </td>
+                      <td className="px-4 py-2">{t.Runtime ? `${t.Runtime} ms` : "—"}</td>
+                    </tr>
+                    {pub && (
+                      <tr>
+                        <td colSpan={3} className="px-4 pb-3">
+                          <details className="rounded-lg border border-line bg-muted/40 px-3 py-2 text-xs">
+                            <summary className="cursor-pointer font-medium text-fg-muted">
+                              Xem testcase công khai
+                            </summary>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                              <div>
+                                <div className="mb-1 text-fg-muted">Đầu vào</div>
+                                <pre className="overflow-x-auto rounded bg-code-bg p-2 font-mono">{pub.InputData}</pre>
+                              </div>
+                              <div>
+                                <div className="mb-1 text-fg-muted">Đầu ra mong đợi</div>
+                                <pre className="overflow-x-auto rounded bg-code-bg p-2 font-mono">{pub.ExpectedOutput}</pre>
+                              </div>
+                            </div>
+                          </details>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
               {testcases.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-4 py-8 text-center text-fg-muted">
-                    Đang chờ chấm…
+                    {emptyMessage}
                   </td>
                 </tr>
               )}

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { verifySession } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import * as problemRepo from "@/modules/problem/repo";
+import { rejudgeProblemSubmissions } from "@/modules/judge/service";
 import { testcaseInputSchema } from "@/modules/problem/schema";
 
 const replaceTestcasesSchema = z.object({
@@ -73,6 +74,7 @@ export async function POST(
     }
 
     await problemRepo.replaceTestcases(problemId, session.userId, parsed.data.testcases);
+    await rejudgeProblemSubmissions(problemId);
     return NextResponse.json({
       success: true,
       message: "Cập nhật testcase thành công.",

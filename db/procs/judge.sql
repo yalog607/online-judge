@@ -141,3 +141,38 @@ BEGIN
     WHERE SubmissionID = @SubmissionID AND Result = 'Judging' AND ClaimedBy = @WorkerID;
 END
 GO
+
+-- Sau khi sửa testcase: chấm lại bài nộp mới nhất của mỗi người đã nộp bài này (mỗi người một lần).
+-- Trả về danh sách SubmissionID để web đẩy lại vào queue.
+CREATE OR ALTER PROCEDURE app.usp_Judge_RejudgeProblemLatest
+    @ProblemID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @Ids TABLE (SubmissionID INT PRIMARY KEY);
+
+    BEGIN TRANSACTION;
+
+    ;WITH latest AS (
+        SELECT SubmissionID, Result,
+               ROW_NUMBER() OVER (PARTITION BY UserID ORDER BY SubmitTime DESC, SubmissionID DESC) AS rn
+        FROM dbo.Submissions
+        WHERE ProblemID = @ProblemID
+    )
+    UPDATE s
+    SET Result = 'Pending', ClaimedBy = NULL, ClaimedAt = NULL, JudgedAt = NULL,
+        Runtime = NULL, Memory = NULL, PassedCases = NULL, Score = NULL, MaxScore = NULL
+    OUTPUT inserted.SubmissionID INTO @Ids
+    FROM dbo.Submissions s
+    JOIN latest l ON l.SubmissionID = s.SubmissionID AND l.rn = 1
+    WHERE l.Result NOT IN ('Pending', 'Judging');
+
+    DELETE sr FROM dbo.SubmissionResults sr JOIN @Ids i ON i.SubmissionID = sr.SubmissionID;
+
+    COMMIT TRANSACTION;
+
+    SELECT SubmissionID FROM @Ids ORDER BY SubmissionID;
+END
+GO

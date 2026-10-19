@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { submitCode } from "@/modules/submission/service";
-import { dispatchSubmission } from "@/modules/judge/service";
+import { dispatchSubmission, rejudgeProblemSubmissions } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
 import { notifyProblemStatus } from "@/modules/notification/events";
@@ -141,6 +141,7 @@ export async function updateProblemAction(
     });
     if (hasTestcaseChanges) {
       await repo.replaceTestcases(problemId, actor.userId, testcases);
+      await rejudgeProblemSubmissions(problemId);
     }
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Cập nhật bài tập thất bại." };
