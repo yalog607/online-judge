@@ -48,7 +48,7 @@ export default async function NewProblemPage({
       {isTA && (
         <p className="mb-4 text-sm text-fg-muted">
           Bài tập bạn tạo sẽ được đặt ở trạng thái &quot;Chờ duyệt&quot;. Giảng viên hoặc Quản trị
-          viên cần duyệt trước khi hiển thị cho học sinh.
+          viên cần duyệt trước khi hiển thị cho học viên.
         </p>
       )}
       {isTA && classes.length === 0 ? (

@@ -176,7 +176,7 @@ export default async function AdminReportsPage({
 
             <div className="card p-4">
               <span className="text-xs text-fg-muted font-medium">
-                {type === "class" ? "Số lượng học sinh" : "Số lượng thí sinh"}
+                {type === "class" ? "Số lượng học viên" : "Số lượng thí sinh"}
               </span>
               <div className="mt-1 text-2xl font-bold text-fg">
                 {"TotalStudents" in summary ? summary.TotalStudents : summary.TotalParticipants}
@@ -231,7 +231,7 @@ export default async function AdminReportsPage({
                     : "text-fg-muted hover:text-fg"
                 }`}
               >
-                {type === "class" ? "Chi tiết theo Học sinh" : "Chi tiết theo Thí sinh"} ({people.length})
+                {type === "class" ? "Chi tiết theo Học viên" : "Chi tiết theo Thí sinh"} ({people.length})
               </Link>
 
               <Link
@@ -246,14 +246,14 @@ export default async function AdminReportsPage({
               </Link>
             </div>
 
-            {/* TAB 1: Danh sách học sinh / thí sinh */}
+            {/* TAB 1: Danh sách học viên / thí sinh */}
             {tab === "people" && (
               <div className="card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full table-fixed text-sm">
                     <thead>
                       <tr className="border-b border-line bg-muted/40 text-xs font-semibold text-fg-muted uppercase tracking-wider">
-                        <th className="w-[24%] min-w-[180px] px-4 py-3.5 text-left">Học sinh / Thí sinh</th>
+                        <th className="w-[24%] min-w-[180px] px-4 py-3.5 text-left">Học viên / Thí sinh</th>
                         <th className="w-[14%] min-w-[110px] px-4 py-3.5 text-left">Tên đăng nhập</th>
                         <th className="w-[20%] min-w-[160px] px-4 py-3.5 text-left">Email</th>
                         <th className="w-[10%] min-w-[90px] px-3 py-3.5 text-center">
@@ -298,7 +298,7 @@ export default async function AdminReportsPage({
                       })}
 
                       {people.length === 0 && (
-                        <EmptyState variant="cell" colSpan={7}>Chưa có dữ liệu học sinh/thí sinh nộp bài.</EmptyState>
+                        <EmptyState variant="cell" colSpan={7}>Chưa có dữ liệu học viên/thí sinh nộp bài.</EmptyState>
                       )}
                     </tbody>
                   </table>

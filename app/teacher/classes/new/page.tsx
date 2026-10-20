@@ -9,7 +9,7 @@ export default async function NewClassPage() {
       <div>
         <h1 className="text-2xl font-semibold">Tạo lớp học mới</h1>
         <p className="mt-1 text-fg-muted">
-          Thiết lập thông tin lớp học và mã mời để học sinh có thể tham gia.
+          Thiết lập thông tin lớp học và mã mời để học viên có thể tham gia.
         </p>
       </div>
 

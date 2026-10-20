@@ -52,7 +52,7 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     return NextResponse.json(
-      { error: "Không thể xuất danh sách học sinh." },
+      { error: "Không thể xuất danh sách học viên." },
       { status: 500 }
     );
   }

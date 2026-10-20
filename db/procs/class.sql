@@ -280,7 +280,7 @@ BEGIN
        AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @ActorID)
        AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
     BEGIN
-        THROW 50026, N'Bạn không có quyền xem danh sách học sinh lớp này.', 1;
+        THROW 50026, N'Bạn không có quyền xem danh sách học viên lớp này.', 1;
     END;
 
     SELECT 
@@ -517,7 +517,7 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50027, N'Bạn không có quyền thêm học sinh vào lớp này.', 1;
+            THROW 50027, N'Bạn không có quyền thêm học viên vào lớp này.', 1;
         END;
 
         DECLARE @StudentID INT;
@@ -532,7 +532,7 @@ BEGIN
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
         BEGIN
-            THROW 50029, N'Học sinh này đã ở trong lớp học rồi.', 1;
+            THROW 50029, N'Học viên này đã ở trong lớp học rồi.', 1;
         END;
 
         INSERT dbo.Class_Student (ClassID, UserID, JoinDate, ProgressPercent)
@@ -574,12 +574,12 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50027, N'Bạn không có quyền xóa học sinh khỏi lớp này.', 1;
+            THROW 50027, N'Bạn không có quyền xóa học viên khỏi lớp này.', 1;
         END;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
         BEGIN
-            THROW 50030, N'Học sinh không có trong lớp này.', 1;
+            THROW 50030, N'Học viên không có trong lớp này.', 1;
         END;
 
         DELETE FROM dbo.Class_Student

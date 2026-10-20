@@ -132,7 +132,7 @@ export function ImportStudentsDialog({
                     Nhập danh sách học viên từ Excel
                   </h3>
                   <p className="text-xs text-fg-muted">
-                    Thêm hàng loạt học sinh vào lớp học bằng tệp định dạng .xlsx
+                    Thêm hàng loạt học viên vào lớp học bằng tệp định dạng .xlsx
                   </p>
                 </div>
               </div>

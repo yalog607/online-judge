@@ -43,7 +43,7 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
       
       {isTA && problem.Status === "Pending" && (
         <p className="mb-4 text-sm text-fg-muted">
-          Bài tập của bạn đang ở trạng thái &quot;Chờ duyệt&quot;. Giảng viên hoặc Quản trị viên cần duyệt trước khi hiển thị cho học sinh.
+          Bài tập của bạn đang ở trạng thái &quot;Chờ duyệt&quot;. Giảng viên hoặc Quản trị viên cần duyệt trước khi hiển thị cho học viên.
         </p>
       )}
 

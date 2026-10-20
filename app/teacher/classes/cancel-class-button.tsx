@@ -20,7 +20,7 @@ export function CancelClassButton({
   const cancel = async () => {
     const ok = await dialog.confirm({
       title: "Hủy lớp học",
-      message: `Hủy lớp “${className}”? Học sinh sẽ chỉ xem được lịch sử và không thể nộp bài mới.`,
+      message: `Hủy lớp “${className}”? Học viên sẽ chỉ xem được lịch sử và không thể nộp bài mới.`,
       confirmText: "Hủy lớp",
       cancelText: "Giữ lại",
       danger: true,
