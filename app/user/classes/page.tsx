@@ -51,6 +51,21 @@ export default async function UserClassesPage({
         <JoinClassForm />
       </div>
 
+      <form className="flex flex-wrap gap-3 card p-3" method="get">
+        <input
+          name="q"
+          defaultValue={sp.q}
+          placeholder="Tìm theo tên lớp học..."
+          className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-fg"
+        />
+        <button
+          type="submit"
+          className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg"
+        >
+          Tìm kiếm
+        </button>
+      </form>
+
       <ClassSection
         title={`Lớp học bạn đã tham gia (${allMine.length})`}
         empty="Bạn chưa tham gia lớp học nào. Hãy nhập mã mời phía trên để tham gia lớp."

@@ -58,7 +58,7 @@ export default async function AdminDashboard() {
     <div className="flex flex-col gap-5 pt-8">
       <PageHeader title="Tổng quan hệ thống" description="Số liệu vận hành 24 giờ gần nhất." />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon="users"
           label="Người dùng"
@@ -79,13 +79,6 @@ export default async function AdminDashboard() {
           value={s.QueueCount}
           hint={`Worker ${s.WorkersActive}/${s.WorkersTotal} hoạt động`}
           tone={s.WorkersTotal > 0 && s.WorkersActive === 0 ? "down" : "neutral"}
-        />
-        <StatCard
-          icon="flag"
-          label="Lỗi hệ thống"
-          value={s.Errors24h}
-          hint={s.Errors24h > 0 ? "Cần kiểm tra" : "Không có lỗi"}
-          tone={s.Errors24h > 0 ? "down" : "neutral"}
         />
       </div>
 
