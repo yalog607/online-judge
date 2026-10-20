@@ -47,6 +47,7 @@ export async function createSubmission(input: {
   language: Language;
   sourceCode: string;
   contestId?: number;
+  classId?: number;
 }): Promise<number> {
   const { rows } = await execProc<{ SubmissionID: number }>("usp_Submission_Create", {
     UserID: input.userId,
@@ -54,6 +55,7 @@ export async function createSubmission(input: {
     Language: input.language,
     SourceCode: input.sourceCode,
     ContestID: input.contestId ?? null,
+    ClassID: input.classId ?? null,
   });
   return rows[0].SubmissionID;
 }

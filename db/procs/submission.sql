@@ -3,7 +3,8 @@ CREATE OR ALTER PROCEDURE app.usp_Submission_Create
     @ProblemID INT,
     @SourceCode NVARCHAR(MAX),
     @Language VARCHAR(20),
-    @ContestID INT = NULL
+    @ContestID INT = NULL,
+    @ClassID INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -73,11 +74,25 @@ BEGIN
 
         IF app.ufn_CanUserAccessProblem(@ProblemID, @UserID) = 0
             THROW 50021, N'Bạn không có quyền nộp bài cho bài tập này.', 1;
+
+        -- Chỉ tính vào lớp khi học viên nộp từ trong lớp đó và lớp thật sự có bài tập này.
+        -- Nộp từ danh sách bài công khai thì không gắn với lớp nào.
+        IF @ClassID IS NOT NULL AND NOT EXISTS (
+            SELECT 1
+            FROM dbo.Class_Student cs
+            JOIN dbo.Class_Problem cp ON cp.ClassID = cs.ClassID
+            JOIN dbo.Classes c ON c.ClassID = cs.ClassID
+            WHERE cs.ClassID = @ClassID AND cs.UserID = @UserID AND cp.ProblemID = @ProblemID
+              AND c.IsCancelled = 0 AND c.ApprovalStatus = 'Approved'
+        )
+            SET @ClassID = NULL;
     END;
 
+    IF @ContestID IS NOT NULL SET @ClassID = NULL;
+
         BEGIN TRANSACTION;
-        INSERT dbo.Submissions (UserID, ProblemID, ContestID, SourceCode, Language)
-        VALUES (@UserID, @ProblemID, @ContestID, @SourceCode, @Language);
+        INSERT dbo.Submissions (UserID, ProblemID, ContestID, ClassID, SourceCode, Language)
+        VALUES (@UserID, @ProblemID, @ContestID, @ClassID, @SourceCode, @Language);
         
         DECLARE @NewID INT = SCOPE_IDENTITY();
         COMMIT TRANSACTION;

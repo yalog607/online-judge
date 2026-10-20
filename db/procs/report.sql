@@ -42,7 +42,7 @@ BEGIN
     JOIN dbo.Users t ON t.UserID = c.TeacherID
     LEFT JOIN dbo.Class_Student cs ON cs.ClassID = c.ClassID
     LEFT JOIN dbo.Class_Problem cp ON cp.ClassID = c.ClassID
-    LEFT JOIN dbo.Submissions s ON s.UserID = cs.UserID AND s.ProblemID = cp.ProblemID AND s.Result NOT IN ('Pending', 'Judging')
+    LEFT JOIN dbo.Submissions s ON s.UserID = cs.UserID AND s.ProblemID = cp.ProblemID AND s.ClassID = cp.ClassID AND s.Result NOT IN ('Pending', 'Judging')
     WHERE c.ClassID = @ClassID
     GROUP BY c.ClassID, c.ClassName, t.FullName;
 
@@ -63,7 +63,7 @@ BEGIN
     FROM dbo.Class_Problem cp
     JOIN dbo.Problems p ON p.ProblemID = cp.ProblemID
     LEFT JOIN dbo.Class_Student cs ON cs.ClassID = cp.ClassID
-    LEFT JOIN dbo.Submissions s ON s.ProblemID = p.ProblemID AND s.UserID = cs.UserID AND s.Result NOT IN ('Pending', 'Judging')
+    LEFT JOIN dbo.Submissions s ON s.ProblemID = p.ProblemID AND s.UserID = cs.UserID AND s.ClassID = cp.ClassID AND s.Result NOT IN ('Pending', 'Judging')
     WHERE cp.ClassID = @ClassID
     GROUP BY p.ProblemID, p.Title, p.Difficulty
     ORDER BY p.ProblemID ASC;
@@ -87,7 +87,7 @@ BEGIN
     FROM dbo.Class_Student cs
     JOIN dbo.Users u ON u.UserID = cs.UserID
     LEFT JOIN dbo.Class_Problem cp ON cp.ClassID = cs.ClassID
-    LEFT JOIN dbo.Submissions s ON s.UserID = u.UserID AND s.ProblemID = cp.ProblemID AND s.Result NOT IN ('Pending', 'Judging')
+    LEFT JOIN dbo.Submissions s ON s.UserID = u.UserID AND s.ProblemID = cp.ProblemID AND s.ClassID = cp.ClassID AND s.Result NOT IN ('Pending', 'Judging')
     WHERE cs.ClassID = @ClassID
     GROUP BY u.UserID, u.FullName, u.Username, u.Email, cs.ProgressPercent
     ORDER BY ProblemsSolved DESC, PassRatePercent DESC;
@@ -387,7 +387,7 @@ BEGIN
             WHERE cp.ClassID = c.ClassID
               AND EXISTS (
                   SELECT 1 FROM dbo.Submissions s
-                  WHERE s.UserID = @TargetUserID AND s.ProblemID = cp.ProblemID AND s.Result = 'AC'
+                  WHERE s.UserID = @TargetUserID AND s.ProblemID = cp.ProblemID AND s.ClassID = cp.ClassID AND s.Result = 'AC'
               )
         ) AS SolvedCount,
         (

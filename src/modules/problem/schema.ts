@@ -59,6 +59,7 @@ export const submitCodeSchema = z.object({
       message: `Mã nguồn tối đa ${MAX_SOURCE_BYTES / 1024}KB.`,
     }),
   contestId: z.coerce.number().int().positive().optional(),
+  classId: z.coerce.number().int().positive().optional(),
 });
 
 export const COMPARE_MODES = ["exact", "unordered", "float"] as const;

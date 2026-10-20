@@ -3,6 +3,8 @@ import Image from "next/image";
 import { logoutAction, endImpersonationAction } from "@/modules/auth/actions";
 import { Icon } from "@/components/icon";
 import { NavLinks, type NavLink } from "@/components/nav-links";
+import { Suspense } from "react";
+import { ImpersonationNotice } from "@/components/impersonation-notice";
 import { NotificationBell, NotificationProvider } from "@/components/notification-center";
 import { verifySession } from "@/lib/dal";
 import { unreadCountFor } from "@/modules/notification/service";
@@ -130,6 +132,11 @@ export async function AppShell({
             </div>
           </header>
           <main className="flex-1 px-8 pb-14 max-[820px]:px-4">{children}</main>
+          {impersonating && (
+            <Suspense fallback={null}>
+              <ImpersonationNotice />
+            </Suspense>
+          )}
         </div>
       </div>
     </NotificationProvider>

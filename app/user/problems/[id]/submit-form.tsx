@@ -116,6 +116,7 @@ export function SubmitForm({
     >
       <input type="hidden" name="problemId" value={problemId} />
       {contestId && <input type="hidden" name="contestId" value={contestId} />}
+      {classId && !contestId && <input type="hidden" name="classId" value={classId} />}
       <div className="flex items-center justify-between gap-3 border-b border-line px-3.5 py-3">
         <Select
           name="language"
