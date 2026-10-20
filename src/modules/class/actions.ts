@@ -109,14 +109,14 @@ export async function addStudentAction(
   const actor = await requireRole("Teacher");
   const identifier = String(formData.get("identifier") || "").trim();
   if (!identifier) {
-    return { error: "Vui lòng nhập email hoặc tên đăng nhập của học sinh." };
+    return { error: "Vui lòng nhập email hoặc tên đăng nhập của học viên." };
   }
 
   try {
     const studentId = await classRepository.addStudent(classId, actor.userId, identifier);
     await notifyStudentAdded(classId, studentId);
     revalidatePath(`/teacher/classes/${classId}`);
-    return { ok: true, message: "Thêm học sinh vào lớp thành công!" };
+    return { ok: true, message: "Thêm học viên vào lớp thành công!" };
   } catch (error) {
     if (error instanceof DomainError) {
       return { error: error.message };

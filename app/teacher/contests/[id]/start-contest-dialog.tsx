@@ -83,7 +83,7 @@ export function StartContestDialog({
 
             <div className="mt-4 flex flex-col gap-4">
               <p className="text-xs text-fg-muted leading-relaxed">
-                Hệ thống sẽ cập nhật thời gian bắt đầu của kỳ thi <strong>{contestName}</strong> về thời điểm hiện tại và mở đề thi ngay lập tức cho học sinh làm bài.
+                Hệ thống sẽ cập nhật thời gian bắt đầu của kỳ thi <strong>{contestName}</strong> về thời điểm hiện tại và mở đề thi ngay lập tức cho học viên làm bài.
               </p>
 
               {error && (

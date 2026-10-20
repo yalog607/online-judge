@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { getUserById } from "@/modules/auth/repo";
@@ -24,12 +23,6 @@ export default async function ProfilePage() {
             Cập nhật họ tên, ảnh đại diện và mật khẩu.
           </p>
         </div>
-        <Link
-          href="/user"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-xs"
-        >
-          <span>📊 Xem báo cáo tiến độ cá nhân →</span>
-        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

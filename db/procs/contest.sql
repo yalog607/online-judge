@@ -455,7 +455,7 @@ BEGIN
     IF @CreatorID IS NULL
         THROW 50040, N'Kỳ thi không tồn tại.', 1;
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher'))
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher', 'TA'))
         THROW 50043, N'Tài khoản này không thể tham gia kỳ thi.', 1;
 
     IF @CreatorID = @UserID
@@ -471,6 +471,7 @@ BEGIN
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @UserID)
            AND NOT EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID AND TeacherID = @UserID)
+           AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @UserID)
            AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
         BEGIN
             THROW 50042, N'Bạn không thuộc lớp học của kỳ thi này.', 1;

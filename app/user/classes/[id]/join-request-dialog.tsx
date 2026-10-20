@@ -82,7 +82,7 @@ export function JoinRequestDialog({
                 required
                 rows={4}
                 maxLength={500}
-                placeholder="Nhập mã số sinh viên, họ tên, lớp chuyên ngành hoặc lời nhắn gửi giảng viên..."
+                placeholder="Nhập mã số học viên, họ tên, lớp chuyên ngành hoặc lời nhắn gửi giảng viên..."
                 className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary resize-none"
               />
               <span className="mt-1 block text-[11px] text-fg-muted">

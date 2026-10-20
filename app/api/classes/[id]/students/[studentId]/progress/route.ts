@@ -19,7 +19,7 @@ export async function GET(
 
     if (isNaN(classId) || isNaN(studentId)) {
       return NextResponse.json(
-        { error: "Tham số lớp học hoặc sinh viên không hợp lệ." },
+        { error: "Tham số lớp học hoặc học viên không hợp lệ." },
         { status: 400 }
       );
     }
@@ -39,7 +39,7 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     return NextResponse.json(
-      { error: "Không thể lấy thông tin chi tiết tiến độ sinh viên." },
+      { error: "Không thể lấy thông tin chi tiết tiến độ học viên." },
       { status: 500 }
     );
   }

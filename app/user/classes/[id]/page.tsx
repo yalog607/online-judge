@@ -172,7 +172,7 @@ export default async function UserClassDetailPage({
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Sĩ số lớp
           </span>
-          <p className="mt-2 text-lg font-bold text-fg">{classDetail.StudentCount} học sinh</p>
+          <p className="mt-2 text-lg font-bold text-fg">{classDetail.StudentCount} học viên</p>
         </div>
 
         {Boolean(classDetail.IsJoined) && (

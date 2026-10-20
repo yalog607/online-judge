@@ -560,7 +560,7 @@ export class ClassRepository implements IClassRepository {
 
     const student = res.sets[0]?.[0] as StudentProgressSummary | undefined;
     if (!student) {
-      throw new DomainError(50032, "Không tìm thấy thông tin tiến độ sinh viên.");
+      throw new DomainError(50032, "Không tìm thấy thông tin tiến độ học viên.");
     }
     const problems = (res.sets[1] as StudentProblemProgress[] | undefined) ?? [];
     const submissions = (res.sets[2] as StudentClassSubmission[] | undefined) ?? [];

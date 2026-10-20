@@ -68,7 +68,7 @@ BEGIN
     GROUP BY p.ProblemID, p.Title, p.Difficulty
     ORDER BY p.ProblemID ASC;
 
-    -- 3. Thống kê theo từng học sinh trong lớp
+    -- 3. Thống kê theo từng học viên trong lớp
     SELECT
         u.UserID,
         u.FullName,

@@ -70,7 +70,7 @@ export async function generateExcelReport(params: ExcelReportParams): Promise<Bu
   summarySheet.addRow({ metric: "Tên đối tượng", value: params.summary.name });
   summarySheet.addRow({ metric: "Người phụ trách / Tạo", value: params.summary.creatorOrTeacher });
   summarySheet.addRow({
-    metric: params.type === "class" ? "Số lượng học sinh" : "Số lượng thí sinh",
+    metric: params.type === "class" ? "Số lượng học viên" : "Số lượng thí sinh",
     value: params.summary.totalPeople,
   });
   summarySheet.addRow({ metric: "Số lượng bài tập", value: params.summary.totalProblems });
@@ -121,7 +121,7 @@ export async function generateExcelReport(params: ExcelReportParams): Promise<Bu
 
   // 3. SHEET DANH SÁCH THÀNH VIÊN / THÍ SINH
   const peopleSheet = workbook.addWorksheet(
-    params.type === "class" ? "Danh_Sach_Hoc_Sinh" : "Danh_Sach_Thi_Sinh",
+    params.type === "class" ? "Danh_Sach_Hoc_Vien" : "Danh_Sach_Thi_Sinh",
     { views: [{ showGridLines: true }] },
   );
 

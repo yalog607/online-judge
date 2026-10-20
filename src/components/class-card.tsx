@@ -55,7 +55,7 @@ export function ClassCard({
       <div className="mt-6 flex items-center justify-between border-t border-line pt-3 text-xs text-fg-muted">
         <span>
           GV: {teacherName}
-          {studentCount !== undefined ? ` · ${studentCount} học sinh` : ""}
+          {studentCount !== undefined ? ` · ${studentCount} học viên` : ""}
         </span>
         <Link href={href} className="font-medium text-fg hover:underline">
           {ctaLabel} →

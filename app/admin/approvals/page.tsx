@@ -58,7 +58,7 @@ export default async function AdminApprovalsPage({
             <thead>
               <tr className="border-b border-line text-left text-fg-muted">
                 <th className="px-5 py-3">Lớp học</th>
-                <th className="px-5 py-3">Học sinh (đề cử)</th>
+                <th className="px-5 py-3">Học viên (đề cử)</th>
                 <th className="px-5 py-3">Giáo viên (người gửi)</th>
                 <th className="px-5 py-3">Ngày gửi</th>
                 <th className="px-5 py-3">Trạng thái</th>

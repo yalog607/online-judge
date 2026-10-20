@@ -73,7 +73,7 @@ export function TeacherClassStudentsManager({
           throw err;
         }
         setModalError(
-          err instanceof Error ? err.message : "Mô phỏng học sinh thất bại."
+          err instanceof Error ? err.message : "Mô phỏng học viên thất bại."
         );
       }
     });
@@ -84,10 +84,10 @@ export function TeacherClassStudentsManager({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-fg">
-            Học sinh trong lớp ({students.length})
+            Học viên trong lớp ({students.length})
           </h2>
           <p className="text-xs text-fg-muted">
-            Xem danh sách, theo dõi tiến độ và mô phỏng trải nghiệm của học sinh.
+            Xem danh sách, theo dõi tiến độ và mô phỏng trải nghiệm của học viên.
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export function TeacherClassStudentsManager({
             <thead className="border-b border-line bg-muted/40 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               <tr>
                 <th className="w-12 px-4 py-3.5 text-center"></th>
-                <th className="px-4 py-3.5">Học sinh</th>
+                <th className="px-4 py-3.5">Học viên</th>
                 <th className="px-4 py-3.5">Email</th>
                 <th className="px-4 py-3.5">Ngày tham gia</th>
                 <th className="px-4 py-3.5 text-center">Tiến độ</th>
@@ -177,8 +177,8 @@ export function TeacherClassStudentsManager({
                     className="px-4 py-8 text-center text-fg-muted"
                   >
                     {students.length === 0
-                      ? "Chưa có học sinh nào tham gia lớp học này."
-                      : "Không tìm thấy học sinh nào phù hợp."}
+                      ? "Chưa có học viên nào tham gia lớp học này."
+                      : "Không tìm thấy học viên nào phù hợp."}
                   </td>
                 </tr>
               ) : (
@@ -255,7 +255,7 @@ export function TeacherClassStudentsManager({
                             setProgressStudent(s);
                           }}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                          title="Bấm để xem chi tiết tiến độ sinh viên"
+                          title="Bấm để xem chi tiết tiến độ học viên"
                         >
                           <span>{s.ProgressPercent}%</span>
                         </button>
@@ -309,7 +309,7 @@ export function TeacherClassStudentsManager({
         {studentTotalPages > 1 && (
           <div className="flex items-center justify-between border-t border-line px-4 py-3 text-sm text-fg-muted">
             <span>
-              Trang {currentStudentPage}/{studentTotalPages} · {filteredStudents.length} học sinh
+              Trang {currentStudentPage}/{studentTotalPages} · {filteredStudents.length} học viên
             </span>
             <div className="flex gap-1">
               <button
@@ -363,7 +363,7 @@ export function TeacherClassStudentsManager({
                   />
                 </svg>
                 <h3 className="text-lg font-semibold text-fg">
-                  Xác nhận mô phỏng học sinh
+                  Xác nhận mô phỏng học viên
                 </h3>
               </div>
               <button
@@ -383,13 +383,13 @@ export function TeacherClassStudentsManager({
 
             <div className="mt-4 space-y-3 text-sm text-fg-muted">
               <p>
-                Bạn sắp chuyển sang phiên làm việc của học sinh{" "}
+                Bạn sắp chuyển sang phiên làm việc của học viên{" "}
                 <strong className="text-fg font-semibold">
                   {selectedStudent.FullName}
                 </strong>.
               </p>
               <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                Lưu ý: Mọi hoạt động làm bài hoặc xem tài liệu sẽ mang danh nghĩa của học sinh này. Bạn có thể quay lại giao diện Giảng viên bất kỳ lúc nào bằng nút &quot;Thoát mô phỏng&quot; ở đầu trang.
+                Lưu ý: Mọi hoạt động làm bài hoặc xem tài liệu sẽ mang danh nghĩa của học viên này. Bạn có thể quay lại giao diện Giảng viên bất kỳ lúc nào bằng nút &quot;Thoát mô phỏng&quot; ở đầu trang.
               </div>
             </div>
 

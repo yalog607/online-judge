@@ -22,12 +22,12 @@ export function AddStudentForm({ classId }: { classId: number }) {
         type="text"
         name="identifier"
         id="identifier"
-        placeholder="Nhập email hoặc tên đăng nhập của học sinh..."
+        placeholder="Nhập email hoặc tên đăng nhập của học viên..."
         required
         className="flex-1 rounded-lg border border-line bg-muted px-4 py-2.5 text-sm text-fg outline-none focus:border-primary focus:bg-surface"
       />
       <SubmitButton className="whitespace-nowrap text-sm py-2">
-        + Thêm học sinh
+        + Thêm học viên
       </SubmitButton>
       {state.error && <FormError message={state.error} />}
       {state.ok && (
