@@ -116,7 +116,7 @@ export function StudentProgressModal({
           {loading && (
             <div className="flex flex-col items-center justify-center py-16 text-fg-muted">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
-              <p className="text-sm">Đang tải chi tiết tiến độ sinh viên...</p>
+              <p className="text-sm">Đang tải chi tiết tiến độ học viên...</p>
             </div>
           )}
 
@@ -317,7 +317,7 @@ export function StudentProgressModal({
                 <div className="card overflow-hidden rounded-xl border border-line">
                   {data.submissions.length === 0 ? (
                     <div className="p-8 text-center text-sm text-fg-muted">
-                      Sinh viên chưa nộp bài nào cho các bài tập của lớp này.
+                      Học viên chưa nộp bài nào cho các bài tập của lớp này.
                     </div>
                   ) : (
                     <div className="overflow-x-auto">

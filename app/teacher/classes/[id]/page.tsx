@@ -428,7 +428,7 @@ export default async function TeacherClassDetailPage({
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
                   <th className="px-4 py-3">STT</th>
-                  <th className="px-4 py-3">Sinh viên</th>
+                  <th className="px-4 py-3">Học viên</th>
                   <th className="px-4 py-3">Bài tập</th>
                   <th className="px-4 py-3">Kết quả</th>
                   <th className="px-4 py-3">Ngôn ngữ</th>

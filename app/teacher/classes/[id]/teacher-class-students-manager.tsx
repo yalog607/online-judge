@@ -255,7 +255,7 @@ export function TeacherClassStudentsManager({
                             setProgressStudent(s);
                           }}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                          title="Bấm để xem chi tiết tiến độ sinh viên"
+                          title="Bấm để xem chi tiết tiến độ học viên"
                         >
                           <span>{s.ProgressPercent}%</span>
                         </button>

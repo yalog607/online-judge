@@ -417,7 +417,7 @@ async function main() {
       {
         code: "NMLT2026",
         name: "Nhập môn lập trình",
-        description: "Lớp công khai dành cho sinh viên năm nhất, có trợ giảng hỗ trợ.",
+        description: "Lớp công khai dành cho học viên năm nhất, có trợ giảng hỗ trợ.",
         isPublic: 1,
         teacher: "teacher",
         ta: "assist",

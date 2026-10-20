@@ -1080,7 +1080,7 @@ BEGIN
 
         IF @TeacherID IS NULL
         BEGIN
-            THROW 50027, 'Ban khong co quyen them hoc sinh vao lop nay.', 1;
+            THROW 50027, N'Bạn không có quyền thêm học viên vào lớp này.', 1;
         END;
 
         DECLARE @RawList TABLE (
@@ -1166,12 +1166,12 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID)
     BEGIN
-        THROW 50031, 'Lop hoc khong ton tai.', 1;
+        THROW 50031, N'Lớp học không tồn tại.', 1;
     END;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
     BEGIN
-        THROW 50032, 'Sinh vien khong thuoc lop hoc nay.', 1;
+        THROW 50032, N'Học viên không thuộc lớp học này.', 1;
     END;
 
     IF NOT EXISTS (
@@ -1184,7 +1184,7 @@ BEGIN
         SELECT 1 WHERE @ActorID = @StudentID
     )
     BEGIN
-        THROW 50030, 'Ban khong co quyen xem chi tiet tien do cua sinh vien nay.', 1;
+        THROW 50030, N'Bạn không có quyền xem chi tiết tiến độ của học viên này.', 1;
     END;
 
     DECLARE @TotalProblems INT;

@@ -292,14 +292,14 @@ export async function TAClassView({
 
       {activeTab === "submissions" && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
+          <h2 className="text-lg font-semibold">Lịch sử nộp bài của học viên</h2>
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
                   <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Sinh viên</th>
+                  <th className="px-4 py-3">Học viên</th>
                   <th className="px-4 py-3">Bài tập</th>
                   <th className="px-4 py-3">Kết quả</th>
                   <th className="px-4 py-3">Thời gian</th>
