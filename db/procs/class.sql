@@ -471,8 +471,8 @@ BEGIN
         cp.DueDate,
         cp.IsClosed,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.ProblemID = p.ProblemID AND s.UserID = @UserID AND s.Result = 'AC') THEN 'done'
-            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.ProblemID = p.ProblemID AND s.UserID = @UserID) THEN 'tried'
+            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.ProblemID = p.ProblemID AND s.UserID = @UserID AND s.ClassID = @ClassID AND s.Result = 'AC') THEN 'done'
+            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.ProblemID = p.ProblemID AND s.UserID = @UserID AND s.ClassID = @ClassID) THEN 'tried'
             ELSE 'todo'
         END AS UserStatus
     FROM dbo.Class_Problem cp
@@ -1197,7 +1197,7 @@ BEGIN
       AND EXISTS (
           SELECT 1 FROM dbo.Submissions s
           WHERE s.UserID = @StudentID
-            AND s.ProblemID = cp.ProblemID
+            AND s.ProblemID = cp.ProblemID AND s.ClassID = @ClassID
             AND s.Result = 'AC'
       );
 
@@ -1208,13 +1208,13 @@ BEGIN
       AND NOT EXISTS (
           SELECT 1 FROM dbo.Submissions s
           WHERE s.UserID = @StudentID
-            AND s.ProblemID = cp.ProblemID
+            AND s.ProblemID = cp.ProblemID AND s.ClassID = @ClassID
             AND s.Result = 'AC'
       )
       AND EXISTS (
           SELECT 1 FROM dbo.Submissions s
           WHERE s.UserID = @StudentID
-            AND s.ProblemID = cp.ProblemID
+            AND s.ProblemID = cp.ProblemID AND s.ClassID = @ClassID
       );
 
     DECLARE @UnattemptedProblems INT = @TotalProblems - (@SolvedProblems + @AttemptedProblems);
@@ -1243,13 +1243,13 @@ BEGIN
         ISNULL((
             SELECT COUNT(*) 
             FROM dbo.Submissions s
-            JOIN dbo.Class_Problem cp ON cp.ClassID = @ClassID AND cp.ProblemID = s.ProblemID
+            JOIN dbo.Class_Problem cp ON cp.ClassID = @ClassID AND cp.ProblemID = s.ProblemID AND s.ClassID = @ClassID
             WHERE s.UserID = @StudentID
         ), 0) AS TotalSubmissions,
         ISNULL((
             SELECT COUNT(*) 
             FROM dbo.Submissions s
-            JOIN dbo.Class_Problem cp ON cp.ClassID = @ClassID AND cp.ProblemID = s.ProblemID
+            JOIN dbo.Class_Problem cp ON cp.ClassID = @ClassID AND cp.ProblemID = s.ProblemID AND s.ClassID = @ClassID
             WHERE s.UserID = @StudentID AND s.Result = 'AC'
         ), 0) AS TotalAC
     FROM dbo.Users u
@@ -1266,27 +1266,27 @@ BEGIN
         cp.DueDate,
         cp.IsClosed,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID AND s.Result = 'AC')
+            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID AND s.ClassID = @ClassID AND s.Result = 'AC')
                 THEN 'Solved'
-            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID)
+            WHEN EXISTS (SELECT 1 FROM dbo.Submissions s WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID AND s.ClassID = @ClassID)
                 THEN 'Attempted'
             ELSE 'Unattempted'
         END AS Status,
         (
             SELECT TOP 1 s.Result
             FROM dbo.Submissions s
-            WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID
+            WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID AND s.ClassID = @ClassID
             ORDER BY CASE WHEN s.Result = 'AC' THEN 0 ELSE 1 END, s.SubmitTime DESC
         ) AS BestResult,
         (
             SELECT COUNT(*)
             FROM dbo.Submissions s
-            WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID
+            WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID AND s.ClassID = @ClassID
         ) AS SubmissionCount,
         (
             SELECT MAX(s.SubmitTime)
             FROM dbo.Submissions s
-            WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID
+            WHERE s.UserID = @StudentID AND s.ProblemID = p.ProblemID AND s.ClassID = @ClassID
         ) AS LastSubmitTime
     FROM dbo.Class_Problem cp
     JOIN dbo.Problems p ON p.ProblemID = cp.ProblemID
@@ -1304,7 +1304,7 @@ BEGIN
         s.PassedCases,
         s.SubmitTime
     FROM dbo.Submissions s
-    JOIN dbo.Class_Problem cp ON cp.ClassID = @ClassID AND cp.ProblemID = s.ProblemID
+    JOIN dbo.Class_Problem cp ON cp.ClassID = @ClassID AND cp.ProblemID = s.ProblemID AND s.ClassID = @ClassID
     JOIN dbo.Problems p ON p.ProblemID = s.ProblemID
     WHERE s.UserID = @StudentID
     ORDER BY s.SubmitTime DESC;

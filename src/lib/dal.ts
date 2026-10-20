@@ -51,12 +51,26 @@ export async function redirectIfSignedIn() {
   if (user) redirect(roleHome(user.role));
 }
 
+export const READ_ONLY_PARAM = "mo_phong_chi_xem";
+
+function readOnlyReturnPath(referer: string | null) {
+  try {
+    const url = new URL(referer ?? "", "http://localhost");
+    url.searchParams.set(READ_ONLY_PARAM, "1");
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return `/?${READ_ONLY_PARAM}=1`;
+  }
+}
+
 export async function requireUser(): Promise<CurrentUser> {
   const user = await verifySession();
   if (!user) redirect("/login");
-  // Chế độ mô phỏng chỉ để xem: mọi Server Action cần người dùng đều bị chặn.
-  if (user.actorId && (await headers()).has("next-action")) {
-    throw new Error("Đang ở chế độ mô phỏng, chỉ được xem, không thể thay đổi dữ liệu.");
+  // Chế độ mô phỏng chỉ để xem: mọi Server Action cần người dùng đều bị chặn. Quay lại đúng trang
+  // đang xem kèm cờ để giao diện hiện thông báo (không ném lỗi, tránh hiện trang lỗi).
+  if (user.actorId) {
+    const h = await headers();
+    if (h.has("next-action")) redirect(readOnlyReturnPath(h.get("referer")));
   }
   return user;
 }

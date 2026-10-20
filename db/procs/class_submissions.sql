@@ -27,7 +27,8 @@ BEGIN
         JOIN dbo.Users u ON u.UserID = s.UserID
         JOIN dbo.Problems p ON p.ProblemID = s.ProblemID
         JOIN dbo.Class_Student cu ON cu.UserID = s.UserID AND cu.ClassID = @ClassID
-        WHERE (@ProblemID IS NULL OR s.ProblemID = @ProblemID)
+        WHERE s.ClassID = @ClassID
+          AND (@ProblemID IS NULL OR s.ProblemID = @ProblemID)
           AND (@Result IS NULL OR @Result = '' OR s.Result = @Result)
     )
     SELECT *

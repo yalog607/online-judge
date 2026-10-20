@@ -100,7 +100,7 @@ BEGIN
           SELECT 1
           FROM #MyClasses mc
           JOIN dbo.Class_Student cs ON cs.ClassID = mc.ClassID AND cs.UserID = s.UserID
-          JOIN dbo.Class_Problem cp ON cp.ClassID = mc.ClassID AND cp.ProblemID = s.ProblemID
+          JOIN dbo.Class_Problem cp ON cp.ClassID = mc.ClassID AND cp.ProblemID = s.ProblemID AND s.ClassID = mc.ClassID
       );
 
     SELECT
@@ -135,7 +135,7 @@ BEGIN
         SELECT 1
         FROM #MyClasses mc
         JOIN dbo.Class_Student cs ON cs.ClassID = mc.ClassID AND cs.UserID = s.UserID
-        JOIN dbo.Class_Problem cp ON cp.ClassID = mc.ClassID AND cp.ProblemID = s.ProblemID
+        JOIN dbo.Class_Problem cp ON cp.ClassID = mc.ClassID AND cp.ProblemID = s.ProblemID AND s.ClassID = mc.ClassID
     )
     ORDER BY s.SubmitTime DESC, s.SubmissionID DESC;
 
