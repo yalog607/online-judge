@@ -29,7 +29,12 @@ export async function TAClassView({
         ? classRepository.getClassSubmissions(classId, userId)
         : Promise.resolve({ items: [], total: 0 }),
       role === "TA" || role === "Teacher" || role === "Admin"
-        ? listForManage({ actorId: userId, page: 1, pageSize: 100 })
+        ? listForManage({
+            actorId: userId,
+            ownerOnly: role !== "Admin",
+            page: 1,
+            pageSize: 100,
+          })
         : Promise.resolve({ rows: [] }),
     ]);
 
@@ -37,7 +42,12 @@ export async function TAClassView({
   const canManage = role === "TA" || role === "Teacher" || role === "Admin";
   const assignedProblemIds = new Set(problems.map((p) => p.ProblemID));
   const availableProblems = manageableProblems.rows
-    .filter((problem) => !assignedProblemIds.has(problem.ProblemID) && problem.Status !== "Hidden")
+    .filter(
+      (problem) =>
+        !assignedProblemIds.has(problem.ProblemID) &&
+        problem.Status !== "Hidden" &&
+        (role === "Admin" || problem.CreatorID === userId),
+    )
     .map((problem) => ({
       problemId: problem.ProblemID,
       title: problem.Title,

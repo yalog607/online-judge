@@ -48,7 +48,12 @@ export default async function TeacherClassDetailPage({
     classRepository.getClassStudents(classId, actor.userId),
     documentRepository.listDocuments(classId, actor.userId),
     classRepository.getClassProblems(classId, actor.userId),
-    listProblemsForManage({ actorId: actor.userId, page: 1, pageSize: 100 }),
+    listProblemsForManage({
+      actorId: actor.userId,
+      ownerOnly: actor.role !== "Admin",
+      page: 1,
+      pageSize: 100,
+    }),
     activeTab === "submissions"
       ? classRepository.getClassSubmissions(classId, actor.userId, page, PAGE_SIZE, selectedProblemId, selectedResult)
       : Promise.resolve({ items: [], total: 0 }),
@@ -85,7 +90,8 @@ export default async function TeacherClassDetailPage({
     .filter(
       (p) =>
         !assignedProblemIds.has(p.ProblemID) &&
-        p.Status !== "Hidden",
+        p.Status !== "Hidden" &&
+        (actor.role === "Admin" || p.CreatorID === actor.userId),
     )
     .map((p) => ({
       problemId: p.ProblemID,

@@ -692,6 +692,16 @@ BEGIN
     )
         THROW 50033, N'Không thể giao bài tập đã bị khóa.', 1;
 
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.Problems p
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE p.ProblemID = @ProblemID AND (
+            u.Role = 'Admin'
+            OR p.CreatorID = @TeacherID
+        )
+    )
+        THROW 50034, N'Bạn chỉ có thể giao bài tập do chính mình tạo hoặc nhân bản.', 1;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
