@@ -161,7 +161,8 @@ export async function TAClassView({
             </div>
 
             <div className="card overflow-hidden">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
                 <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                   <tr>
                     <th className="px-4 py-3">STT</th>
@@ -211,6 +212,7 @@ export async function TAClassView({
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
@@ -235,7 +237,8 @@ export async function TAClassView({
           <div className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
             <div className="card overflow-hidden">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
                 <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                   <tr>
                     <th className="px-4 py-3">STT</th>
@@ -271,6 +274,7 @@ export async function TAClassView({
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </div>
@@ -280,7 +284,8 @@ export async function TAClassView({
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
                   <th className="px-4 py-3">ID</th>
@@ -347,6 +352,7 @@ export async function TAClassView({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

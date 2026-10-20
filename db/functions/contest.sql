@@ -158,3 +158,32 @@ BEGIN
     RETURN 0;
 END;
 GO
+
+-- Tỉ lệ (0..1) testcase đạt của một lần nộp, dùng để tính điểm kỳ thi.
+-- Bài có chia nhóm điểm dùng Score/MaxScore; còn lại dùng số testcase đạt / tổng.
+CREATE OR ALTER FUNCTION app.ufn_SubmissionRatio
+(
+    @Result VARCHAR(20),
+    @Score INT,
+    @MaxScore INT,
+    @PassedCases VARCHAR(50)
+)
+RETURNS FLOAT
+AS
+BEGIN
+    IF @Result = 'AC' RETURN 1.0;
+    IF @Result NOT IN ('WA', 'TLE', 'MLE', 'RE') RETURN 0.0;
+
+    IF @MaxScore IS NOT NULL AND @MaxScore > 0
+        RETURN CASE WHEN ISNULL(@Score, 0) >= @MaxScore THEN 1.0 ELSE CAST(ISNULL(@Score, 0) AS FLOAT) / @MaxScore END;
+
+    DECLARE @Slash INT = CHARINDEX('/', ISNULL(@PassedCases, ''));
+    IF @Slash <= 1 RETURN 0.0;
+
+    DECLARE @Passed INT = TRY_CAST(LEFT(@PassedCases, @Slash - 1) AS INT);
+    DECLARE @Total INT = TRY_CAST(SUBSTRING(@PassedCases, @Slash + 1, 20) AS INT);
+    IF @Passed IS NULL OR @Total IS NULL OR @Total <= 0 RETURN 0.0;
+
+    RETURN CASE WHEN @Passed >= @Total THEN 1.0 ELSE CAST(@Passed AS FLOAT) / @Total END;
+END;
+GO

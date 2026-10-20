@@ -19,6 +19,7 @@ import {
 } from "./schema";
 import * as service from "./service";
 import { AuthError } from "./service";
+import { notifyTADemoted } from "@/modules/notification/events";
 import { createDbSession, getUserById, revokeDbSession, validateImpersonate } from "./repo";
 import { clientIp } from "@/lib/client-ip";
 import { firstIssue } from "@/lib/form-errors";
@@ -202,7 +203,10 @@ export async function setUserRoleAction(
   }
 
   try {
+    const target = await getUserById(parsed.data.userId);
     await service.setUserRole(admin.userId, parsed.data.userId, parsed.data.role);
+    // Admin demoting a TA: tell them their TA role was removed.
+    if (target?.Role === "TA") await notifyTADemoted(parsed.data.userId);
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (e) {

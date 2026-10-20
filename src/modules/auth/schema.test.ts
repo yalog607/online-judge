@@ -67,10 +67,14 @@ describe("setUserStatusSchema", () => {
 });
 
 describe("setUserRoleSchema", () => {
-  it.each(["User", "TA", "Teacher"])("accepts valid role %s", (role) => {
+  it.each(["User", "Teacher"])("accepts valid role %s", (role) => {
     const parsed = setUserRoleSchema.parse({ userId: "10", role });
     expect(parsed.userId).toBe(10);
     expect(parsed.role).toBe(role);
+  });
+
+  it("rejects TA: admin cannot promote directly", () => {
+    expect(() => setUserRoleSchema.parse({ userId: 10, role: "TA" })).toThrow();
   });
 
   it("rejects invalid role or non-positive userId", () => {

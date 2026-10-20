@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { markReadAction } from "@/modules/notification/actions";
-import { NOTIFICATIONS_CHANGED_EVENT } from "@/components/notification-read-buttons";
+import {
+  NOTIFICATIONS_CHANGED_EVENT,
+  announceNotificationsChanged,
+} from "@/components/notification-read-buttons";
+import { formatRelativeTime } from "@/lib/relative-time";
 import type { NotificationItem, StreamMessage } from "@/modules/notification/types";
 
 const TOAST_MS = 6000;
@@ -153,19 +157,131 @@ export function NotificationProvider({
   );
 }
 
-// Header bell: a bordered square button linking to the notifications page, red dot when unread.
+// Header bell: opens a small panel with the most recent notifications; "Xem tất cả" goes to the full page.
 export function NotificationBell({ href }: { href: string }) {
   const unread = useUnreadCount();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<NotificationItem[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications/recent", { cache: "no-store" });
+      if (!res.ok) throw new Error(String(res.status));
+      setItems(((await res.json()) as { items: NotificationItem[] }).items);
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    }
+  }, []);
+
+  // New notifications arriving while the panel is open refresh the list (deferred, not in the effect body).
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => void load(), 0);
+    return () => clearTimeout(t);
+  }, [unread, open, load]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const openItem = (item: NotificationItem) => {
+    setOpen(false);
+    if (!item.isRead) void markReadAction(item.id).then(announceNotificationsChanged);
+    router.push(item.link ?? href);
+  };
+
   return (
-    <Link
-      href={href}
-      aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"}
-      className="relative grid h-[38px] w-[38px] place-items-center rounded-[9px] border border-line bg-surface text-fg hover:bg-muted"
-    >
-      <Icon name="bell" />
-      {unread > 0 && (
-        <span className="absolute right-[9px] top-2 h-2 w-2 rounded-full border-2 border-surface bg-bad" />
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => {
+          setOpen((v) => !v);
+          if (!open) void load();
+        }}
+        aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        className="relative grid h-[38px] w-[38px] place-items-center rounded-[9px] border border-line bg-surface text-fg hover:bg-muted"
+      >
+        <Icon name="bell" />
+        {unread > 0 && (
+          <span className="absolute right-[9px] top-2 h-2 w-2 rounded-full border-2 border-surface bg-bad" />
+        )}
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Thông báo gần đây"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+        >
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <h2 className="text-sm font-semibold">Thông báo gần đây</h2>
+            {unread > 0 && <span className="text-xs text-fg-muted">{unread} chưa đọc</span>}
+          </div>
+          <div className="max-h-[22rem] overflow-y-auto">
+            {failed ? (
+              <p className="px-4 py-6 text-center text-sm text-fg-muted">Không tải được thông báo.</p>
+            ) : items === null ? (
+              <p className="px-4 py-6 text-center text-sm text-fg-muted">Đang tải…</p>
+            ) : items.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-fg-muted">Chưa có thông báo nào.</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {items.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => openItem(item)}
+                      className="flex w-full items-start gap-2.5 px-4 py-3 text-left hover:bg-muted"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1.5 h-2 w-2 flex-none rounded-full ${item.isRead ? "bg-transparent" : "bg-primary"}`}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm">{item.title}</span>
+                        {item.body && <span className="block truncate text-xs text-fg-muted">{item.body}</span>}
+                        <time
+                          dateTime={item.createdAt}
+                          suppressHydrationWarning
+                          className="block text-xs text-fg-muted"
+                        >
+                          {formatRelativeTime(item.createdAt)}
+                        </time>
+                      </span>
+                      {!item.isRead && <span className="sr-only">Chưa đọc</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Link
+            href={href}
+            onClick={() => setOpen(false)}
+            className="block border-t border-line px-4 py-3 text-center text-sm font-medium text-primary hover:bg-muted"
+          >
+            Xem tất cả
+          </Link>
+        </div>
       )}
-    </Link>
+    </div>
   );
 }

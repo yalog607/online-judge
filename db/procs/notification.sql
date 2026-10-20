@@ -187,7 +187,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT r.RequestID, r.ClassID, c.ClassName, r.UserID, s.FullName AS StudentName,
-           r.RequestedBy, t.FullName AS TeacherName, r.Status
+           r.RequestedBy, t.FullName AS TeacherName, r.Status, r.RejectionReason
     FROM dbo.TA_Requests r
     JOIN dbo.Classes c ON c.ClassID = r.ClassID
     JOIN dbo.Users s ON s.UserID = r.UserID

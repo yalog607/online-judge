@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { impersonateAction } from "@/modules/auth/actions";
 import { RequestTAUpgradeButton } from "./request-ta-button";
+import { DemoteTAButton } from "./demote-ta-button";
 import { RemoveStudentButton } from "./remove-student-button";
 import { ImportStudentsDialog } from "./import-students-dialog";
 import { ExportStudentsButton } from "./export-students-button";
@@ -272,6 +273,13 @@ export function TeacherClassStudentsManager({
                           >
                             Xem tiến độ
                           </button>
+                          {Boolean(s.IsTA) && (
+                            <DemoteTAButton
+                              classId={classId}
+                              userId={s.UserID}
+                              userName={s.FullName}
+                            />
+                          )}
                           {!s.IsTA && s.IsTAPending && (
                             <span className="text-warn text-xs font-medium">
                               Chờ duyệt TA

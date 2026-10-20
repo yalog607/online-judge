@@ -78,7 +78,7 @@ export default async function ManageProblemsPage({
         action={{ href: "/teacher/problems/new", label: "+ Tạo bài tập" }}
       />
 
-      <nav aria-label="Lọc danh sách bài tập" className="flex gap-5 border-b border-line pb-2">
+      <nav aria-label="Lọc danh sách bài tập" className="flex gap-5 overflow-x-auto border-b border-line pb-2">
         <Link 
           href="/teacher/problems" 
           className={`whitespace-nowrap pb-2 -mb-2.25 font-medium ${sp.status !== 'Pending' && sp.view !== 'mine' ? 'border-b-2 border-primary text-primary' : 'text-fg-muted hover:text-fg'}`}

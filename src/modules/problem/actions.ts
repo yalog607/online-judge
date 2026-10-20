@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, requireUser } from "@/lib/dal";
 import { DomainError } from "@/db/exec";
 import { submitCode } from "@/modules/submission/service";
-import { dispatchSubmission } from "@/modules/judge/service";
+import { dispatchSubmission, rejudgeProblemSubmissions } from "@/modules/judge/service";
 import type { FormState } from "@/modules/auth/actions";
 import * as repo from "./repo";
 import { notifyProblemStatus } from "@/modules/notification/events";
@@ -85,7 +85,15 @@ export async function createProblemAction(
     return { error: e instanceof DomainError ? e.message : "Tạo bài tập thất bại." };
   }
 
-  if (testcases.length > 0) await repo.replaceTestcases(problemId, actor.userId, testcases);
+  if (testcases.length > 0) {
+    try {
+      await repo.replaceTestcases(problemId, actor.userId, testcases);
+    } catch (e) {
+      // Không để lại bài tập dở dang (chưa có testcase) khi lưu testcase thất bại.
+      await repo.deleteProblem(problemId, actor.userId).catch(() => {});
+      return { error: e instanceof DomainError ? e.message : "Lưu testcase thất bại. Bài tập chưa được tạo." };
+    }
+  }
 
   const titleParam = encodeURIComponent(parsed.data.title);
   if (actor.role === "TA") {
@@ -141,6 +149,7 @@ export async function updateProblemAction(
     });
     if (hasTestcaseChanges) {
       await repo.replaceTestcases(problemId, actor.userId, testcases);
+      await rejudgeProblemSubmissions(problemId);
     }
   } catch (e) {
     return { error: e instanceof DomainError ? e.message : "Cập nhật bài tập thất bại." };
@@ -171,11 +180,17 @@ export async function setProblemStatusAction(problemId: number, status: repo.Pro
   revalidatePath("/user/problems");
 }
 
-export async function deleteProblemAction(problemId: number) {
+export async function deleteProblemAction(problemId: number): Promise<{ ok?: boolean; error?: string }> {
   const actor = await requireRole("Teacher", "TA", "Admin");
-  await repo.deleteProblem(problemId, actor.userId);
+  try {
+    await repo.deleteProblem(problemId, actor.userId);
+  } catch (e) {
+    if (e instanceof DomainError) return { error: e.message };
+    return { error: "Xóa bài tập thất bại. Vui lòng thử lại." };
+  }
   revalidatePath("/teacher/problems");
   revalidatePath("/user/problems");
+  return { ok: true };
 }
 
 export async function submitCodeAction(_prev: FormState, formData: FormData): Promise<FormState> {

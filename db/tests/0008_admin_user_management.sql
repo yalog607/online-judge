@@ -106,11 +106,15 @@ BEGIN CATCH
     INSERT @Results SELECT 'cannot set invalid role', 1;
 END CATCH;
 
--- 10. Admin can upgrade user to TA
-EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @UserID, @Role = 'TA';
-
-INSERT @Results SELECT 'admin can upgrade user to TA',
-    CASE WHEN EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'TA') THEN 1 ELSE 0 END;
+-- 10. Admin cannot upgrade user to TA directly (only via teacher request)
+BEGIN TRY
+    EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @UserID, @Role = 'TA';
+    INSERT @Results SELECT 'admin cannot upgrade user to TA directly', 0;
+END TRY
+BEGIN CATCH
+    INSERT @Results SELECT 'admin cannot upgrade user to TA directly',
+        CASE WHEN NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'TA') THEN 1 ELSE 0 END;
+END CATCH;
 
 -- 11. Admin can upgrade user to Teacher
 EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @UserID, @Role = 'Teacher';

@@ -185,7 +185,8 @@ export async function ContestParticipantPage({
             </div>
           ) : (
             <div className="card overflow-hidden">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
                 <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                   <tr>
                     <th className="px-4 py-3 w-16">STT</th>
@@ -260,6 +261,7 @@ export async function ContestParticipantPage({
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
@@ -278,7 +280,8 @@ export async function ContestParticipantPage({
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>
                   <th className="px-4 py-3 w-16">Hạng</th>
@@ -346,6 +349,7 @@ export async function ContestParticipantPage({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
           <Pager
             page={leaderboardPage.page}

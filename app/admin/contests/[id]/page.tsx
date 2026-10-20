@@ -122,7 +122,8 @@ export default async function AdminContestDetailPage({
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>
                   <th className="px-4 py-3 w-16">STT</th>
@@ -163,6 +164,7 @@ export default async function AdminContestDetailPage({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -180,7 +182,8 @@ export default async function AdminContestDetailPage({
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted text-fg-muted font-medium">
                 <tr>
                   <th className="px-4 py-3 w-16">Hạng</th>
@@ -227,6 +230,7 @@ export default async function AdminContestDetailPage({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

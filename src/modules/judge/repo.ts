@@ -98,3 +98,12 @@ export async function saveResult(input: {
 export async function heartbeat(workerId: string) {
   await execProc("usp_Judge_Heartbeat", { WorkerID: workerId });
 }
+
+// Resets the latest submission of every user for a problem to `Pending` (used after its
+// testcases changed) and returns their ids so the caller can enqueue them.
+export async function requestProblemRejudge(problemId: number): Promise<number[]> {
+  const { rows } = await execProc<{ SubmissionID: number }>("usp_Judge_RejudgeProblemLatest", {
+    ProblemID: problemId,
+  });
+  return rows.map((r) => r.SubmissionID);
+}

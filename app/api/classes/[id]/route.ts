@@ -43,9 +43,9 @@ export async function PUT(
       return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
     }
 
-    if (session.role !== "Teacher" && session.role !== "Admin") {
+    if (session.role !== "Teacher") {
       return NextResponse.json(
-        { error: "Chỉ giáo viên hoặc quản trị viên mới có thể cập nhật lớp học." },
+        { error: "Chỉ giảng viên mới có thể cập nhật lớp học." },
         { status: 403 }
       );
     }
