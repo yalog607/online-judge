@@ -75,8 +75,10 @@ const VERDICTS: { code: string; kind: "ok" | "bad" | "warn"; body: string }[] = 
   { code: "AC", kind: "ok", body: "Bài làm đúng với mọi testcase." },
   { code: "WA", kind: "bad", body: "Output khác đáp án ở ít nhất một testcase." },
   { code: "TLE", kind: "warn", body: "Chạy quá thời gian cho phép." },
+  { code: "MLE", kind: "warn", body: "Dùng quá bộ nhớ cho phép." },
   { code: "CE", kind: "warn", body: "Code không biên dịch được." },
   { code: "RE", kind: "bad", body: "Chương trình dừng giữa chừng do lỗi khi chạy." },
+  { code: "IE", kind: "bad", body: "Lỗi phía hệ thống chấm, không phải do bài làm." },
 ];
 
 const ROLES: { icon: IconName; title: string; body: string }[] = [
@@ -213,14 +215,23 @@ export default async function Home() {
           />
           <div className="relative mx-auto grid w-full max-w-[1200px] grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] items-center gap-12 px-5 max-[1000px]:grid-cols-1">
             <div className="flex min-w-0 flex-col items-start">
-              <h1 style={{ "--d": "0.05s" } as React.CSSProperties} className="enter mb-[18px] text-[clamp(34px,5.2vw,58px)] leading-[1.04] font-bold tracking-[-0.04em] text-balance">
+              <h1
+                style={{ "--d": "0.05s" } as React.CSSProperties}
+                className="enter mb-[18px] text-[clamp(34px,5.2vw,58px)] leading-[1.04] font-bold tracking-[-0.04em] text-balance"
+              >
                 Thực hành và luyện tập không ngừng
               </h1>
-              <p style={{ "--d": "0.18s" } as React.CSSProperties} className="enter mb-7 max-w-[520px] text-lg leading-relaxed text-fg-muted">
+              <p
+                style={{ "--d": "0.18s" } as React.CSSProperties}
+                className="enter mb-7 max-w-[520px] text-lg leading-relaxed text-fg-muted"
+              >
                 ITOJ là hệ thống luyện tập lập trình, hỗ trợ chấm bài cho lớp học và kỳ thi. Sinh
                 viên luyện thuật toán, giảng viên theo dõi tiến độ của học viên rõ ràng.
               </p>
-              <div style={{ "--d": "0.3s" } as React.CSSProperties} className="enter flex flex-wrap gap-3">
+              <div
+                style={{ "--d": "0.3s" } as React.CSSProperties}
+                className="enter flex flex-wrap gap-3"
+              >
                 {home ? (
                   <Link href={home} className={BTN_PRIMARY}>
                     <Icon name="send" size={16} />
@@ -238,7 +249,10 @@ export default async function Home() {
                   </>
                 )}
               </div>
-              <ul style={{ "--d": "0.42s" } as React.CSSProperties} className="enter mt-7 flex flex-col gap-2 text-fg-muted">
+              <ul
+                style={{ "--d": "0.42s" } as React.CSSProperties}
+                className="enter mt-7 flex flex-col gap-2 text-fg-muted"
+              >
                 {[
                   "Mỗi bài chạy trong container riêng",
                   "Tắt mạng, giới hạn CPU, RAM, thời gian",
@@ -353,7 +367,7 @@ export default async function Home() {
             <SectionHead
               kicker="Kết quả chấm"
               title="Biết ngay bài làm sai ở đâu"
-              lead="Năm phán quyết quen thuộc của các kỳ thi lập trình."
+              lead="Bảy phán quyết quen thuộc của các kỳ thi lập trình."
             />
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-3 reveal-stagger">
               {VERDICTS.map((v) => (
@@ -393,7 +407,9 @@ export default async function Home() {
                 <h2 className="text-[clamp(26px,3.4vw,36px)] font-bold tracking-[-0.03em]">
                   Sẵn sàng cho bài đầu tiên?
                 </h2>
-                <p className="opacity-75">Tạo tài khoản bằng email và xác thực OTP trong một phút.</p>
+                <p className="opacity-75">
+                  Tạo tài khoản bằng email và xác thực OTP trong một phút.
+                </p>
                 <div className="flex flex-wrap justify-center gap-3">
                   <Link href="/register" className={BTN_PRIMARY}>
                     <Icon name="send" size={16} />
