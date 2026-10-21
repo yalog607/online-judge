@@ -716,3 +716,68 @@ BEGIN
 END;
 GO
 
+
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_Create_Teacher
+    @TeacherID INT,
+    @Title NVARCHAR(150),
+    @Slug VARCHAR(150),
+    @Description NVARCHAR(MAX),
+    @Difficulty VARCHAR(15),
+    @TimeLimitMs INT,
+    @MemoryLimitMb INT,
+    @FunctionSpec NVARCHAR(MAX),
+    @ProblemID INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO dbo.Problems (Title, Slug, Description, Difficulty, TimeLimitMs, MemoryLimitMb, FunctionSpec, Status, CreatorID)
+        VALUES (@Title, @Slug, @Description, @Difficulty, @TimeLimitMs, @MemoryLimitMb, @FunctionSpec, 'Public', @TeacherID);
+
+        SET @ProblemID = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_Create_TA
+    @TA_ID INT,
+    @Title NVARCHAR(150),
+    @Slug VARCHAR(150),
+    @Description NVARCHAR(MAX),
+    @Difficulty VARCHAR(15),
+    @TimeLimitMs INT,
+    @MemoryLimitMb INT,
+    @FunctionSpec NVARCHAR(MAX),
+    @ProblemID INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO dbo.Problems (Title, Slug, Description, Difficulty, TimeLimitMs, MemoryLimitMb, FunctionSpec, Status, CreatorID)
+        VALUES (@Title, @Slug, @Description, @Difficulty, @TimeLimitMs, @MemoryLimitMb, @FunctionSpec, 'Pending', @TA_ID);
+
+        SET @ProblemID = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO

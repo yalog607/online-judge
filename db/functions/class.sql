@@ -18,6 +18,22 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER FUNCTION app.ufn_GetClassStudentCount
+(
+    @ClassID INT
+)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @TotalStudents INT = 0;
+    SELECT @TotalStudents = COUNT(*) 
+    FROM dbo.Class_Student 
+    WHERE ClassID = @ClassID;
+
+    RETURN @TotalStudents;
+END;
+GO
+
 CREATE OR ALTER FUNCTION app.ufn_GetClassStudentList
 (
     @ClassID INT

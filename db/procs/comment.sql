@@ -211,3 +211,31 @@ BEGIN
     COMMIT TRANSACTION;
 END
 GO
+
+
+CREATE OR ALTER PROCEDURE app.usp_Comment_Create
+    @ProblemID INT,
+    @UserID INT,
+    @Content NVARCHAR(1000),
+    @CommentID BIGINT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO dbo.Comments (ProblemID, UserID, Content, CreatedAt)
+        VALUES (@ProblemID, @UserID, @Content, SYSUTCDATETIME());
+
+        SET @CommentID = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
