@@ -8,10 +8,9 @@ SELECT
     d.CloudinaryURL,
     d.Category,
     d.UploadDate,
-    u.FullName AS UploaderName,
-    u.Email AS UploaderEmail,
-    u.Role AS UploaderRole
+    u.FullName AS TeacherName,
+    u.Email AS TeacherEmail
 FROM dbo.Documents d
 INNER JOIN dbo.Classes c ON d.ClassID = c.ClassID
-INNER JOIN dbo.Users u ON d.UploaderID = u.UserID;
+INNER JOIN dbo.Users u ON c.TeacherID = u.UserID;
 GO

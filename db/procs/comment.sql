@@ -214,28 +214,21 @@ GO
 
 
 CREATE OR ALTER PROCEDURE app.usp_Comment_Create
-    @ProblemID INT,
+    @ProblemID INT = NULL,
+    @ContestID INT = NULL,
     @UserID INT,
-    @Content NVARCHAR(1000),
-    @CommentID BIGINT OUTPUT
+    @Content NVARCHAR(2000),
+    @ParentID INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Comments (ProblemID, UserID, Content, CreatedAt)
-        VALUES (@ProblemID, @UserID, @Content, SYSUTCDATETIME());
-
-        SET @CommentID = SCOPE_IDENTITY();
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
+    EXEC app.usp_Comment_Add
+        @ProblemID = @ProblemID,
+        @ContestID = @ContestID,
+        @UserID = @UserID,
+        @ParentID = @ParentID,
+        @Content = @Content;
 END;
 GO

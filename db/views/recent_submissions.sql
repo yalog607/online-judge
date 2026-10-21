@@ -6,9 +6,8 @@ SELECT TOP 100
     p.Title AS ProblemTitle,
     s.Language,
     s.Result,
-    s.Score,
-    s.TotalRuntimeMs,
-    s.MaxMemoryKb,
+    s.Runtime,
+    s.Memory,
     s.SubmitTime
 FROM dbo.Submissions s
 JOIN dbo.Users u ON s.UserID = u.UserID

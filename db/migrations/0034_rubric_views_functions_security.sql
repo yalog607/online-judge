@@ -13,7 +13,7 @@ GO
 
 CREATE OR ALTER VIEW app.uvw_PublicProblems_Security
 AS
-SELECT ProblemID, Title, Difficulty, TimeLimitMs, MemoryLimitMb, Status
+SELECT ProblemID, Title, Difficulty, TimeLimit, MemoryLimit, Status
 FROM dbo.Problems
 WHERE Status = 'Public'
 WITH CHECK OPTION;
@@ -61,12 +61,11 @@ SELECT
     d.CloudinaryURL,
     d.Category,
     d.UploadDate,
-    u.FullName AS UploaderName,
-    u.Email AS UploaderEmail,
-    u.Role AS UploaderRole
+    u.FullName AS TeacherName,
+    u.Email AS TeacherEmail
 FROM dbo.Documents d
 INNER JOIN dbo.Classes c ON d.ClassID = c.ClassID
-INNER JOIN dbo.Users u ON d.UploaderID = u.UserID;
+INNER JOIN dbo.Users u ON c.TeacherID = u.UserID;
 GO
 
 CREATE OR ALTER VIEW dbo.vw_RecentSubmissions
@@ -77,9 +76,8 @@ SELECT TOP 100
     p.Title AS ProblemTitle,
     s.Language,
     s.Result,
-    s.Score,
-    s.TotalRuntimeMs,
-    s.MaxMemoryKb,
+    s.Runtime,
+    s.Memory,
     s.SubmitTime
 FROM dbo.Submissions s
 JOIN dbo.Users u ON s.UserID = u.UserID
@@ -202,10 +200,8 @@ RETURN
         d.FileName,
         d.CloudinaryURL,
         d.Category,
-        d.UploadDate,
-        u.FullName AS UploaderName
+        d.UploadDate
     FROM dbo.Documents d
-    JOIN dbo.Users u ON d.UploaderID = u.UserID
     WHERE d.ClassID = @ClassID
 );
 GO
@@ -277,29 +273,22 @@ END;
 GO
 
 CREATE OR ALTER PROCEDURE app.usp_Comment_Create
-    @ProblemID INT,
+    @ProblemID INT = NULL,
+    @ContestID INT = NULL,
     @UserID INT,
-    @Content NVARCHAR(1000),
-    @CommentID BIGINT OUTPUT
+    @Content NVARCHAR(2000),
+    @ParentID INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Comments (ProblemID, UserID, Content, CreatedAt)
-        VALUES (@ProblemID, @UserID, @Content, SYSUTCDATETIME());
-
-        SET @CommentID = SCOPE_IDENTITY();
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
+    EXEC app.usp_Comment_Add
+        @ProblemID = @ProblemID,
+        @ContestID = @ContestID,
+        @UserID = @UserID,
+        @ParentID = @ParentID,
+        @Content = @Content;
 END;
 GO
 
@@ -312,25 +301,10 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @AdminID AND Role = 'Admin')
-            THROW 50016, N'Chi co quan tri vien moi co quyen thay doi vai tro tai khoan.', 1;
-
-        IF @NewRole NOT IN ('User', 'TA', 'Teacher', 'Admin')
-            THROW 50017, N'Vai tro moi khong hop le.', 1;
-
-        BEGIN TRANSACTION;
-
-        UPDATE dbo.Users
-        SET Role = @NewRole
-        WHERE UserID = @TargetUserID;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
+    EXEC app.usp_Admin_SetUserRole
+        @AdminID = @AdminID,
+        @TargetUserID = @TargetUserID,
+        @Role = @NewRole;
 END;
 GO
 
@@ -371,64 +345,68 @@ GO
 
 CREATE OR ALTER PROCEDURE app.usp_Problem_Create_Teacher
     @TeacherID INT,
-    @Title NVARCHAR(150),
-    @Slug VARCHAR(150),
-    @Description NVARCHAR(MAX),
-    @Difficulty VARCHAR(15),
-    @TimeLimitMs INT,
-    @MemoryLimitMb INT,
-    @FunctionSpec NVARCHAR(MAX),
-    @ProblemID INT OUTPUT
+    @Title NVARCHAR(200),
+    @Statement NVARCHAR(MAX),
+    @InputFormat NVARCHAR(MAX) = NULL,
+    @OutputFormat NVARCHAR(MAX) = NULL,
+    @TimeLimit INT = 1000,
+    @MemoryLimit INT = 256,
+    @Tags NVARCHAR(200) = NULL,
+    @Difficulty VARCHAR(20) = 'Medium',
+    @FunctionSpec NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Problems (Title, Slug, Description, Difficulty, TimeLimitMs, MemoryLimitMb, FunctionSpec, Status, CreatorID)
-        VALUES (@Title, @Slug, @Description, @Difficulty, @TimeLimitMs, @MemoryLimitMb, @FunctionSpec, 'Public', @TeacherID);
-
-        SET @ProblemID = SCOPE_IDENTITY();
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
+    EXEC app.usp_Problem_Create
+        @CreatorID = @TeacherID,
+        @Title = @Title,
+        @Statement = @Statement,
+        @InputFormat = @InputFormat,
+        @OutputFormat = @OutputFormat,
+        @TimeLimit = @TimeLimit,
+        @MemoryLimit = @MemoryLimit,
+        @Tags = @Tags,
+        @Difficulty = @Difficulty,
+        @Status = 'Public',
+        @ClassID = NULL,
+        @DueDate = NULL,
+        @FunctionSpec = @FunctionSpec,
+        @ProposedStatus = NULL;
 END;
 GO
 
 CREATE OR ALTER PROCEDURE app.usp_Problem_Create_TA
     @TA_ID INT,
-    @Title NVARCHAR(150),
-    @Slug VARCHAR(150),
-    @Description NVARCHAR(MAX),
-    @Difficulty VARCHAR(15),
-    @TimeLimitMs INT,
-    @MemoryLimitMb INT,
-    @FunctionSpec NVARCHAR(MAX),
-    @ProblemID INT OUTPUT
+    @Title NVARCHAR(200),
+    @Statement NVARCHAR(MAX),
+    @InputFormat NVARCHAR(MAX) = NULL,
+    @OutputFormat NVARCHAR(MAX) = NULL,
+    @TimeLimit INT = 1000,
+    @MemoryLimit INT = 256,
+    @Tags NVARCHAR(200) = NULL,
+    @Difficulty VARCHAR(20) = 'Medium',
+    @FunctionSpec NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Problems (Title, Slug, Description, Difficulty, TimeLimitMs, MemoryLimitMb, FunctionSpec, Status, CreatorID)
-        VALUES (@Title, @Slug, @Description, @Difficulty, @TimeLimitMs, @MemoryLimitMb, @FunctionSpec, 'Pending', @TA_ID);
-
-        SET @ProblemID = SCOPE_IDENTITY();
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
+    EXEC app.usp_Problem_Create
+        @CreatorID = @TA_ID,
+        @Title = @Title,
+        @Statement = @Statement,
+        @InputFormat = @InputFormat,
+        @OutputFormat = @OutputFormat,
+        @TimeLimit = @TimeLimit,
+        @MemoryLimit = @MemoryLimit,
+        @Tags = @Tags,
+        @Difficulty = @Difficulty,
+        @Status = 'Pending',
+        @ClassID = NULL,
+        @DueDate = NULL,
+        @FunctionSpec = @FunctionSpec,
+        @ProposedStatus = 'Private';
 END;
 GO
