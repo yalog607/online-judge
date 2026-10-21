@@ -1,5 +1,21 @@
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'app_executor' AND type = 'R')
+    CREATE ROLE app_executor AUTHORIZATION dbo;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'db_admin' AND type = 'R')
+    CREATE ROLE db_admin AUTHORIZATION dbo;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'db_teacher' AND type = 'R')
+    CREATE ROLE db_teacher AUTHORIZATION dbo;
+GO
+
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'db_ta' AND type = 'R')
     CREATE ROLE db_ta AUTHORIZATION dbo;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'db_student' AND type = 'R')
+    CREATE ROLE db_student AUTHORIZATION dbo;
 GO
 
 GRANT SELECT ON dbo.Problems TO db_ta;
