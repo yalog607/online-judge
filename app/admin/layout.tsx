@@ -10,7 +10,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       fullName={user.fullName}
       avatar={user.avatar}
       nav={ADMIN_NAV}
-      impersonating={Boolean(user.actorId)}
       notificationsHref="/admin/notifications"
     >
       {children}

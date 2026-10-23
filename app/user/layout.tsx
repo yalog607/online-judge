@@ -11,7 +11,6 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       fullName={user.fullName}
       avatar={user.avatar}
       nav={getNavForRole(user.role)}
-      impersonating={Boolean(user.actorId)}
       notificationsHref={getNotificationsHref(user.role)}
     >
       {children}

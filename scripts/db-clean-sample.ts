@@ -75,7 +75,7 @@ DELETE FROM dbo.Problems WHERE ProblemID IN (SELECT ProblemID FROM #P);
 
 -- Người dùng
 DELETE FROM dbo.Notifications WHERE UserID IN (SELECT UserID FROM #U);
-DELETE FROM dbo.Sessions WHERE UserID IN (SELECT UserID FROM #U) OR ActorID IN (SELECT UserID FROM #U);
+DELETE FROM dbo.Sessions WHERE UserID IN (SELECT UserID FROM #U);
 DELETE FROM dbo.AuditLog WHERE ActorID IN (SELECT UserID FROM #U);
 DELETE FROM dbo.Users WHERE UserID IN (SELECT UserID FROM #U);
 

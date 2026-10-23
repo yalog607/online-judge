@@ -414,37 +414,6 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE app.usp_Admin_ValidateImpersonate
-    @ActorID INT,
-    @TargetUserID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-
-    DECLARE @Allowed BIT = app.ufn_CanImpersonateUser(@ActorID, @TargetUserID);
-
-    IF @Allowed = 1
-    BEGIN
-        BEGIN TRY
-            BEGIN TRANSACTION;
-
-            INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID)
-            VALUES (@ActorID, 'ImpersonateStart', 'User', @TargetUserID);
-
-            COMMIT TRANSACTION;
-        END TRY
-        BEGIN CATCH
-            IF @@TRANCOUNT > 0
-                ROLLBACK TRANSACTION;
-            THROW;
-        END CATCH
-    END;
-
-    SELECT @Allowed AS Allowed;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE app.usp_Auth_RegisterDirect
     @Username VARCHAR(50),
     @Email VARCHAR(100),
