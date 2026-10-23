@@ -211,3 +211,24 @@ BEGIN
     COMMIT TRANSACTION;
 END
 GO
+
+
+CREATE OR ALTER PROCEDURE app.usp_Comment_Create
+    @ProblemID INT = NULL,
+    @ContestID INT = NULL,
+    @UserID INT,
+    @Content NVARCHAR(2000),
+    @ParentID INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    EXEC app.usp_Comment_Add
+        @ProblemID = @ProblemID,
+        @ContestID = @ContestID,
+        @UserID = @UserID,
+        @ParentID = @ParentID,
+        @Content = @Content;
+END;
+GO

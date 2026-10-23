@@ -716,3 +716,72 @@ BEGIN
 END;
 GO
 
+
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_Create_Teacher
+    @TeacherID INT,
+    @Title NVARCHAR(200),
+    @Statement NVARCHAR(MAX),
+    @InputFormat NVARCHAR(MAX) = NULL,
+    @OutputFormat NVARCHAR(MAX) = NULL,
+    @TimeLimit INT = 1000,
+    @MemoryLimit INT = 256,
+    @Tags NVARCHAR(200) = NULL,
+    @Difficulty VARCHAR(20) = 'Medium',
+    @FunctionSpec NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    EXEC app.usp_Problem_Create
+        @CreatorID = @TeacherID,
+        @Title = @Title,
+        @Statement = @Statement,
+        @InputFormat = @InputFormat,
+        @OutputFormat = @OutputFormat,
+        @TimeLimit = @TimeLimit,
+        @MemoryLimit = @MemoryLimit,
+        @Tags = @Tags,
+        @Difficulty = @Difficulty,
+        @Status = 'Public',
+        @ClassID = NULL,
+        @DueDate = NULL,
+        @FunctionSpec = @FunctionSpec,
+        @ProposedStatus = NULL;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE app.usp_Problem_Create_TA
+    @TA_ID INT,
+    @Title NVARCHAR(200),
+    @Statement NVARCHAR(MAX),
+    @InputFormat NVARCHAR(MAX) = NULL,
+    @OutputFormat NVARCHAR(MAX) = NULL,
+    @TimeLimit INT = 1000,
+    @MemoryLimit INT = 256,
+    @Tags NVARCHAR(200) = NULL,
+    @Difficulty VARCHAR(20) = 'Medium',
+    @FunctionSpec NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    EXEC app.usp_Problem_Create
+        @CreatorID = @TA_ID,
+        @Title = @Title,
+        @Statement = @Statement,
+        @InputFormat = @InputFormat,
+        @OutputFormat = @OutputFormat,
+        @TimeLimit = @TimeLimit,
+        @MemoryLimit = @MemoryLimit,
+        @Tags = @Tags,
+        @Difficulty = @Difficulty,
+        @Status = 'Pending',
+        @ClassID = NULL,
+        @DueDate = NULL,
+        @FunctionSpec = @FunctionSpec,
+        @ProposedStatus = 'Private';
+END;
+GO

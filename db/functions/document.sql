@@ -40,3 +40,22 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER FUNCTION app.ufn_GetClassDocuments
+(
+    @ClassID INT
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT 
+        d.DocumentID,
+        d.ClassID,
+        d.FileName,
+        d.CloudinaryURL,
+        d.Category,
+        d.UploadDate
+    FROM dbo.Documents d
+    WHERE d.ClassID = @ClassID
+);
+GO
