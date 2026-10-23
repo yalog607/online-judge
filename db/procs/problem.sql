@@ -762,7 +762,8 @@ CREATE OR ALTER PROCEDURE app.usp_Problem_Create_TA
     @MemoryLimit INT = 256,
     @Tags NVARCHAR(200) = NULL,
     @Difficulty VARCHAR(20) = 'Medium',
-    @FunctionSpec NVARCHAR(MAX) = NULL
+    @FunctionSpec NVARCHAR(MAX) = NULL,
+    @ClassID INT = NULL      -- lớp TA được phân công; usp_Problem_Create bắt buộc có với vai TA
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -779,7 +780,7 @@ BEGIN
         @Tags = @Tags,
         @Difficulty = @Difficulty,
         @Status = 'Pending',
-        @ClassID = NULL,
+        @ClassID = @ClassID,
         @DueDate = NULL,
         @FunctionSpec = @FunctionSpec,
         @ProposedStatus = 'Private';
