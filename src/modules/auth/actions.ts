@@ -20,16 +20,16 @@ import {
 import * as service from "./service";
 import { AuthError } from "./service";
 import { notifyTADemoted } from "@/modules/notification/events";
-import { createDbSession, getUserById, revokeDbSession, validateImpersonate } from "./repo";
+import { createDbSession, getUserById, revokeDbSession } from "./repo";
 import { clientIp } from "@/lib/client-ip";
 import { firstIssue } from "@/lib/form-errors";
 
 export type FormState = { error?: string; field?: string; ok?: boolean; submissionId?: number };
 
-async function startSession(userId: number, actorId?: number) {
+async function startSession(userId: number) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  const sessionId = await createDbSession(userId, expiresAt, actorId);
-  await createSession(sessionId, actorId);
+  const sessionId = await createDbSession(userId, expiresAt);
+  await createSession(sessionId);
 }
 
 export async function requestRegisterOtpAction(
@@ -141,32 +141,6 @@ export async function changePasswordAction(
     return { error: e instanceof AuthError ? e.message : "Đổi mật khẩu thất bại." };
   }
   return { ok: true };
-}
-
-export async function impersonateAction(targetUserId: number) {
-  const actor = await requireUser();
-  const allowed = await validateImpersonate(actor.userId, targetUserId);
-  if (!allowed) throw new Error("Không có quyền mô phỏng người dùng này.");
-  const targetUser = await getUserById(targetUserId);
-  if (!targetUser) throw new Error("Người dùng mục tiêu không tồn tại.");
-  const oldSession = await readSession();
-  if (oldSession) await revokeDbSession(oldSession.sessionId);
-  await startSession(targetUserId, actor.userId);
-  redirect(roleHome(targetUser.Role));
-}
-
-export async function endImpersonationAction() {
-  const session = await readSession();
-  if (!session?.actorId) redirect("/user");
-
-  const actor = await getUserById(session.actorId);
-  await revokeDbSession(session.sessionId);
-  if (!actor) {
-    await destroySession();
-    redirect("/login");
-  }
-  await startSession(actor.UserID);
-  redirect(roleHome(actor.Role));
 }
 
 export async function setUserStatusAction(

@@ -10,7 +10,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       fullName={user.fullName}
       avatar={user.avatar}
       nav={TEACHER_NAV}
-      impersonating={Boolean(user.actorId)}
       notificationsHref="/teacher/notifications"
     >
       {children}

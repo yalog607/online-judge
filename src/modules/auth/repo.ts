@@ -101,11 +101,9 @@ export async function changePassword(userId: number, passwordHash: string) {
 export async function createDbSession(
   userId: number,
   expiresAt: Date,
-  actorId?: number,
 ): Promise<string> {
   const { rows } = await execProc<{ SessionID: string }>("usp_Session_Create", {
     UserID: userId,
-    ActorID: actorId ?? null,
     ExpiresAt: expiresAt,
   });
   return rows[0].SessionID;
@@ -125,14 +123,6 @@ export async function setUserRole(
   role: "User" | "TA" | "Teacher",
 ) {
   await execProc("usp_Admin_SetUserRole", { ActorID: actorId, UserID: userId, Role: role });
-}
-
-export async function validateImpersonate(actorId: number, targetUserId: number) {
-  const { rows } = await execProc<{ Allowed: boolean }>("usp_Admin_ValidateImpersonate", {
-    ActorID: actorId,
-    TargetUserID: targetUserId,
-  });
-  return Boolean(rows[0]?.Allowed);
 }
 
 export async function registerDirect(input: {

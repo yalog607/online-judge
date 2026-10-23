@@ -7,7 +7,6 @@ export type Role = "User" | "Teacher" | "Admin" | "TA";
 
 export type SessionPayload = {
   sessionId: string;
-  actorId?: number;
 };
 
 const COOKIE = "itoj_session";
@@ -35,9 +34,9 @@ async function decrypt(token: string): Promise<SessionPayload | null> {
   }
 }
 
-export async function createSession(sessionId: string, actorId?: number) {
+export async function createSession(sessionId: string) {
   const expiresAt = new Date(Date.now() + TTL_MS);
-  const token = await encrypt({ sessionId, actorId }, expiresAt);
+  const token = await encrypt({ sessionId }, expiresAt);
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     secure: true,
@@ -45,12 +44,6 @@ export async function createSession(sessionId: string, actorId?: number) {
     path: "/",
     expires: expiresAt,
   });
-}
-
-export async function isImpersonatingToken(token: string | undefined): Promise<boolean> {
-  if (!token) return false;
-  const payload = await decrypt(token);
-  return Boolean(payload?.actorId);
 }
 
 export async function readSession(): Promise<SessionPayload | null> {

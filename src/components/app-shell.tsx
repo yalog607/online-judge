@@ -1,10 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { logoutAction, endImpersonationAction } from "@/modules/auth/actions";
+import { logoutAction } from "@/modules/auth/actions";
 import { Icon } from "@/components/icon";
 import { NavLinks, type NavLink } from "@/components/nav-links";
-import { Suspense } from "react";
-import { ImpersonationNotice } from "@/components/impersonation-notice";
 import { NotificationBell, NotificationProvider } from "@/components/notification-center";
 import { verifySession } from "@/lib/dal";
 import { unreadCountFor } from "@/modules/notification/service";
@@ -19,7 +17,6 @@ export async function AppShell({
   fullName,
   avatar,
   nav,
-  impersonating,
   notificationsHref,
   children,
 }: {
@@ -27,7 +24,6 @@ export async function AppShell({
   fullName: string;
   avatar?: string | null;
   nav: NavItem[];
-  impersonating: boolean;
   notificationsHref: string;
   children: React.ReactNode;
 }) {
@@ -90,26 +86,6 @@ export async function AppShell({
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          {impersonating && (
-            <div className="sticky top-0 z-50 flex items-center justify-between border-b border-amber-500/30 bg-amber-500/15 px-6 py-2 text-xs font-medium text-amber-500 backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-amber-500/20 text-xs">
-                  👁
-                </span>
-                <span>
-                  Đang mô phỏng người dùng: <strong className="text-fg font-semibold">{fullName}</strong>
-                </span>
-              </div>
-              <form action={endImpersonationAction}>
-                <button
-                  type="submit"
-                  className="rounded-lg border border-amber-500/40 bg-surface px-3 py-1 text-xs font-semibold text-fg hover:bg-muted transition-colors shadow-xs"
-                >
-                  Thoát mô phỏng
-                </button>
-              </form>
-            </div>
-          )}
           <header className="sticky top-0 z-10 flex items-center justify-end gap-4 border-b border-line bg-bg/85 px-8 py-3 backdrop-blur max-[820px]:static max-[820px]:px-4">
             <div className="flex items-center gap-2.5">
               <NotificationBell href={notificationsHref} />
@@ -132,11 +108,6 @@ export async function AppShell({
             </div>
           </header>
           <main className="flex-1 px-8 pb-14 max-[820px]:px-4">{children}</main>
-          {impersonating && (
-            <Suspense fallback={null}>
-              <ImpersonationNotice />
-            </Suspense>
-          )}
         </div>
       </div>
     </NotificationProvider>

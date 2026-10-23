@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { impersonateAction } from "@/modules/auth/actions";
+import { useState } from "react";
 import { RequestTAUpgradeButton } from "./request-ta-button";
 import { DemoteTAButton } from "./demote-ta-button";
 import { RemoveStudentButton } from "./remove-student-button";
 import { ImportStudentsDialog } from "./import-students-dialog";
 import { ExportStudentsButton } from "./export-students-button";
 import { StudentProgressModal } from "./student-progress-modal";
-import { Modal } from "@/components/modal";
 import type { StudentItem } from "@/modules/class/repo";
 
 const STUDENT_PAGE_SIZE = 20;
@@ -37,10 +35,7 @@ export function TeacherClassStudentsManager({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [studentPage, setStudentPage] = useState(1);
-  const [isImpersonateModalOpen, setIsImpersonateModalOpen] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
   const [progressStudent, setProgressStudent] = useState<StudentItem | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const filteredStudents = students.filter((s) => {
     const q = searchQuery.trim().toLowerCase();
@@ -59,26 +54,6 @@ export function TeacherClassStudentsManager({
     currentStudentPage * STUDENT_PAGE_SIZE,
   );
 
-  const selectedStudent =
-    students.find((s) => s.UserID === selectedStudentId) ?? null;
-
-  const handleImpersonate = () => {
-    if (!selectedStudent) return;
-    setModalError(null);
-    startTransition(async () => {
-      try {
-        await impersonateAction(selectedStudent.UserID);
-      } catch (err: unknown) {
-        if (err && typeof err === "object" && "digest" in err) {
-          throw err;
-        }
-        setModalError(
-          err instanceof Error ? err.message : "Mô phỏng học sinh thất bại."
-        );
-      }
-    });
-  };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -87,43 +62,13 @@ export function TeacherClassStudentsManager({
             Học sinh trong lớp ({students.length})
           </h2>
           <p className="text-xs text-fg-muted">
-            Xem danh sách, theo dõi tiến độ và mô phỏng trải nghiệm của học sinh.
+            Xem danh sách và theo dõi tiến độ của học sinh.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <ImportStudentsDialog classId={classId} />
           <ExportStudentsButton classId={classId} />
-          <button
-            type="button"
-            disabled={!selectedStudent}
-            onClick={() => {
-              setModalError(null);
-              setIsImpersonateModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            Mô phỏng
-          </button>
         </div>
       </div>
 
@@ -334,86 +279,6 @@ export function TeacherClassStudentsManager({
           </div>
         )}
       </div>
-
-      <Modal
-        isOpen={Boolean(isImpersonateModalOpen && selectedStudent)}
-        onClose={() => setIsImpersonateModalOpen(false)}
-      >
-        {selectedStudent && (
-          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-line">
-              <div className="flex items-center gap-2 text-primary font-semibold">
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <h3 className="text-lg font-semibold text-fg">
-                  Xác nhận mô phỏng học sinh
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsImpersonateModalOpen(false)}
-                className="text-fg-muted hover:text-fg text-sm font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="mt-4 rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-500">
-                {modalError}
-              </div>
-            )}
-
-            <div className="mt-4 space-y-3 text-sm text-fg-muted">
-              <p>
-                Bạn sắp chuyển sang phiên làm việc của học sinh{" "}
-                <strong className="text-fg font-semibold">
-                  {selectedStudent.FullName}
-                </strong>.
-              </p>
-              <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                Lưu ý: Mọi hoạt động làm bài hoặc xem tài liệu sẽ mang danh nghĩa của học sinh này. Bạn có thể quay lại giao diện Giảng viên bất kỳ lúc nào bằng nút &quot;Thoát mô phỏng&quot; ở đầu trang.
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-line">
-              <button
-                type="button"
-                onClick={() => setIsImpersonateModalOpen(false)}
-                disabled={isPending}
-                className="rounded-lg border border-line bg-muted px-4 py-2 text-xs font-semibold text-fg hover:bg-muted/80 transition-colors disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleImpersonate}
-                disabled={isPending}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "Đang xử lý..." : "Bắt đầu mô phỏng"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {progressStudent && (
         <StudentProgressModal

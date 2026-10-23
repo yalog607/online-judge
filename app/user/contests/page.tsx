@@ -4,8 +4,11 @@ import { PageHeader } from "@/components/page-header";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
+import { classRepository } from "@/modules/class/repo";
 import { Pager } from "@/components/pager";
 import { ContestStatusBadge } from "@/components/badge";
+import { DataTable } from "@/components/data-table";
+import { Select } from "@/components/select";
 import { JoinContestDialog } from "./join-contest-dialog";
 
 const PAGE_SIZE = 20;
@@ -32,18 +35,24 @@ export default async function UserContestsPage({
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const statusParam = (sp.status as "Upcoming" | "Ongoing" | "Ended" | "All") || "All";
+  const selectedClassId = sp.classId ? Number(sp.classId) : undefined;
   const isMineView = sp.view === "mine";
   const joinedView = sp.view === "joined";
 
-  const { items: contests, total } = await contestRepository.listContests({
-    status: statusParam,
-    search: sp.q,
-    page,
-    pageSize: PAGE_SIZE,
-    userId: user.userId,
-    onlyMine: isMineView,
-    onlyJoined: joinedView,
-  });
+  const [{ items: contests, total }, { classes }] = await Promise.all([
+    contestRepository.listContests({
+      status: statusParam,
+      classId: selectedClassId,
+      search: sp.q,
+      page,
+      pageSize: PAGE_SIZE,
+      userId: user.userId,
+      onlyMine: isMineView,
+      onlyJoined: joinedView,
+    }),
+    classRepository.listClasses({ userId: user.userId, onlyMine: true, page: 1, pageSize: 500 }),
+  ]);
+  const classOptions = classes.map((item) => ({ classId: item.ClassID, className: item.ClassName }));
 
   // Số kỳ thi hiển thị trên các tab (không phụ thuộc bộ lọc đang chọn).
   const countFor = async (view: "mine" | "joined") =>
@@ -151,9 +160,13 @@ export default async function UserContestsPage({
           </Link>
         </div>
 
-        <form className="flex items-center gap-2" method="get">
+        <form className="flex flex-wrap items-center gap-2" method="get">
           <input type="hidden" name="status" value={statusParam} />
           {sp.view && <input type="hidden" name="view" value={sp.view} />}
+          <Select name="classId" label="Lớp học" defaultValue={sp.classId ?? ""} className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary">
+            <option value="">Tất cả lớp</option>
+            {classOptions.map((item) => <option key={item.classId} value={item.classId}>{item.className}</option>)}
+          </Select>
           <input
             name="q"
             defaultValue={sp.q}
@@ -166,99 +179,37 @@ export default async function UserContestsPage({
           >
             Tìm
           </button>
+          <Link href={isMineView ? "/user/contests?view=mine" : joinedView ? "/user/contests?view=joined" : "/user/contests"} className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs font-semibold text-fg hover:bg-muted/80">
+            Xóa lọc
+          </Link>
         </form>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <DataTable minWidth={940} columns={[{ label: "STT" }, { label: "Tên kỳ thi" }, { label: "Lớp / Người tạo" }, { label: "Thời gian" }, { label: "Đề thi / Thí sinh" }, { label: "Trạng thái" }, { label: "Thao tác", align: "right" }] }>
         {detailedContests.length === 0 ? (
-          <EmptyState>{joinedView ? "Bạn chưa tham gia kỳ thi nào phù hợp." : "Không tìm thấy kỳ thi nào phù hợp."}</EmptyState>
+          <EmptyState variant="cell" colSpan={7}>{joinedView ? "Bạn chưa tham gia kỳ thi nào phù hợp." : "Không tìm thấy kỳ thi nào phù hợp."}</EmptyState>
         ) : (
-          detailedContests.map((c) => (
-            <div
-              key={c.contestId}
-              className="rounded-2xl border border-line bg-surface p-5 flex flex-col justify-between hover:border-primary/50 transition-colors shadow-sm"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link
-                        href={getHref(c.contestId)}
-                        className="font-bold text-base text-fg hover:text-primary transition-colors"
-                      >
-                        {c.contestName}
-                      </Link>
-                      {c.isProtected && (
-                        <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
-                          Mật khẩu
-                        </span>
-                      )}
-                    </div>
-                    {c.className && (
-                      <span className="mt-1 inline-block text-xs font-medium text-primary">
-                        Lớp: {c.className}
-                      </span>
-                    )}
-                  </div>
-                  <ContestStatusBadge status={c.status} />
-                </div>
-
-                {c.description && (
-                  <p className="mt-2 text-xs text-fg-muted line-clamp-2">{c.description}</p>
-                )}
-
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-fg-muted bg-muted/40 p-3 rounded-xl border border-line/60">
-                  <div>
-                    <span className="block text-[11px] text-fg-subtle">Bắt đầu:</span>
-                    <span className="font-medium text-fg">{formatDateTime(c.startTime)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[11px] text-fg-subtle">Kết thúc:</span>
-                    <span className="font-medium text-fg">{formatDateTime(c.endTime)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[11px] text-fg-subtle">Đề thi:</span>
-                    <span className="font-medium text-fg">{c.problemCount} bài tập</span>
-                  </div>
-                  <div>
-                    <span className="block text-[11px] text-fg-subtle">Thí sinh:</span>
-                    <span className="font-medium text-fg">{c.participantCount} người tham gia</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between pt-3 border-t border-line">
-                <span className="text-xs text-fg-muted">Tạo bởi: {c.creatorName}</span>
+          detailedContests.map((c, index) => (
+            <tr key={c.contestId} className="transition-colors hover:bg-muted/40">
+              <td className="px-5 py-3 text-fg-muted">{(page - 1) * PAGE_SIZE + index + 1}</td>
+              <td className="px-5 py-3"><div className="flex items-center gap-2"><Link href={getHref(c.contestId)} className="font-semibold text-fg hover:underline">{c.contestName}</Link>{c.isProtected && <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500">Mật khẩu</span>}</div>{c.description && <p className="mt-0.5 line-clamp-1 text-xs text-fg-muted">{c.description}</p>}</td>
+              <td className="px-5 py-3 text-xs"><div className="font-medium text-primary">{c.className ?? "Công khai"}</div><div className="text-fg-muted">{c.creatorName}</div></td>
+              <td className="px-5 py-3 text-xs text-fg-muted"><div>{formatDateTime(c.startTime)}</div><div>đến {formatDateTime(c.endTime)}</div></td>
+              <td className="px-5 py-3 text-xs text-fg-muted"><div>{c.problemCount} bài tập</div><div>{c.participantCount} thí sinh</div></td>
+              <td className="px-5 py-3"><ContestStatusBadge status={c.status} /></td>
+              <td className="px-5 py-3 text-right">
                 {c.isJoined ? (
-                  <Link
-                    href={`/user/contests/${c.contestId}`}
-                    className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-opacity ${
-                      c.status === "Ended"
-                        ? "border border-line bg-surface text-fg-muted hover:text-fg hover:bg-muted"
-                        : "bg-primary text-primary-fg hover:opacity-90"
-                    }`}
-                  >
-                    {c.status === "Ended" ? "Xem kết quả →" : "Vào phòng thi →"}
-                  </Link>
+                  <Link href={`/user/contests/${c.contestId}`} className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted">{c.status === "Ended" ? "Xem kết quả" : "Vào phòng thi"}</Link>
                 ) : c.status === "Ended" ? (
-                  <Link
-                    href={`/user/contests/${c.contestId}`}
-                    className="rounded-lg border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-fg-muted hover:text-fg hover:bg-muted transition-colors"
-                  >
-                    Xem chi tiết →
-                  </Link>
+                  <Link href={`/user/contests/${c.contestId}`} className="rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-fg hover:bg-muted">Xem chi tiết</Link>
                 ) : (
-                  <JoinContestDialog
-                    contestId={c.contestId}
-                    contestName={c.contestName}
-                    isProtected={c.isProtected}
-                  />
+                  <JoinContestDialog contestId={c.contestId} contestName={c.contestName} isProtected={c.isProtected} />
                 )}
-              </div>
-            </div>
+              </td>
+            </tr>
           ))
         )}
-      </div>
+      </DataTable>
 
       <Pager
         page={page}

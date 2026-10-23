@@ -9,7 +9,6 @@ import { Pager } from "@/components/pager";
 import {
   setUserStatusAction,
   setUserRoleAction,
-  impersonateAction,
   loadOwnershipDataAction,
   transferOwnershipAction,
   type OwnershipData,
@@ -64,7 +63,6 @@ export function AdminUsersManager({
 
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
-  const [isImpersonateModalOpen, setIsImpersonateModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedNewRole, setSelectedNewRole] = useState<Role>("User");
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -77,9 +75,8 @@ export function AdminUsersManager({
 
   // Chỉ tính các người dùng đang hiển thị trên trang hiện tại.
   const targets = users.filter((u) => checkedIds.has(u.UserID));
-  // Thao tác một người (mô phỏng, chuyển quyền sở hữu) chỉ dùng khi chọn đúng một người.
+  // Chuyển quyền sở hữu chỉ dùng khi chọn đúng một người.
   const selectedUser = targets.length === 1 ? targets[0] : null;
-  const isCurrentAdmin = selectedUser?.UserID === currentAdminId;
 
   const manageable = targets.filter((u) => u.UserID !== currentAdminId && u.Role !== "Admin");
   const lockTargets = manageable.filter((u) => u.Status === "Active");
@@ -88,12 +85,6 @@ export function AdminUsersManager({
 
   const canLock = lockTargets.length > 0;
   const canUnlock = unlockTargets.length > 0;
-  const canImpersonate = Boolean(
-    selectedUser &&
-      !isCurrentAdmin &&
-      selectedUser.Role !== "Admin" &&
-      selectedUser.Status === "Active"
-  );
   const canChangeRole = roleTargets.length > 0;
 
   // Quản trị viên (kể cả chính mình) không thể bị khóa hay đổi vai trò nên không chọn được.
@@ -226,21 +217,6 @@ export function AdminUsersManager({
     });
   };
 
-  const handleImpersonate = () => {
-    if (!selectedUser) return;
-    setModalError(null);
-    startTransition(async () => {
-      try {
-        await impersonateAction(selectedUser.UserID);
-      } catch (err: unknown) {
-        if (err && typeof err === "object" && "digest" in err) {
-          throw err;
-        }
-        setModalError(err instanceof Error ? err.message : "Mô phỏng thất bại.");
-      }
-    });
-  };
-
   const buildPageHref = (targetPage: number) => {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -258,7 +234,7 @@ export function AdminUsersManager({
       <div>
         <h1 className="text-2xl font-bold text-fg">Quản lý người dùng</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          Khóa, mở khóa hoặc mô phỏng tài khoản.
+          Khóa, mở khóa hoặc phân quyền tài khoản.
         </p>
       </div>
 
@@ -398,31 +374,6 @@ export function AdminUsersManager({
               </button>
             )}
 
-            <button
-              type="button"
-              disabled={!canImpersonate}
-              onClick={() => {
-                setModalError(null);
-                setIsImpersonateModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
-              Mô phỏng
-            </button>
           </div>
         </div>
       </div>
@@ -431,7 +382,7 @@ export function AdminUsersManager({
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-sm text-primary">
           <span>
             Đã chọn <strong>{targets.length}</strong> người dùng
-            {targets.length > 1 && " — mô phỏng và chuyển quyền sở hữu chỉ dùng khi chọn một người"}
+            {targets.length > 1 && " — chuyển quyền sở hữu chỉ dùng khi chọn một người"}
           </span>
           <button
             type="button"
@@ -596,79 +547,6 @@ export function AdminUsersManager({
           )}
         </div>
       </div>
-
-      <Modal
-        isOpen={Boolean(isImpersonateModalOpen && selectedUser)}
-        onClose={() => setIsImpersonateModalOpen(false)}
-      >
-        {selectedUser && (
-          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl text-left animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-line">
-              <div className="flex items-center gap-2 text-primary font-semibold">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <h3 className="text-lg font-semibold text-fg">Xác nhận mô phỏng tài khoản</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsImpersonateModalOpen(false)}
-                className="text-fg-muted hover:text-fg text-sm font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="mt-4 rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-500">
-                {modalError}
-              </div>
-            )}
-
-            <div className="mt-4 space-y-3 text-sm text-fg-muted">
-              <p>
-                Bạn sắp chuyển sang phiên làm việc của người dùng{" "}
-                <strong className="text-fg font-semibold">{selectedUser.FullName}</strong>{" "}
-                <span className="font-mono text-xs text-fg-muted">(@{selectedUser.Username})</span> với vai trò{" "}
-                <strong className="text-fg font-semibold">{selectedUser.Role}</strong>.
-              </p>
-              <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-                Lưu ý: Phiên mô phỏng chỉ để xem giao diện, bạn không thể thay đổi dữ liệu của tài khoản này. Việc bắt đầu mô phỏng được lưu vào nhật ký kiểm toán. Bạn có thể quay lại phiên Admin bất kỳ lúc nào qua thanh cảnh báo ở đầu trang.
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-line">
-              <button
-                type="button"
-                onClick={() => setIsImpersonateModalOpen(false)}
-                disabled={isPending}
-                className="rounded-lg border border-line bg-muted px-4 py-2 text-xs font-semibold text-fg hover:bg-muted/80 transition-colors disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleImpersonate}
-                disabled={isPending}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "Đang xử lý..." : "Bắt đầu mô phỏng"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       <Modal
         isOpen={Boolean(isLockModalOpen && lockTargets.length > 0)}

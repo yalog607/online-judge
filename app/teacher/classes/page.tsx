@@ -1,145 +1,54 @@
-import { requireRole } from "@/lib/dal";
-import { classRepository } from "@/modules/class/repo";
-import { ClassCard, ClassSection } from "@/components/class-card";
-import { Badge, ClassActiveBadge, ClassApprovalBadge } from "@/components/badge";
-import { PageHeader } from "@/components/page-header";
-import { pageHrefBuilder, paginate, parsePage } from "@/lib/paginate";
+import Link from "next/link";
+import { ClassListTable } from "@/components/class-list-table";
 import { JoinClassForm } from "@/components/join-class-form";
+import { PageHeader } from "@/components/page-header";
+import { Pager } from "@/components/pager";
+import { SearchForm, filterControlClass, searchInputClass } from "@/components/search-form";
+import { Select } from "@/components/select";
+import { requireRole } from "@/lib/dal";
+import { pageHrefBuilder, paginate, parsePage } from "@/lib/paginate";
+import { classRepository } from "@/modules/class/repo";
 
-const CLASS_PAGE_SIZE = 9;
+const PAGE_SIZE = 20;
 
-export default async function TeacherClassesPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
+export default async function TeacherClassesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireRole("Teacher", "Admin");
   const sp = await searchParams;
-  const { classes } = await classRepository.listClasses({
-    userId: actor.userId,
-    search: sp.q,
-    onlyMine: false,
-    page: 1,
-    pageSize: 500,
+  const view = sp.view === "joined" || sp.view === "other" ? sp.view : "mine";
+  const { classes } = await classRepository.listClasses({ userId: actor.userId, search: sp.q, onlyMine: false, page: 1, pageSize: 500 });
+  const groups = {
+    mine: classes.filter((item) => item.TeacherID === actor.userId),
+    joined: classes.filter((item) => item.IsJoined && item.TeacherID !== actor.userId && !item.IsTA),
+    other: classes.filter((item) => !item.IsJoined && item.TeacherID !== actor.userId && !item.IsTA),
+  };
+  const filtered = groups[view].filter((item) => {
+    if (sp.state === "active" && item.IsCancelled) return false;
+    if (sp.state === "cancelled" && !item.IsCancelled) return false;
+    if (sp.access === "public" && !item.IsPublic) return false;
+    if (sp.access === "approval" && item.IsPublic) return false;
+    return true;
   });
-  const ownedClasses = classes.filter((c) => c.TeacherID === actor.userId);
-  const joinedClasses = classes.filter(
-    (c) => c.IsJoined && c.TeacherID !== actor.userId && !c.IsTA,
-  );
-  const otherClasses = classes.filter(
-    (c) => !c.IsJoined && c.TeacherID !== actor.userId && !c.IsTA,
-  );
+  const paged = paginate(filtered, parsePage(sp.page), PAGE_SIZE);
+  const tabHref = (target: string) => `/teacher/classes${target === "mine" ? "" : `?view=${target}`}`;
 
   return (
     <div className="flex flex-col gap-6 pt-8">
-      <PageHeader
-        title="Lớp học"
-        description="Quản lý lớp đang dạy và truy cập các lớp bạn tham gia."
-        action={{ href: "/teacher/classes/new", label: "+ Tạo lớp học" }}
-      />
-
-      <div className="card p-5">
-        <h2 className="mb-2 font-semibold">Tham gia lớp bằng mã mời</h2>
-        <JoinClassForm />
-      </div>
-
-      <form className="flex flex-wrap gap-3 card p-3" method="get">
-        {sp.view === "mine" && <input type="hidden" name="view" value="mine" />}
-        <input
-          name="q"
-          defaultValue={sp.q}
-          placeholder="Tìm theo tên lớp học..."
-          className="min-w-[200px] flex-1 rounded-lg border border-line bg-muted px-3 py-2 text-fg"
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-fg"
-        >
-          Tìm kiếm
-        </button>
-      </form>
-
-      <ClassCards
-        title={`Lớp tôi quản lý (${ownedClasses.length})`}
-        classes={ownedClasses}
-        pageKey="po"
-        sp={sp}
-        buildHref={pageHrefBuilder(sp, "po")}
-        hrefPrefix="/teacher/classes"
-        empty="Bạn chưa tạo lớp học nào."
-        label="Giảng viên"
-      />
-      <ClassCards
-        title={`Lớp tôi đã tham gia (${joinedClasses.length})`}
-        classes={joinedClasses}
-        pageKey="pj"
-        sp={sp}
-        buildHref={pageHrefBuilder(sp, "pj")}
-        hrefPrefix="/user/classes"
-        empty="Bạn chưa tham gia lớp học nào."
-        label="Đã tham gia"
-      />
-      <ClassCards
-        title={`Các lớp học khác (${otherClasses.length})`}
-        classes={otherClasses}
-        pageKey="pc"
-        sp={sp}
-        buildHref={pageHrefBuilder(sp, "pc")}
-        hrefPrefix="/user/classes"
-        empty="Không có lớp học phù hợp."
-        label="Lớp học"
-      />
+      <PageHeader title="Lớp học" description="Quản lý lớp đang dạy và truy cập các lớp bạn tham gia." action={{ href: "/teacher/classes/new", label: "+ Tạo lớp học" }} />
+      <div className="card p-5"><h2 className="mb-2 font-semibold">Tham gia lớp bằng mã mời</h2><JoinClassForm /></div>
+      <nav aria-label="Nhóm lớp học" className="flex gap-5 overflow-x-auto border-b border-line pb-2">
+        {[["mine", "Lớp tôi quản lý", groups.mine.length], ["joined", "Đã tham gia", groups.joined.length], ["other", "Lớp khác", groups.other.length]].map(([value, label, count]) => (
+          <Link key={String(value)} href={tabHref(String(value))} className={`-mb-[9px] whitespace-nowrap pb-2 font-medium ${view === value ? "border-b-2 border-primary text-primary" : "text-fg-muted hover:text-fg"}`}>
+            {label} <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-xs">{count}</span>
+          </Link>
+        ))}
+      </nav>
+      <SearchForm sp={sp} hidden={{ view: view !== "mine" && view }} resetHref={tabHref(view)}>
+        <input name="q" defaultValue={sp.q} placeholder="Tìm theo tên lớp hoặc giảng viên..." className={searchInputClass} />
+        <Select name="state" label="Trạng thái" defaultValue={sp.state ?? ""} className={filterControlClass}><option value="">Tất cả trạng thái</option><option value="active">Đang hoạt động</option><option value="cancelled">Đã hủy</option></Select>
+        <Select name="access" label="Phạm vi" defaultValue={sp.access ?? ""} className={filterControlClass}><option value="">Tất cả phạm vi</option><option value="public">Công khai</option><option value="approval">Cần duyệt</option></Select>
+      </SearchForm>
+      <ClassListTable classes={paged.items} hrefPrefix={view === "mine" ? "/teacher/classes" : "/user/classes"} relationLabel={() => view === "mine" ? "Giảng viên" : view === "joined" ? "Đã tham gia" : "Lớp khác"} empty="Không tìm thấy lớp học nào phù hợp." startIndex={(paged.page - 1) * PAGE_SIZE} showApprovalStatus />
+      <Pager page={paged.page} pageSize={PAGE_SIZE} total={paged.total} buildHref={pageHrefBuilder(sp, "page")} />
     </div>
-  );
-}
-
-function ClassCards({
-  title,
-  classes,
-  hrefPrefix,
-  empty,
-  label,
-  pageKey,
-  sp,
-  buildHref,
-}: {
-  title: string;
-  classes: Awaited<ReturnType<typeof classRepository.listClasses>>["classes"];
-  hrefPrefix: string;
-  empty: string;
-  label: string;
-  pageKey: string;
-  sp: Record<string, string | undefined>;
-  buildHref: (page: number) => string;
-}) {
-  const paged = paginate(classes, parsePage(sp[pageKey]), CLASS_PAGE_SIZE);
-  return (
-    <ClassSection
-      title={title}
-      empty={empty}
-      isEmpty={paged.items.length === 0}
-      pager={{ page: paged.page, pageSize: CLASS_PAGE_SIZE, total: paged.total, buildHref }}
-    >
-      {paged.items.map((c) => (
-        <ClassCard
-          key={c.ClassID}
-          href={`${hrefPrefix}/${c.ClassID}`}
-          name={c.ClassName}
-          description={c.Description}
-          teacherName={c.TeacherName}
-          studentCount={c.StudentCount}
-          kicker={c.IsCancelled ? "Đã hủy · chỉ xem lịch sử" : label}
-          kickerTone={c.IsCancelled ? "bad" : "primary"}
-          badges={
-            <>
-              <Badge kind={c.IsPublic ? "ok" : "warn"}>{c.IsPublic ? "Lớp công khai" : "Lớp cần duyệt"}</Badge>
-              <ClassApprovalBadge status={c.ApprovalStatus} />
-              <ClassActiveBadge cancelled={c.IsCancelled} />
-            </>
-          }
-          ctaLabel={label === "Giảng viên" || c.IsTA ? "Quản lý lớp" : "Vào lớp"}
-        />
-      ))}
-    </ClassSection>
   );
 }
