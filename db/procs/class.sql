@@ -280,7 +280,7 @@ BEGIN
        AND NOT EXISTS (SELECT 1 FROM dbo.Class_TA WHERE ClassID = @ClassID AND UserID_TA = @ActorID)
        AND NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
     BEGIN
-        THROW 50026, N'Bạn không có quyền xem danh sách học sinh lớp này.', 1;
+        THROW 50026, N'Bạn không có quyền xem danh sách học viên lớp này.', 1;
     END;
 
     SELECT 
@@ -517,7 +517,7 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50027, N'Bạn không có quyền thêm học sinh vào lớp này.', 1;
+            THROW 50027, N'Bạn không có quyền thêm học viên vào lớp này.', 1;
         END;
 
         DECLARE @StudentID INT;
@@ -532,7 +532,7 @@ BEGIN
 
         IF EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
         BEGIN
-            THROW 50029, N'Học sinh này đã ở trong lớp học rồi.', 1;
+            THROW 50029, N'Học viên này đã ở trong lớp học rồi.', 1;
         END;
 
         INSERT dbo.Class_Student (ClassID, UserID, JoinDate, ProgressPercent)
@@ -574,12 +574,12 @@ BEGIN
             )
         )
         BEGIN
-            THROW 50027, N'Bạn không có quyền xóa học sinh khỏi lớp này.', 1;
+            THROW 50027, N'Bạn không có quyền xóa học viên khỏi lớp này.', 1;
         END;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
         BEGIN
-            THROW 50030, N'Học sinh không có trong lớp này.', 1;
+            THROW 50030, N'Học viên không có trong lớp này.', 1;
         END;
 
         DELETE FROM dbo.Class_Student
@@ -691,6 +691,16 @@ BEGIN
         WHERE ProblemID = @ProblemID AND Status = 'Hidden'
     )
         THROW 50033, N'Không thể giao bài tập đã bị khóa.', 1;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.Problems p
+        JOIN dbo.Users u ON u.UserID = @TeacherID
+        WHERE p.ProblemID = @ProblemID AND (
+            u.Role = 'Admin'
+            OR p.CreatorID = @TeacherID
+        )
+    )
+        THROW 50034, N'Bạn chỉ có thể giao bài tập do chính mình tạo hoặc nhân bản.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -1070,7 +1080,7 @@ BEGIN
 
         IF @TeacherID IS NULL
         BEGIN
-            THROW 50027, 'Ban khong co quyen them hoc sinh vao lop nay.', 1;
+            THROW 50027, N'Bạn không có quyền thêm học viên vào lớp này.', 1;
         END;
 
         DECLARE @RawList TABLE (
@@ -1156,12 +1166,12 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID)
     BEGIN
-        THROW 50031, 'Lop hoc khong ton tai.', 1;
+        THROW 50031, N'Lớp học không tồn tại.', 1;
     END;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Class_Student WHERE ClassID = @ClassID AND UserID = @StudentID)
     BEGIN
-        THROW 50032, 'Sinh vien khong thuoc lop hoc nay.', 1;
+        THROW 50032, N'Học viên không thuộc lớp học này.', 1;
     END;
 
     IF NOT EXISTS (
@@ -1174,7 +1184,7 @@ BEGIN
         SELECT 1 WHERE @ActorID = @StudentID
     )
     BEGIN
-        THROW 50030, 'Ban khong co quyen xem chi tiet tien do cua sinh vien nay.', 1;
+        THROW 50030, N'Bạn không có quyền xem chi tiết tiến độ của học viên này.', 1;
     END;
 
     DECLARE @TotalProblems INT;

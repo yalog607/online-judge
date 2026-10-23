@@ -29,7 +29,7 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     return NextResponse.json(
-      { error: "Không thể lấy danh sách học sinh." },
+      { error: "Không thể lấy danh sách học viên." },
       { status: 500 }
     );
   }
@@ -59,7 +59,7 @@ export async function POST(
     const identifier = String(body.identifier || "").trim();
     if (!identifier) {
       return NextResponse.json(
-        { error: "Vui lòng cung cấp email hoặc username của học sinh." },
+        { error: "Vui lòng cung cấp email hoặc username của học viên." },
         { status: 400 }
       );
     }
@@ -68,7 +68,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: true,
-        message: "Thêm học sinh thành công.",
+        message: "Thêm học viên thành công.",
         data: { studentId },
       },
       { status: 201 }
@@ -77,7 +77,7 @@ export async function POST(
     if (error instanceof DomainError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json({ error: "Thêm học sinh thất bại." }, { status: 500 });
+    return NextResponse.json({ error: "Thêm học viên thất bại." }, { status: 500 });
   }
 }
 
@@ -100,18 +100,18 @@ export async function DELETE(
     const { searchParams } = new URL(req.url);
     const studentId = parseInt(searchParams.get("studentId") ?? "", 10);
     if (isNaN(studentId)) {
-      return NextResponse.json({ error: "Mã học sinh không hợp lệ." }, { status: 400 });
+      return NextResponse.json({ error: "Mã học viên không hợp lệ." }, { status: 400 });
     }
 
     await classRepository.removeStudent(classId, session.userId, studentId);
     return NextResponse.json({
       success: true,
-      message: "Xóa học sinh khỏi lớp thành công.",
+      message: "Xóa học viên khỏi lớp thành công.",
     });
   } catch (error) {
     if (error instanceof DomainError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json({ error: "Xóa học sinh thất bại." }, { status: 500 });
+    return NextResponse.json({ error: "Xóa học viên thất bại." }, { status: 500 });
   }
 }

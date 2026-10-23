@@ -29,7 +29,12 @@ export async function TAClassView({
         ? classRepository.getClassSubmissions(classId, userId)
         : Promise.resolve({ items: [], total: 0 }),
       role === "TA" || role === "Teacher" || role === "Admin"
-        ? listForManage({ actorId: userId, page: 1, pageSize: 100 })
+        ? listForManage({
+            actorId: userId,
+            ownerOnly: role !== "Admin",
+            page: 1,
+            pageSize: 100,
+          })
         : Promise.resolve({ rows: [] }),
     ]);
 
@@ -37,7 +42,12 @@ export async function TAClassView({
   const canManage = role === "TA" || role === "Teacher" || role === "Admin";
   const assignedProblemIds = new Set(problems.map((p) => p.ProblemID));
   const availableProblems = manageableProblems.rows
-    .filter((problem) => !assignedProblemIds.has(problem.ProblemID) && problem.Status !== "Hidden")
+    .filter(
+      (problem) =>
+        !assignedProblemIds.has(problem.ProblemID) &&
+        problem.Status !== "Hidden" &&
+        (role === "Admin" || problem.CreatorID === userId),
+    )
     .map((problem) => ({
       problemId: problem.ProblemID,
       title: problem.Title,
@@ -119,9 +129,9 @@ export async function TAClassView({
 
             <div className="card p-4">
               <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-                Tổng số học sinh
+                Tổng số học viên
               </span>
-              <p className="mt-2 text-xl font-bold text-fg">{students.length} học sinh</p>
+              <p className="mt-2 text-xl font-bold text-fg">{students.length} học viên</p>
             </div>
 
             <div className="card p-4">
@@ -224,7 +234,7 @@ export async function TAClassView({
                     Đăng tải tài liệu học tập
                   </h2>
                   <p className="mb-4 text-xs text-fg-muted">
-                    Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học sinh trong lớp.
+                    Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học viên trong lớp.
                   </p>
                   <DocumentUploadForm classId={classId} />
                 </div>
@@ -235,7 +245,7 @@ export async function TAClassView({
           )}
 
           <div className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h2>
+            <h2 className="text-lg font-semibold">Danh sách học viên ({students.length})</h2>
             <div className="card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -253,7 +263,7 @@ export async function TAClassView({
                   {students.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
-                        Chưa có học sinh nào tham gia lớp học này.
+                        Chưa có học viên nào tham gia lớp học này.
                       </td>
                     </tr>
                   ) : (
@@ -282,14 +292,14 @@ export async function TAClassView({
 
       {activeTab === "submissions" && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Lịch sử nộp bài của sinh viên</h2>
+          <h2 className="text-lg font-semibold">Lịch sử nộp bài của học viên</h2>
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
                   <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Sinh viên</th>
+                  <th className="px-4 py-3">Học viên</th>
                   <th className="px-4 py-3">Bài tập</th>
                   <th className="px-4 py-3">Kết quả</th>
                   <th className="px-4 py-3">Thời gian</th>
@@ -300,7 +310,7 @@ export async function TAClassView({
                 {submissions.items.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-fg-muted">
-                      Chưa có lượt nộp bài nào từ học sinh trong lớp.
+                      Chưa có lượt nộp bài nào từ học viên trong lớp.
                     </td>
                   </tr>
                 ) : (

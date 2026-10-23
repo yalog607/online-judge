@@ -24,7 +24,7 @@ export function RemoveStudentButton({
         await removeStudentAction(classId, studentId);
         setIsOpen(false);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Xóa học sinh thất bại.");
+        setError(e instanceof Error ? e.message : "Xóa học viên thất bại.");
       }
     });
   };
@@ -50,7 +50,7 @@ export function RemoveStudentButton({
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              <h3 className="text-lg font-semibold text-fg">Xóa học sinh khỏi lớp</h3>
+              <h3 className="text-lg font-semibold text-fg">Xóa học viên khỏi lớp</h3>
             </div>
             <button
               type="button"
@@ -69,10 +69,10 @@ export function RemoveStudentButton({
 
           <div className="mt-4 space-y-2 text-sm text-fg-muted">
             <p>
-              Bạn có chắc chắn muốn xóa học sinh <span className="font-semibold text-fg">&ldquo;{studentName}&rdquo;</span> khỏi lớp học này?
+              Bạn có chắc chắn muốn xóa học viên <span className="font-semibold text-fg">&ldquo;{studentName}&rdquo;</span> khỏi lớp học này?
             </p>
             <p className="text-xs text-fg-subtle">
-              Sau khi xóa, học sinh sẽ không thể tiếp tục truy cập các bài tập, tài liệu của lớp và tiến độ nộp bài của học sinh sẽ bị hủy liên kết khỏi lớp học.
+              Sau khi xóa, học viên sẽ không thể tiếp tục truy cập các bài tập, tài liệu của lớp và tiến độ nộp bài của học viên sẽ bị hủy liên kết khỏi lớp học.
             </p>
           </div>
 

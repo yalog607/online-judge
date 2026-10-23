@@ -44,7 +44,7 @@ export async function POST(
     const parsedRows = await parseClassStudentsFromExcel(buffer);
     if (parsedRows.length === 0) {
       return NextResponse.json(
-        { error: "Không tìm thấy dòng dữ liệu học sinh nào trong tệp Excel." },
+        { error: "Không tìm thấy dòng dữ liệu học viên nào trong tệp Excel." },
         { status: 400 }
       );
     }
@@ -67,7 +67,7 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     return NextResponse.json(
-      { error: "Không thể nhập học sinh từ tệp Excel." },
+      { error: "Không thể nhập học viên từ tệp Excel." },
       { status: 500 }
     );
   }

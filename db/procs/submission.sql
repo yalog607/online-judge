@@ -49,7 +49,7 @@ BEGIN
         IF app.ufn_CanUserAccessContestProblem(@ContestID, @ProblemID, @UserID) = 0
             THROW 50025, N'Bạn không có quyền tham gia kỳ thi này.', 1;
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher'))
+        IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role IN ('User', 'Teacher', 'TA'))
             THROW 50027, N'Tài khoản này không thể nộp bài trong kỳ thi.', 1;
 
         IF app.ufn_CanUserAccessContest(@ContestID, @UserID) = 1 AND NOT EXISTS (SELECT 1 FROM dbo.Contest_User WHERE ContestID = @ContestID AND UserID = @UserID)

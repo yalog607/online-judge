@@ -36,7 +36,7 @@ export default async function UserContestsPage({
   const page = Math.max(1, Number(sp.page) || 1);
   const statusParam = (sp.status as "Upcoming" | "Ongoing" | "Ended" | "All") || "All";
   const selectedClassId = sp.classId ? Number(sp.classId) : undefined;
-  const isMineView = sp.view === "mine";
+  const isMineView = user.role === "Admin" && sp.view === "mine";
   const joinedView = sp.view === "joined";
 
   const [{ items: contests, total }, { classes }] = await Promise.all([
@@ -67,7 +67,7 @@ export default async function UserContestsPage({
       })
     ).total;
   const [mineCount, joinedCount] = await Promise.all([
-    user.role === "TA" || user.role === "Admin" ? countFor("mine") : Promise.resolve(0),
+    user.role === "Admin" ? countFor("mine") : Promise.resolve(0),
     countFor("joined"),
   ]);
 
@@ -134,7 +134,7 @@ export default async function UserContestsPage({
               </Link>
             );
           })}
-          {(user.role === "TA" || user.role === "Admin") && (
+          {user.role === "Admin" && (
             <Link
               href={`/user/contests?${mineParams.toString()}`}
               aria-current={isMineView ? "page" : undefined}

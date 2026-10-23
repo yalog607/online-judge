@@ -20,7 +20,7 @@ export function ReopenClassButton({
   const reopen = async () => {
     const ok = await dialog.confirm({
       title: "Mở lại lớp học",
-      message: `Mở lại lớp “${className}”? Lớp sẽ hoạt động trở lại, học sinh có thể nộp bài mới.`,
+      message: `Mở lại lớp “${className}”? Lớp sẽ hoạt động trở lại, học viên có thể nộp bài mới.`,
       confirmText: "Mở lại lớp",
       cancelText: "Để sau",
     });

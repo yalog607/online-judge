@@ -48,7 +48,12 @@ export default async function TeacherClassDetailPage({
     classRepository.getClassStudents(classId, actor.userId),
     documentRepository.listDocuments(classId, actor.userId),
     classRepository.getClassProblems(classId, actor.userId),
-    listProblemsForManage({ actorId: actor.userId, page: 1, pageSize: 100 }),
+    listProblemsForManage({
+      actorId: actor.userId,
+      ownerOnly: actor.role !== "Admin",
+      page: 1,
+      pageSize: 100,
+    }),
     activeTab === "submissions"
       ? classRepository.getClassSubmissions(classId, actor.userId, page, PAGE_SIZE, selectedProblemId, selectedResult)
       : Promise.resolve({ items: [], total: 0 }),
@@ -85,7 +90,8 @@ export default async function TeacherClassDetailPage({
     .filter(
       (p) =>
         !assignedProblemIds.has(p.ProblemID) &&
-        p.Status !== "Hidden",
+        p.Status !== "Hidden" &&
+        (actor.role === "Admin" || p.CreatorID === actor.userId),
     )
     .map((p) => ({
       problemId: p.ProblemID,
@@ -163,7 +169,7 @@ export default async function TeacherClassDetailPage({
 
       {classDetail.IsCancelled && (
         <div className="rounded-lg border border-bad/30 bg-bad/5 px-4 py-3 text-sm text-bad">
-          Lớp đã hủy. Học sinh cũ vẫn có thể xem bài tập và lịch sử nộp bài; lớp không nhận học sinh hoặc bài nộp mới.
+          Lớp đã hủy. Học viên cũ vẫn có thể xem bài tập và lịch sử nộp bài; lớp không nhận học viên hoặc bài nộp mới.
         </div>
       )}
 
@@ -222,9 +228,9 @@ export default async function TeacherClassDetailPage({
 
         <div className="card p-4">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-            Tổng số học sinh
+            Tổng số học viên
           </span>
-          <p className="mt-2 text-xl font-bold text-fg">{students.length} học sinh</p>
+          <p className="mt-2 text-xl font-bold text-fg">{students.length} học viên</p>
         </div>
 
         <div className="card p-4">
@@ -256,7 +262,7 @@ export default async function TeacherClassDetailPage({
           <div>
             <h2 className="text-lg font-semibold text-fg">Bài tập của lớp ({problems.length})</h2>
             <p className="text-xs text-fg-muted">
-              Quản lý các bài tập được giao cho học sinh trong lớp học này.
+              Quản lý các bài tập được giao cho học viên trong lớp học này.
             </p>
           </div>
           {!classDetail.IsCancelled && (
@@ -340,7 +346,7 @@ export default async function TeacherClassDetailPage({
       <div className="card p-5">
         <h2 className="mb-2 text-base font-semibold text-fg">Đăng tải tài liệu học tập</h2>
         <p className="mb-4 text-xs text-fg-muted">
-          Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học sinh trong lớp.
+          Tải lên bài giảng, slide, bài tập hoặc tài liệu tham khảo cho học viên trong lớp.
         </p>
         {!classDetail.IsCancelled && <DocumentUploadForm classId={classId} />}
       </div>
@@ -351,9 +357,9 @@ export default async function TeacherClassDetailPage({
       </div>
 
       {!classDetail.IsCancelled && <div className="card p-5">
-        <h2 className="mb-2 text-base font-semibold text-fg">Thêm học sinh vào lớp</h2>
+        <h2 className="mb-2 text-base font-semibold text-fg">Thêm học viên vào lớp</h2>
         <p className="mb-4 text-xs text-fg-muted">
-          Nhập địa chỉ email hoặc tên đăng nhập của học sinh để thêm trực tiếp vào lớp.
+          Nhập địa chỉ email hoặc tên đăng nhập của học viên để thêm trực tiếp vào lớp.
         </p>
         <AddStudentForm classId={classId} />
       </div>}
@@ -422,7 +428,7 @@ export default async function TeacherClassDetailPage({
               <thead className="border-b border-line bg-muted font-medium text-fg-muted">
                 <tr>
                   <th className="px-4 py-3">STT</th>
-                  <th className="px-4 py-3">Sinh viên</th>
+                  <th className="px-4 py-3">Học viên</th>
                   <th className="px-4 py-3">Bài tập</th>
                   <th className="px-4 py-3">Kết quả</th>
                   <th className="px-4 py-3">Ngôn ngữ</th>

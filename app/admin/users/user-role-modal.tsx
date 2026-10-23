@@ -29,7 +29,7 @@ const ROLES: {
     role: "TA",
     label: "Trợ giảng (TA)",
     badgeText: "Trợ giảng",
-    desc: "Hỗ trợ giáo viên chấm bài, duyệt bài tập và hỗ trợ quản lý học sinh trong lớp.",
+    desc: "Hỗ trợ giáo viên chấm bài, duyệt bài tập và hỗ trợ quản lý học viên trong lớp.",
   },
   {
     role: "Teacher",
