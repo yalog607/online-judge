@@ -116,7 +116,7 @@ export default async function AdminContestsPage({
           <input
             name="q"
             defaultValue={sp.q}
-            placeholder="Tìm theo tên kỳ thi..."
+            placeholder="Tìm theo mã hoặc tên kỳ thi..."
             className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary"
           />
           <button
@@ -156,6 +156,7 @@ export default async function AdminContestsPage({
 
       <DataTable
         columns={[
+          { label: "Mã" },
           { label: "Tên kỳ thi" },
           { label: "Trạng thái" },
           { label: "Thời gian" },
@@ -165,12 +166,13 @@ export default async function AdminContestsPage({
         ]}
       >
         {contests.length === 0 ? (
-          <EmptyState variant="cell" colSpan={6}>
+          <EmptyState variant="cell" colSpan={7}>
             Không tìm thấy kỳ thi nào phù hợp.
           </EmptyState>
         ) : (
           contests.map((c) => (
             <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
+              <td className="px-4 py-3 font-mono text-xs font-semibold text-fg-muted whitespace-nowrap">{c.contestCode}</td>
               <td className="px-4 py-3 font-medium text-fg">
                 <div className="flex items-center gap-2">
                   <Link

@@ -9,21 +9,19 @@ export function ClassListTable({
   hrefPrefix,
   relationLabel,
   empty,
-  startIndex = 0,
   showApprovalStatus = false,
 }: {
   classes: ClassItem[];
   hrefPrefix: string;
   relationLabel: (item: ClassItem) => string;
   empty: string;
-  startIndex?: number;
   showApprovalStatus?: boolean;
 }) {
   return (
     <DataTable
       minWidth={860}
       columns={[
-        { label: "STT" },
+        { label: "Mã" },
         { label: "Tên lớp" },
         { label: "Giảng viên" },
         { label: "Vai trò / Phạm vi" },
@@ -35,9 +33,9 @@ export function ClassListTable({
       {classes.length === 0 ? (
         <EmptyState variant="cell" colSpan={7}>{empty}</EmptyState>
       ) : (
-        classes.map((item, index) => (
+        classes.map((item) => (
           <tr key={item.ClassID} className="transition-colors hover:bg-muted/40">
-            <td className="whitespace-nowrap px-5 py-3 text-fg-muted">{startIndex + index + 1}</td>
+            <td className="whitespace-nowrap px-5 py-3 text-fg-muted">{item.ClassCode}</td>
             <td className="px-5 py-3">
               <Link href={`${hrefPrefix}/${item.ClassID}`} className="font-semibold text-fg hover:underline">
                 {item.ClassName}

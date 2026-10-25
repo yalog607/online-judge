@@ -146,7 +146,7 @@ BEGIN
       AND (
           @Search IS NULL 
           OR co.ContestName LIKE '%' + @Search + '%'
-          OR ('KT' + RIGHT('000' + CAST(co.ContestID AS VARCHAR(10)), 3)) LIKE '%' + @Search + '%'
+          OR co.ContestCode LIKE '%' + @Search + '%'
           OR CAST(co.ContestID AS NVARCHAR(20)) = @Search
       )
       AND (@OnlyMine = 0 OR (@UserID IS NOT NULL AND co.CreatorID = @UserID))

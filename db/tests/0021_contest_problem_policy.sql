@@ -4,7 +4,7 @@ DECLARE @OwnerID INT, @OtherTeacherID INT, @StudentID INT, @ContestID INT;
 DECLARE @PublicProblemID INT, @PrivateProblemID INT, @OtherPrivateID INT, @PendingProblemID INT;
 DECLARE @Submission TABLE (SubmissionID INT);
 DECLARE @JoinedContests TABLE (
-    ContestID INT, CreatorID INT, CreatorName NVARCHAR(200), CreatorUsername NVARCHAR(100),
+    ContestID INT, ContestCode VARCHAR(16), CreatorID INT, CreatorName NVARCHAR(200), CreatorUsername NVARCHAR(100),
     ContestName NVARCHAR(200), Description NVARCHAR(MAX), StartTime DATETIME2(0), EndTime DATETIME2(0),
     ClassID INT NULL, ClassName NVARCHAR(200) NULL, IsProtected BIT, Status VARCHAR(20),
     ProblemCount INT, ParticipantCount INT, CreatedAt DATETIME2(0), TotalCount INT

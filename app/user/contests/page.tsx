@@ -170,7 +170,7 @@ export default async function UserContestsPage({
           <input
             name="q"
             defaultValue={sp.q}
-            placeholder="Tìm theo tên kỳ thi..."
+            placeholder="Tìm theo mã hoặc tên kỳ thi..."
             className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary"
           />
           <button
@@ -185,13 +185,13 @@ export default async function UserContestsPage({
         </form>
       </div>
 
-      <DataTable minWidth={940} columns={[{ label: "STT" }, { label: "Tên kỳ thi" }, { label: "Lớp / Người tạo" }, { label: "Thời gian" }, { label: "Đề thi / Thí sinh" }, { label: "Trạng thái" }, { label: "Thao tác", align: "right" }] }>
+      <DataTable minWidth={940} columns={[{ label: "Mã" }, { label: "Tên kỳ thi" }, { label: "Lớp / Người tạo" }, { label: "Thời gian" }, { label: "Đề thi / Thí sinh" }, { label: "Trạng thái" }, { label: "Thao tác", align: "right" }] }>
         {detailedContests.length === 0 ? (
           <EmptyState variant="cell" colSpan={7}>{joinedView ? "Bạn chưa tham gia kỳ thi nào phù hợp." : "Không tìm thấy kỳ thi nào phù hợp."}</EmptyState>
         ) : (
-          detailedContests.map((c, index) => (
+          detailedContests.map((c) => (
             <tr key={c.contestId} className="transition-colors hover:bg-muted/40">
-              <td className="px-5 py-3 text-fg-muted">{(page - 1) * PAGE_SIZE + index + 1}</td>
+              <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-fg-muted">{c.contestCode}</td>
               <td className="px-5 py-3"><div className="flex items-center gap-2"><Link href={getHref(c.contestId)} className="font-semibold text-fg hover:underline">{c.contestName}</Link>{c.isProtected && <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500">Mật khẩu</span>}</div>{c.description && <p className="mt-0.5 line-clamp-1 text-xs text-fg-muted">{c.description}</p>}</td>
               <td className="px-5 py-3 text-xs"><div className="font-medium text-primary">{c.className ?? "Công khai"}</div><div className="text-fg-muted">{c.creatorName}</div></td>
               <td className="px-5 py-3 text-xs text-fg-muted"><div>{formatDateTime(c.startTime)}</div><div>đến {formatDateTime(c.endTime)}</div></td>

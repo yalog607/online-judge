@@ -47,7 +47,7 @@ INSERT INTO @ClassProblems EXEC app.usp_Class_GetProblems @ClassID = @ClassID, @
 INSERT @Results SELECT 'former student can still read assigned problems', CASE WHEN EXISTS (SELECT 1 FROM @ClassProblems WHERE ProblemID = @ProblemID) THEN 1 ELSE 0 END;
 
 DECLARE @VisibleClasses TABLE (
-    ClassID INT, TeacherID INT, TeacherName NVARCHAR(100), TeacherEmail VARCHAR(100), InviteCode VARCHAR(20),
+    ClassID INT, TeacherID INT, TeacherName NVARCHAR(100), TeacherEmail VARCHAR(100), ClassCode VARCHAR(16), InviteCode VARCHAR(20),
     ClassName NVARCHAR(150), Description NVARCHAR(MAX), IsPublic BIT, ApprovalStatus VARCHAR(20),
     IsCancelled BIT, RejectionReason NVARCHAR(MAX), CreatedAt DATETIME2(0), StudentCount INT,
     IsJoined BIT, IsTA BIT, TotalCount INT

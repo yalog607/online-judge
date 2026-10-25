@@ -55,6 +55,7 @@ export interface ClassItem {
   TeacherID: number;
   TeacherName: string;
   TeacherEmail: string;
+  ClassCode: string;
   InviteCode: string;
   ClassName: string;
   Description: string | null;

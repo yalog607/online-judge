@@ -125,7 +125,7 @@ export default async function ProblemListPage({
         <input
           name="q"
           defaultValue={sp.q}
-          placeholder="Tìm kiếm tên bài tập..."
+          placeholder="Tìm theo mã hoặc tên bài tập..."
           className={searchInputClass}
         />
         <input
@@ -180,7 +180,7 @@ export default async function ProblemListPage({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1400px] table-fixed text-sm">
             <colgroup>
-              <col className="w-[72px]" />
+              <col className="w-[96px]" />
               <col className="w-[260px]" />
               <col className="w-[175px]" />
               <col className="w-[200px]" />
@@ -190,7 +190,7 @@ export default async function ProblemListPage({
             </colgroup>
             <thead>
               <tr className="border-b border-line bg-muted text-left font-medium text-fg-muted">
-                <th className="px-5 py-3">STT</th>
+                <th className="px-5 py-3">Mã</th>
                 <th className="px-5 py-3">Tên bài</th>
                 <th className="px-5 py-3">Người tạo</th>
                 <th className="px-5 py-3">Chủ đề</th>
@@ -200,13 +200,12 @@ export default async function ProblemListPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {approvalRows.map((p, i) => (
+              {approvalRows.map((p) => (
                 <tr key={p.ProblemID} className="align-middle transition-colors hover:bg-muted/40">
-                  <td className="whitespace-nowrap px-5 py-4 text-fg-muted">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="whitespace-nowrap px-5 py-4 text-fg-muted">{p.ProblemCode}</td>
                   <td className="px-5 py-4 font-medium">
                     <div className="flex min-w-0 items-center gap-2">
                       <Link href={`/teacher/problems/${p.ProblemID}`} className="truncate hover:underline" title={p.Title}>{p.Title}</Link>
-                      <span className="shrink-0 rounded border border-line/50 bg-muted px-1.5 py-0.5 text-[10px] font-normal text-fg-muted">#{p.ProblemID}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-fg-muted">{p.CreatorFullName ?? "-"}</td>
@@ -233,7 +232,7 @@ export default async function ProblemListPage({
           <table className="w-full">
           <thead>
             <tr className="border-b border-line text-left text-sm text-fg-muted">
-              <th className="px-5 py-3">STT</th>
+              <th className="px-5 py-3">Mã</th>
               <th className="px-5 py-3">Tên bài</th>
               <th className="px-5 py-3">Người tạo</th>
               <th className="px-5 py-3">Chủ đề</th>
@@ -245,9 +244,9 @@ export default async function ProblemListPage({
             </tr>
           </thead>
           <tbody>
-            {rows.map((p, i) => (
+            {rows.map((p) => (
               <tr key={p.ProblemID} className="border-b border-line last:border-0 hover:bg-muted">
-                <td className="px-5 py-3">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                <td className="px-5 py-3">{p.ProblemCode}</td>
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-2">
                     <Link
@@ -256,7 +255,6 @@ export default async function ProblemListPage({
                     >
                       {p.Title}
                     </Link>
-                    <span className="text-[10px] text-fg-muted font-normal px-1.5 py-0.5 bg-muted rounded border border-line/50">#{p.ProblemID}</span>
                   </div>
                 </td>
                 <td className="px-5 py-3">{p.CreatorFullName ?? "-"}</td>
