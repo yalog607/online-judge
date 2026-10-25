@@ -25,7 +25,7 @@ DECLARE @OtherProblem INT = (SELECT MAX(ProblemID) FROM dbo.Problems WHERE Creat
 INSERT INTO dbo.Class_Problem (ClassID, ProblemID) VALUES (@Class1, @OwnedProblem), (@Class2, @OwnedProblem);
 
 DECLARE @Rows TABLE (
-    ProblemID INT, Title NVARCHAR(200), Tags NVARCHAR(200), Difficulty VARCHAR(20), Status VARCHAR(20), ProposedStatus VARCHAR(20),
+    ProblemID INT, ProblemCode VARCHAR(16), Title NVARCHAR(200), Tags NVARCHAR(200), Difficulty VARCHAR(20), Status VARCHAR(20), ProposedStatus VARCHAR(20),
     CreatedAt DATETIME2(0), CreatorID INT, CreatorFullName NVARCHAR(100), ClassID INT,
     ClassName NVARCHAR(150), CanManage BIT, TotalCount INT
 );

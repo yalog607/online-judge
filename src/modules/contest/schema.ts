@@ -63,6 +63,7 @@ export type ContestFilterInput = z.infer<typeof contestFilterSchema>;
 
 export interface ContestOverview {
   contestId: number;
+  contestCode: string;
   creatorId: number;
   creatorName: string;
   creatorUsername: string;

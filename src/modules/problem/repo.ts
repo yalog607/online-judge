@@ -7,6 +7,7 @@ export type ProblemStatus = "Public" | "Private" | "Hidden" | "Pending" | "Rejec
 
 export type ProblemListRow = {
   ProblemID: number;
+  ProblemCode: string;
   Title: string;
   Tags: string | null;
   Difficulty: Difficulty;
@@ -22,6 +23,7 @@ export type ProblemListRow = {
 
 export type ManageProblemRow = {
   ProblemID: number;
+  ProblemCode: string;
   CreatorID: number;
   CreatorFullName?: string | null;
   Title: string;

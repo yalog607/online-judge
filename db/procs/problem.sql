@@ -325,7 +325,7 @@ BEGIN
     SET NOCOUNT ON;
     WITH Base AS (
         SELECT
-            p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.CreatorID,
+            p.ProblemID, p.ProblemCode, p.Title, p.Tags, p.Difficulty, p.Status, p.CreatorID,
             u.FullName AS CreatorFullName,
             ROUND(COALESCE(r.AcRate, 0), 0) AS AcRate,
             CASE
@@ -346,7 +346,7 @@ BEGIN
         ) c
         WHERE (@OwnerOnly = 0 OR p.CreatorID = @UserID)
           AND (@OwnerOnly = 1 OR p.Status = 'Public' OR p.CreatorID = @UserID)
-          AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
+          AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%' OR p.ProblemCode LIKE '%' + @Search + '%')
           AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
           AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
           AND (@ProblemStatus IS NULL OR p.Status = @ProblemStatus)
@@ -374,7 +374,7 @@ BEGIN
     DECLARE @IsAdmin BIT = (SELECT CASE WHEN Role = 'Admin' THEN 1 ELSE 0 END FROM dbo.Users WHERE UserID = @ActorID);
 
     SELECT 
-        p.ProblemID, p.Title, p.Tags, p.Difficulty, p.Status, p.ProposedStatus, p.CreatedAt, p.CreatorID,
+        p.ProblemID, p.ProblemCode, p.Title, p.Tags, p.Difficulty, p.Status, p.ProposedStatus, p.CreatedAt, p.CreatorID,
         u.FullName AS CreatorFullName,
         c.ClassID, c.ClassName,
         CAST(CASE WHEN @IsAdmin = 1 OR p.CreatorID = @ActorID OR EXISTS (
@@ -404,7 +404,7 @@ BEGIN
                 WHERE cp.ProblemID = p.ProblemID AND cl.TeacherID = @ActorID
             )
       )
-      AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%')
+      AND (@Search IS NULL OR p.Title LIKE '%' + @Search + '%' OR p.ProblemCode LIKE '%' + @Search + '%')
       AND (@Tag IS NULL OR ',' + REPLACE(p.Tags, ' ', '') + ',' LIKE '%,' + REPLACE(@Tag, ' ', '') + ',%' OR p.Tags LIKE '%' + @Tag + '%')
       AND (@Difficulty IS NULL OR p.Difficulty = @Difficulty)
       AND (@Status IS NULL OR p.Status = @Status)

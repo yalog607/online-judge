@@ -57,7 +57,7 @@ export default async function AdminProblemsPage({
         <input
           name="q"
           defaultValue={sp.q}
-          placeholder="Tìm kiếm tên bài tập..."
+          placeholder="Tìm theo mã hoặc tên bài tập..."
           className={searchInputClass}
         />
         <input
@@ -86,7 +86,7 @@ export default async function AdminProblemsPage({
 
       <DataTable
         columns={[
-          { label: "STT" },
+          { label: "Mã" },
           { label: "Tên bài" },
           { label: "Người tạo" },
           { label: "Chủ đề" },
@@ -96,9 +96,9 @@ export default async function AdminProblemsPage({
         ]}
         footer={<Pager page={page} pageSize={PAGE_SIZE} total={total} buildHref={buildHref} />}
       >
-        {rows.map((p, i) => (
+        {rows.map((p) => (
           <tr key={p.ProblemID} className="hover:bg-muted/40 transition-colors">
-            <td className="px-5 py-3 text-fg-muted">{(page - 1) * PAGE_SIZE + i + 1}</td>
+            <td className="whitespace-nowrap px-5 py-3 text-fg-muted">{p.ProblemCode}</td>
             <td className="px-5 py-3 font-medium">
               <div className="flex items-center gap-2">
                 <Link
@@ -108,9 +108,6 @@ export default async function AdminProblemsPage({
                 >
                   {p.Title}
                 </Link>
-                <span className="text-[10px] text-fg-muted font-normal px-1.5 py-0.5 bg-muted rounded border border-line/50">
-                  #{p.ProblemID}
-                </span>
               </div>
             </td>
             <td className="px-5 py-3 text-fg-muted">{p.CreatorFullName ?? "-"}</td>

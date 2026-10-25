@@ -15,6 +15,7 @@ import {
 
 interface ContestDbRow {
   ContestID: number;
+  ContestCode: string;
   CreatorID: number;
   CreatorName: string;
   CreatorUsername: string;
@@ -60,6 +61,7 @@ interface ContestLeaderboardDbRow {
 function mapContestRow(row: ContestDbRow): ContestOverview {
   return {
     contestId: row.ContestID,
+    contestCode: row.ContestCode,
     creatorId: row.CreatorID,
     creatorName: row.CreatorName,
     creatorUsername: row.CreatorUsername,

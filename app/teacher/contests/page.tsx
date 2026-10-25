@@ -146,7 +146,7 @@ export default async function TeacherContestsPage({
           <input
             name="q"
             defaultValue={sp.q}
-            placeholder="Tìm theo tên kỳ thi, mã kỳ thi..."
+            placeholder="Tìm theo mã hoặc tên kỳ thi..."
             className="w-full rounded-lg border border-line bg-muted/40 pl-9 pr-3 py-2 text-xs sm:text-sm text-fg outline-none focus:border-primary transition-colors"
           />
         </div>
@@ -210,7 +210,6 @@ export default async function TeacherContestsPage({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-line bg-muted/40 text-fg-muted text-xs font-semibold uppercase tracking-wider">
             <tr>
-              <th className="px-4 py-3 w-14">STT</th>
               <th className="px-4 py-3 w-24">MÃ</th>
               <th className="px-4 py-3">TÊN KỲ THI</th>
               <th className="px-4 py-3 w-40">NGƯỜI TẠO</th>
@@ -222,20 +221,16 @@ export default async function TeacherContestsPage({
           </thead>
           <tbody className="divide-y divide-line">
             {contests.length === 0 ? (
-              <EmptyState variant="cell" colSpan={8}>Không tìm thấy kỳ thi nào phù hợp.</EmptyState>
+              <EmptyState variant="cell" colSpan={7}>Không tìm thấy kỳ thi nào phù hợp.</EmptyState>
             ) : (
-              contests.map((c, idx) => {
+              contests.map((c) => {
                 const canManage = actor.role === "Admin" || c.creatorId === actor.userId;
                 const detailHref = `/teacher/contests/${c.contestId}`;
-                const code = `KT${String(c.contestId).padStart(3, "0")}`;
 
                 return (
                   <tr key={c.contestId} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-fg-muted">
-                      {(page - 1) * PAGE_SIZE + idx + 1}
-                    </td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-fg-muted">
-                      {code}
+                      {c.contestCode}
                     </td>
                     <td className="px-4 py-3 font-medium text-fg">
                       <div className="flex items-center gap-2">

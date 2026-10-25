@@ -108,7 +108,7 @@ export default async function ManageProblemsPage({
         <input
           name="q"
           defaultValue={sp.q}
-          placeholder="Tìm kiếm tên bài tập..."
+          placeholder="Tìm theo mã hoặc tên bài tập..."
           className={filterControlClass}
         />
         <input
@@ -149,7 +149,7 @@ export default async function ManageProblemsPage({
         <div className="overflow-x-auto">
         <table className="w-full min-w-295 text-sm">
           <colgroup>
-            <col className="w-16" />
+            <col className="w-24" />
             <col className="w-57.5" />
             <col className="w-42.5" />
             <col className="w-47.5" />
@@ -159,7 +159,7 @@ export default async function ManageProblemsPage({
           </colgroup>
           <thead>
             <tr className="border-b border-line text-left text-fg-muted bg-muted font-medium">
-              <th className="px-5 py-3">STT</th>
+              <th className="px-5 py-3">Mã</th>
               <th className="px-5 py-3">Tên bài</th>
               <th className="px-5 py-3">Người tạo</th>
               <th className="px-5 py-3">Chủ đề</th>
@@ -169,15 +169,14 @@ export default async function ManageProblemsPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {rows.map((p, i) => (
+            {rows.map((p) => (
               <tr key={p.ProblemID} className="align-middle transition-colors hover:bg-muted/40">
-                <td className="whitespace-nowrap px-5 py-4 text-fg-muted">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                <td className="whitespace-nowrap px-5 py-4 text-fg-muted">{p.ProblemCode}</td>
                 <td className="px-5 py-4 font-medium">
                   <div className="flex min-w-0 items-center gap-2">
                     <Link href={`/teacher/problems/${p.ProblemID}`} className="truncate hover:underline" title={p.Title}>
                       {p.Title}
                     </Link>
-                    <span className="text-[10px] text-fg-muted font-normal px-1.5 py-0.5 bg-muted rounded border border-line/50">#{p.ProblemID}</span>
                   </div>
                 </td>
                 <td className="px-5 py-4 text-fg-muted">{p.CreatorFullName ?? "-"}</td>

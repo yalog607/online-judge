@@ -177,6 +177,7 @@ BEGIN
         c.TeacherID,
         c.TeacherName,
         c.TeacherEmail,
+        c.ClassCode,
         c.InviteCode,
         c.ClassName,
         c.Description,
@@ -197,7 +198,7 @@ BEGIN
         COUNT(*) OVER() AS TotalCount
     FROM app.uvw_ClassOverview c
     WHERE 
-        (@Search IS NULL OR c.ClassName LIKE '%' + @Search + '%' OR c.TeacherName LIKE '%' + @Search + '%')
+        (@Search IS NULL OR c.ClassName LIKE '%' + @Search + '%' OR c.TeacherName LIKE '%' + @Search + '%' OR c.ClassCode LIKE '%' + @Search + '%')
         AND (@IsAdmin = 1 OR c.ApprovalStatus = 'Approved' OR c.TeacherID = @UserID)
         AND (
             c.IsCancelled = 0 OR @IsAdmin = 1 OR c.TeacherID = @UserID
@@ -229,6 +230,7 @@ BEGIN
         c.TeacherID,
         c.TeacherName,
         c.TeacherEmail,
+        c.ClassCode,
         c.InviteCode,
         c.ClassName,
         c.Description,
@@ -906,6 +908,7 @@ BEGIN
         c.TeacherID,
         c.TeacherName,
         c.TeacherEmail,
+        c.ClassCode,
         c.InviteCode,
         c.ClassName,
         c.Description,

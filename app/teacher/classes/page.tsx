@@ -43,11 +43,11 @@ export default async function TeacherClassesPage({ searchParams }: { searchParam
         ))}
       </nav>
       <SearchForm sp={sp} hidden={{ view: view !== "mine" && view }} resetHref={tabHref(view)}>
-        <input name="q" defaultValue={sp.q} placeholder="Tìm theo tên lớp hoặc giảng viên..." className={searchInputClass} />
+        <input name="q" defaultValue={sp.q} placeholder="Tìm theo mã, tên lớp hoặc giảng viên..." className={searchInputClass} />
         <Select name="state" label="Trạng thái" defaultValue={sp.state ?? ""} className={filterControlClass}><option value="">Tất cả trạng thái</option><option value="active">Đang hoạt động</option><option value="cancelled">Đã hủy</option></Select>
         <Select name="access" label="Phạm vi" defaultValue={sp.access ?? ""} className={filterControlClass}><option value="">Tất cả phạm vi</option><option value="public">Công khai</option><option value="approval">Cần duyệt</option></Select>
       </SearchForm>
-      <ClassListTable classes={paged.items} hrefPrefix={view === "mine" ? "/teacher/classes" : "/user/classes"} relationLabel={() => view === "mine" ? "Giảng viên" : view === "joined" ? "Đã tham gia" : "Lớp khác"} empty="Không tìm thấy lớp học nào phù hợp." startIndex={(paged.page - 1) * PAGE_SIZE} showApprovalStatus />
+      <ClassListTable classes={paged.items} hrefPrefix={view === "mine" ? "/teacher/classes" : "/user/classes"} relationLabel={() => view === "mine" ? "Giảng viên" : view === "joined" ? "Đã tham gia" : "Lớp khác"} empty="Không tìm thấy lớp học nào phù hợp." showApprovalStatus />
       <Pager page={paged.page} pageSize={PAGE_SIZE} total={paged.total} buildHref={pageHrefBuilder(sp, "page")} />
     </div>
   );

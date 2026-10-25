@@ -2,6 +2,7 @@ CREATE OR ALTER VIEW app.uvw_ContestOverview
 AS
 SELECT
     c.ContestID,
+    c.ContestCode,
     c.CreatorID,
     u.FullName AS CreatorName,
     u.Username AS CreatorUsername,
