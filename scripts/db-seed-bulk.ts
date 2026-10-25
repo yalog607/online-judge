@@ -10,7 +10,7 @@ import { validateFunctionTestcase, type FunctionSpec } from "../src/modules/prob
 //   SEED_PASSWORD='...' npx tsx scripts/db-seed-bulk.ts --yes      -> ghi vào DB (một transaction)
 // Tuỳ chọn: --users=1000 --problems=120 --contests=25 --submissions=1500
 // Tất cả tài khoản có username `sample_*` nên `npm run db:clean:sample -- --yes` xoá được toàn bộ.
-// Idempotent: chạy lại không nhân đôi dữ liệu. Chứa 2 tài khoản Admin dùng chung SEED_PASSWORD và mã mời lớp dễ đoán (BLK####):
+// Idempotent: chạy lại không nhân đôi dữ liệu. Không tạo tài khoản Admin (dùng admin đã có). Mã mời lớp dễ đoán (BLK####):
 // đây là dữ liệu mẫu, xoá bằng db:clean:sample ngay sau khi dùng xong.
 // Mật khẩu không nằm trong source: truyền qua SEED_PASSWORD.
 
@@ -66,12 +66,10 @@ type Role = "Admin" | "Teacher" | "TA" | "User";
 type UserDef = { username: string; fullName: string; role: Role };
 
 function buildUsers(): UserDef[] {
-  const admins = Math.min(2, USERS);
   const teachers = Math.max(1, Math.round(USERS * 0.03));
   const tas = Math.max(1, Math.round(USERS * 0.06));
-  const students = Math.max(0, USERS - admins - teachers - tas);
+  const students = Math.max(0, USERS - teachers - tas);
   const out: UserDef[] = [];
-  for (let i = 1; i <= admins; i++) out.push({ username: `sample_a${pad(i, 2)}`, fullName: fullName(), role: "Admin" });
   for (let i = 1; i <= teachers; i++) out.push({ username: `sample_t${pad(i, 3)}`, fullName: fullName(), role: "Teacher" });
   for (let i = 1; i <= tas; i++) out.push({ username: `sample_ta${pad(i, 3)}`, fullName: fullName(), role: "TA" });
   for (let i = 1; i <= students; i++) out.push({ username: `sample_s${pad(i, 4)}`, fullName: fullName(), role: "User" });
