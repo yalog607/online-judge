@@ -24,8 +24,21 @@ async function main() {
         .sort()
     : [];
 
-  let failed = 0;
-  for (const file of files) {
+  // Trigger trg_Users_PreventDeleteAdmin chặn xóa Admin cuối cùng; trên DB mới (CI) chưa có Admin nào nên
+  // nhiều test (tạo rồi xóa Admin tạm) sẽ lỗi. Tạo một Admin nền tảng không đăng nhập được, xóa lại khi xong.
+  const BASELINE = "db_test_baseline_admin";
+  const needBaseline =
+    (await pool.request().query(`SELECT COUNT(*) AS n FROM dbo.Users WHERE Role = 'Admin'`)).recordset[0].n === 0;
+  if (needBaseline) {
+    await pool
+      .request()
+      .input("u", BASELINE)
+      .query(
+        `INSERT dbo.Users (Username, Password, Email, FullName, Role) VALUES (@u, 'x', @u + '@test.invalid', N'DB Test Baseline Admin', 'Admin')`,
+      );
+  }
+
+  let failed = 0;  for (const file of files) {
     const script = fs.readFileSync(path.join(DIR, file), "utf8");
     try {
       const result = await pool.request().query(script);
@@ -42,8 +55,17 @@ async function main() {
     }
   }
 
-  await pool.close();
-  if (failed) {
+  if (needBaseline) {
+    await pool
+      .request()
+      .input("u", BASELINE)
+      .query(
+        `DISABLE TRIGGER dbo.trg_Users_PreventDeleteAdmin ON dbo.Users;
+         BEGIN TRY DELETE FROM dbo.Users WHERE Username = @u; END TRY BEGIN CATCH END CATCH;
+         ENABLE TRIGGER dbo.trg_Users_PreventDeleteAdmin ON dbo.Users;`,
+      );
+  }
+  await pool.close();  if (failed) {
     console.error(`${failed} assertion(s) failed`);
     process.exit(1);
   }
