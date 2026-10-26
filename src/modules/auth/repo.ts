@@ -121,14 +121,8 @@ export async function setUserRole(
   actorId: number,
   userId: number,
   role: "User" | "TA" | "Teacher",
-  newOwnerId?: number,
 ) {
-  await execProc("usp_Admin_SetUserRole", {
-    ActorID: actorId,
-    UserID: userId,
-    Role: role,
-    NewOwnerID: newOwnerId ?? null,
-  });
+  await execProc("usp_Admin_SetUserRole", { ActorID: actorId, UserID: userId, Role: role });
 }
 
 export async function registerDirect(input: {

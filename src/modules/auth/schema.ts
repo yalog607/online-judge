@@ -74,11 +74,6 @@ export const setUserStatusSchema = z.object({
 export const setUserRoleSchema = z.object({
   userId: z.coerce.number().int().positive("ID người dùng không hợp lệ"),
   role: z.enum(["User", "Teacher"], { message: "Vai trò không hợp lệ" }),
-  // Bắt buộc khi hạ chức một giảng viên còn lớp/kỳ thi/bài tập (SP kiểm tra lại ở DB).
-  newOwnerId: z.preprocess(
-    (v) => (v === "" || v === null ? undefined : v),
-    z.coerce.number().int().positive("Hãy chọn giảng viên nhận bàn giao").optional(),
-  ),
 });
 
 export const transferOwnershipSchema = z.object({

@@ -69,8 +69,6 @@ export function AdminUsersManager({
   const [ownership, setOwnership] = useState<OwnershipData | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [newOwnerId, setNewOwnerId] = useState("");
-  const [handoverTeachers, setHandoverTeachers] = useState<OwnershipData["teachers"] | null>(null);
-  const [handoverOwnerId, setHandoverOwnerId] = useState("");
 
   const [modalError, setModalError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -84,12 +82,6 @@ export function AdminUsersManager({
   const lockTargets = manageable.filter((u) => u.Status === "Active");
   const unlockTargets = manageable.filter((u) => u.Status === "Locked");
   const roleTargets = manageable;
-  // Hạ chức giảng viên bắt buộc chọn giảng viên khác nhận bàn giao toàn bộ lớp, kỳ thi, bài tập.
-  const demotedTeachers = roleTargets.filter((u) => u.Role === "Teacher");
-  const needsHandover = selectedNewRole !== "Teacher" && demotedTeachers.length > 0;
-  const handoverRecipients = (handoverTeachers ?? []).filter(
-    (t) => !demotedTeachers.some((d) => d.UserID === t.UserID),
-  );
 
   const canLock = lockTargets.length > 0;
   const canUnlock = unlockTargets.length > 0;
@@ -161,33 +153,13 @@ export function AdminUsersManager({
     );
   };
 
-  const openRoleModal = () => {
-    setSelectedNewRole(roleTargets.length === 1 && roleTargets[0].Role === "Teacher" ? "Teacher" : "User");
-    setModalError(null);
-    setHandoverOwnerId("");
-    setHandoverTeachers(null);
-    setIsRoleModalOpen(true);
-    if (demotedTeachers.length > 0) {
-      startTransition(async () => {
-        const res = await loadOwnershipDataAction(demotedTeachers[0].UserID);
-        if (res.error || !res.data) setModalError(res.error ?? "Không tải được danh sách giảng viên.");
-        else setHandoverTeachers(res.data.teachers);
-      });
-    }
-  };
-
   const handleRoleChange = () => {
-    if (needsHandover && !handoverOwnerId) {
-      setModalError("Hãy chọn giảng viên nhận bàn giao trước khi hạ chức.");
-      return;
-    }
     runBulk(
       roleTargets,
       (u) => {
         const fd = new FormData();
         fd.append("userId", String(u.UserID));
         fd.append("role", selectedNewRole);
-        if (needsHandover && u.Role === "Teacher") fd.append("newOwnerId", handoverOwnerId);
         return setUserRoleAction({}, fd);
       },
       () => {
@@ -363,7 +335,13 @@ export function AdminUsersManager({
             {canChangeRole && (
               <button
                 type="button"
-                onClick={openRoleModal}
+                onClick={() => {
+                  setSelectedNewRole(
+                    roleTargets.length === 1 && roleTargets[0].Role === "Teacher" ? "Teacher" : "User",
+                  );
+                  setModalError(null);
+                  setIsRoleModalOpen(true);
+                }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <svg className="h-4 w-4 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -763,41 +741,6 @@ export function AdminUsersManager({
                   </label>
                 ))}
               </div>
-
-              {needsHandover && (
-                <div className="rounded-lg border border-line bg-muted/40 p-3">
-                  <label className="text-xs font-semibold text-fg">
-                    Giảng viên nhận bàn giao <span className="text-bad">*</span>
-                  </label>
-                  <p className="mt-1 text-xs text-fg-muted">
-                    Toàn bộ lớp học, kỳ thi và bài tập của{" "}
-                    {demotedTeachers.length === 1 ? "giảng viên này" : "các giảng viên bị hạ chức"} sẽ được chuyển
-                    cho người này. Không thể hạ chức nếu chưa chọn.
-                  </p>
-                  {!handoverTeachers && !modalError && <p className="mt-2 text-xs">Đang tải danh sách giảng viên...</p>}
-                  {handoverTeachers && handoverRecipients.length === 0 && (
-                    <p className="mt-2 text-xs text-bad">
-                      Không có giảng viên nào khác đang hoạt động để nhận bàn giao.
-                    </p>
-                  )}
-                  {handoverTeachers && handoverRecipients.length > 0 && (
-                    <Select
-                      label="Giảng viên nhận bàn giao"
-                      value={handoverOwnerId}
-                      onChange={(e) => setHandoverOwnerId(e.target.value)}
-                      required
-                      className="mt-2 w-full rounded-lg border border-line bg-muted/50 px-3 py-2 text-sm text-fg focus:border-primary focus:bg-surface focus:outline-none"
-                    >
-                      <option value="">Chọn giảng viên...</option>
-                      {handoverRecipients.map((t) => (
-                        <option key={t.UserID} value={t.UserID}>
-                          {t.FullName} (@{t.Username})
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </div>
-              )}
             </div>
 
             <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-line">
@@ -812,7 +755,7 @@ export function AdminUsersManager({
               <button
                 type="button"
                 onClick={handleRoleChange}
-                disabled={isPending || (needsHandover && !handoverOwnerId)}
+                disabled={isPending}
                 className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-fg hover:opacity-90 transition-colors disabled:opacity-50"
               >
                 {isPending ? "Đang lưu..." : "Lưu thay đổi"}
