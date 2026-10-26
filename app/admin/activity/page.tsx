@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
-import { listAdminAudit } from "@/modules/dashboard/service";
+import { listAdminAudit } from "@/modules/audit/service";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
@@ -36,7 +36,7 @@ export default async function AdminActivityPage({
   return (
     <div className="flex flex-col gap-5 pt-8">
       <Link href="/admin" className="text-sm font-medium text-fg-muted hover:text-fg hover:underline">
-        ← Quay lại tổng quan
+        ← Quay lại trang chủ
       </Link>
       <PageHeader title="Hoạt động hệ thống" description="Toàn bộ nhật ký hoạt động quản trị, mới nhất trước." />
 
