@@ -5,15 +5,12 @@ import { requireUser } from "@/lib/dal";
 import { getProblem, listPublicTestcases, checkProblemAccess } from "@/modules/problem/repo";
 import { listForUser as listSubmissions } from "@/modules/submission/repo";
 import { contestRepository } from "@/modules/contest/repo";
-import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
 import { MathContent } from "@/components/math-content";
 import { parseFunctionSpec } from "@/modules/problem/function-spec";
 import { starterCode } from "@/modules/problem/harness";
 import { SubmitForm } from "./submit-form";
 import { ProblemTabs } from "./problem-tabs";
-import { Comments } from "@/components/comments";
-import { mapToCommentView } from "@/modules/comment/view";
 
 export default async function ProblemDetailPage({
   params,
@@ -61,13 +58,11 @@ export default async function ProblemDetailPage({
       )
     : undefined;
 
-  const [examples, history, commentRows] = await Promise.all([
+  const [examples, history] = await Promise.all([
     listPublicTestcases(problemId),
     listSubmissions(user.userId, problemId, 1, 10),
-    listComments({ kind: "problem", id: problemId }, user.userId),
   ]);
 
-  const comments = commentRows.map(mapToCommentView);
   const tags = (problem.Tags ?? "")
     .split(",")
     .map((t) => t.trim())
@@ -225,16 +220,7 @@ export default async function ProblemDetailPage({
             </div>
           </div>
           <ProblemTabs
-            discussionCount={comments.length}
             statement={statement}
-            discussion={
-              <Comments
-                target={{ kind: "problem", id: problem.ProblemID }}
-                currentUserId={user.userId}
-                canModerate={user.role !== "User"}
-                comments={comments}
-              />
-            }
             history={submissions}
           />
         </div>

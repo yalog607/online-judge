@@ -2,18 +2,15 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { getProblem, listPublicTestcases } from "@/modules/problem/repo";
-import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
 import { MathContent } from "@/components/math-content";
-import { Comments } from "@/components/comments";
-import { mapToCommentView } from "@/modules/comment/view";
 
 export default async function AdminProblemDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const actor = await requireRole("Admin");
+  await requireRole("Admin");
   const { id } = await params;
   const problemId = Number(id);
   if (isNaN(problemId)) notFound();
@@ -21,12 +18,7 @@ export default async function AdminProblemDetailPage({
   const problem = await getProblem(problemId);
   if (!problem) notFound();
 
-  const [examples, commentRows] = await Promise.all([
-    listPublicTestcases(problemId),
-    listComments({ kind: "problem", id: problemId }, actor.userId),
-  ]);
-
-  const comments = commentRows.map(mapToCommentView);
+  const examples = await listPublicTestcases(problemId);
 
   const tags = (problem.Tags ?? "")
     .split(",")
@@ -106,11 +98,6 @@ export default async function AdminProblemDetailPage({
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="card p-5">
-        <h2 className="text-xl font-semibold mb-4">Bình luận & Thảo luận</h2>
-        <Comments comments={comments} target={{ kind: "problem", id: problemId }} currentUserId={actor.userId} canModerate={false} />
       </div>
     </div>
   );

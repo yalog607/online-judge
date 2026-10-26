@@ -3,11 +3,8 @@ import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal";
 import { checkProblemAccess, getProblem, listPublicTestcases, getProblemSubmissions } from "@/modules/problem/repo";
-import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
 import { MathContent } from "@/components/math-content";
-import { Comments } from "@/components/comments";
-import { mapToCommentView } from "@/modules/comment/view";
 import { StatCard } from "@/components/stat-card";
 import { Pager } from "@/components/pager";
 
@@ -35,9 +32,8 @@ export default async function TeacherProblemPreviewPage({
   const selectedResult = sParams?.result || undefined;
   const PAGE_SIZE = 20;
 
-  const [examples, commentRows, submissionsData] = await Promise.all([
+  const [examples, submissionsData] = await Promise.all([
     listPublicTestcases(problemId),
-    listComments({ kind: "problem", id: problemId }, user.userId),
     activeTab === "submissions"
       ? getProblemSubmissions(problemId, user.userId, page, PAGE_SIZE, selectedResult)
       : Promise.resolve({
@@ -47,7 +43,6 @@ export default async function TeacherProblemPreviewPage({
         }),
   ]);
 
-  const comments = commentRows.map(mapToCommentView);
   const tags = (problem.Tags ?? "")
     .split(",")
     .map((t) => t.trim())
@@ -299,11 +294,6 @@ export default async function TeacherProblemPreviewPage({
             )}
           </div>
         )}
-      </div>
-
-      <div className="card p-5">
-        <h2 className="text-xl font-semibold mb-4">Bình luận & Thảo luận</h2>
-        <Comments comments={comments} target={{ kind: "problem", id: problemId }} currentUserId={user.userId} canModerate={true} />
       </div>
     </div>
   );
