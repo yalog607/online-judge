@@ -216,7 +216,8 @@ GO
 CREATE OR ALTER PROCEDURE app.usp_Admin_SetUserRole
     @ActorID INT,
     @UserID INT,
-    @Role VARCHAR(20)
+    @Role VARCHAR(20),
+    @NewOwnerID INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -244,14 +245,45 @@ BEGIN
         DECLARE @OldRole VARCHAR(20);
         SELECT @OldRole = Role FROM dbo.Users WHERE UserID = @UserID;
 
-        -- Giáng chức giảng viên: chuyển lớp và kỳ thi chưa kết thúc cho admin thực hiện.
+        -- Giáng chức giảng viên: bắt buộc bàn giao toàn bộ lớp, kỳ thi, bài tập cho một giảng viên khác.
         IF @OldRole = 'Teacher' AND @Role <> 'Teacher'
         BEGIN
-            UPDATE dbo.Classes SET TeacherID = @ActorID
-            WHERE TeacherID = @UserID AND IsCancelled = 0;
+            IF EXISTS (SELECT 1 FROM dbo.Classes WHERE TeacherID = @UserID AND IsCancelled = 0)
+               OR EXISTS (SELECT 1 FROM dbo.Contests WHERE CreatorID = @UserID)
+               OR EXISTS (SELECT 1 FROM dbo.Problems WHERE CreatorID = @UserID)
+            BEGIN
+                IF @NewOwnerID IS NULL
+                    THROW 50065, N'Giảng viên này còn lớp, kỳ thi hoặc bài tập. Hãy chọn giảng viên nhận bàn giao.', 1;
 
-            UPDATE dbo.Contests SET CreatorID = @ActorID
-            WHERE CreatorID = @UserID AND EndTime > SYSUTCDATETIME();
+                IF @NewOwnerID = @UserID
+                   OR NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @NewOwnerID AND Role = 'Teacher' AND Status = 'Active')
+                    THROW 50061, N'Người nhận phải là giảng viên đang hoạt động.', 1;
+
+                IF EXISTS (
+                    SELECT 1 FROM dbo.Classes c
+                    JOIN dbo.Class_Student cs ON cs.ClassID = c.ClassID AND cs.UserID = @NewOwnerID
+                    WHERE c.TeacherID = @UserID AND c.IsCancelled = 0
+                )
+                    THROW 50064, N'Người nhận đang là học viên của một lớp cần bàn giao.', 1;
+
+                INSERT dbo.AuditLog (ActorID, Action, TargetType, TargetID, Detail)
+                SELECT @ActorID, 'TransferOwnership', 'Class', ClassID, CONCAT(@UserID, N'->', @NewOwnerID)
+                FROM dbo.Classes WHERE TeacherID = @UserID AND IsCancelled = 0
+                UNION ALL
+                SELECT @ActorID, 'TransferOwnership', 'Contest', ContestID, CONCAT(@UserID, N'->', @NewOwnerID)
+                FROM dbo.Contests WHERE CreatorID = @UserID
+                UNION ALL
+                SELECT @ActorID, 'TransferOwnership', 'Problem', ProblemID, CONCAT(@UserID, N'->', @NewOwnerID)
+                FROM dbo.Problems WHERE CreatorID = @UserID;
+
+                DELETE ta FROM dbo.Class_TA ta
+                JOIN dbo.Classes c ON c.ClassID = ta.ClassID
+                WHERE c.TeacherID = @UserID AND c.IsCancelled = 0 AND ta.UserID_TA = @NewOwnerID;
+
+                UPDATE dbo.Classes SET TeacherID = @NewOwnerID WHERE TeacherID = @UserID AND IsCancelled = 0;
+                UPDATE dbo.Contests SET CreatorID = @NewOwnerID WHERE CreatorID = @UserID;
+                UPDATE dbo.Problems SET CreatorID = @NewOwnerID WHERE CreatorID = @UserID;
+            END;
         END;
 
         -- Rời vai TA: gỡ quyền hỗ trợ ở mọi lớp.
