@@ -21,21 +21,18 @@ INSERT dbo.Contests (CreatorID, ContestName, StartTime, EndTime)
 VALUES (@TeacherID, N'DM Contest', DATEADD(HOUR, -1, SYSUTCDATETIME()), DATEADD(DAY, 1, SYSUTCDATETIME()));
 SET @ContestID = SCOPE_IDENTITY();
 
--- Giáng giảng viên xuống User: lớp và kỳ thi chưa kết thúc sang admin thực hiện
-EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @TeacherID, @Role = 'User';
-INSERT @Results VALUES ('Demoted teacher class is transferred to the acting admin',
-    CASE WHEN EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID AND TeacherID = @AdminID) THEN 1 ELSE 0 END);
-INSERT @Results VALUES ('Demoted teacher active contest is transferred to the acting admin',
-    CASE WHEN EXISTS (SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID AND CreatorID = @AdminID) THEN 1 ELSE 0 END);
-
--- Người đã bị giáng chức không thêm được học sinh nữa
+-- Không hỗ trợ hạ chức giảng viên: bị chặn, vai trò và quyền sở hữu không đổi
 BEGIN TRY
-    EXEC app.usp_Class_AddStudent @ClassID = @ClassID, @TeacherID = @TeacherID, @Identifier = 'nobody';
-    INSERT @Results VALUES ('Ex-teacher cannot add students', 0);
+    EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @TeacherID, @Role = 'User';
+    INSERT @Results VALUES ('Teacher demotion is rejected', 0);
 END TRY
 BEGIN CATCH
-    INSERT @Results VALUES ('Ex-teacher cannot add students', CASE WHEN ERROR_NUMBER() = 50027 THEN 1 ELSE 0 END);
+    INSERT @Results VALUES ('Teacher demotion is rejected', CASE WHEN ERROR_NUMBER() = 50066 THEN 1 ELSE 0 END);
 END CATCH;
+INSERT @Results VALUES ('Rejected demotion leaves role and ownership unchanged',
+    CASE WHEN EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @TeacherID AND Role = 'Teacher')
+          AND EXISTS (SELECT 1 FROM dbo.Classes WHERE ClassID = @ClassID AND TeacherID = @TeacherID)
+          AND EXISTS (SELECT 1 FROM dbo.Contests WHERE ContestID = @ContestID AND CreatorID = @TeacherID) THEN 1 ELSE 0 END);
 
 -- Rời vai TA: gỡ khỏi Class_TA
 EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @TAID, @Role = 'User';
