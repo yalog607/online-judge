@@ -122,11 +122,15 @@ EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @UserID, @Role = '
 INSERT @Results SELECT 'admin can upgrade user to Teacher',
     CASE WHEN EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Teacher') THEN 1 ELSE 0 END;
 
--- 12. Admin can revert role to User
-EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @UserID, @Role = 'User';
-
-INSERT @Results SELECT 'admin can set role back to User',
-    CASE WHEN EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'User') THEN 1 ELSE 0 END;
+-- 12. Admin cannot demote a Teacher back to User
+BEGIN TRY
+    EXEC app.usp_Admin_SetUserRole @ActorID = @AdminID, @UserID = @UserID, @Role = 'User';
+    INSERT @Results SELECT 'admin cannot demote a teacher', 0;
+END TRY
+BEGIN CATCH
+    INSERT @Results SELECT 'admin cannot demote a teacher',
+        CASE WHEN ERROR_NUMBER() = 50066 AND EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Teacher') THEN 1 ELSE 0 END;
+END CATCH;
 
 -- 13. Audit log recorded role changes
 INSERT @Results SELECT 'audit log recorded role change',

@@ -81,7 +81,8 @@ export function AdminUsersManager({
   const manageable = targets.filter((u) => u.UserID !== currentAdminId && u.Role !== "Admin");
   const lockTargets = manageable.filter((u) => u.Status === "Active");
   const unlockTargets = manageable.filter((u) => u.Status === "Locked");
-  const roleTargets = manageable;
+  // Không hỗ trợ hạ chức giảng viên nên giảng viên không nằm trong danh sách đổi vai trò.
+  const roleTargets = manageable.filter((u) => u.Role !== "Teacher");
 
   const canLock = lockTargets.length > 0;
   const canUnlock = unlockTargets.length > 0;
@@ -336,9 +337,7 @@ export function AdminUsersManager({
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedNewRole(
-                    roleTargets.length === 1 && roleTargets[0].Role === "Teacher" ? "Teacher" : "User",
-                  );
+                  setSelectedNewRole("User");
                   setModalError(null);
                   setIsRoleModalOpen(true);
                 }}

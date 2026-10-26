@@ -238,21 +238,15 @@ BEGIN
     IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Admin')
         THROW 50036, N'Không thể thay đổi vai trò của quản trị viên.', 1;
 
+    -- Không hỗ trợ hạ chức giảng viên.
+    IF EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @UserID AND Role = 'Teacher') AND @Role <> 'Teacher'
+        THROW 50066, N'Không thể hạ chức giảng viên.', 1;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
         DECLARE @OldRole VARCHAR(20);
         SELECT @OldRole = Role FROM dbo.Users WHERE UserID = @UserID;
-
-        -- Giáng chức giảng viên: chuyển lớp và kỳ thi chưa kết thúc cho admin thực hiện.
-        IF @OldRole = 'Teacher' AND @Role <> 'Teacher'
-        BEGIN
-            UPDATE dbo.Classes SET TeacherID = @ActorID
-            WHERE TeacherID = @UserID AND IsCancelled = 0;
-
-            UPDATE dbo.Contests SET CreatorID = @ActorID
-            WHERE CreatorID = @UserID AND EndTime > SYSUTCDATETIME();
-        END;
 
         -- Rời vai TA: gỡ quyền hỗ trợ ở mọi lớp.
         IF @OldRole = 'TA' AND @Role <> 'TA'
