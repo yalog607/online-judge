@@ -152,12 +152,13 @@ export async function setUserRole(
   actorId: number,
   userId: number,
   role: "User" | "TA" | "Teacher",
+  newOwnerId?: number,
 ) {
   if (actorId === userId) {
     throw new AuthError("Không thể tự thay đổi vai trò của chính mình.");
   }
   try {
-    await repo.setUserRole(actorId, userId, role);
+    await repo.setUserRole(actorId, userId, role, newOwnerId);
   } catch (e) {
     if (e instanceof DomainError) throw new AuthError(e.message);
     throw e;

@@ -84,6 +84,18 @@ describe("setUserRoleSchema", () => {
   });
 });
 
+describe("setUserRoleSchema newOwnerId", () => {
+  it("coerces newOwnerId and treats empty as missing", () => {
+    expect(setUserRoleSchema.parse({ userId: 3, role: "User", newOwnerId: "9" }).newOwnerId).toBe(9);
+    expect(setUserRoleSchema.parse({ userId: 3, role: "User", newOwnerId: "" }).newOwnerId).toBeUndefined();
+    expect(setUserRoleSchema.parse({ userId: 3, role: "User" }).newOwnerId).toBeUndefined();
+  });
+
+  it("rejects non-positive newOwnerId", () => {
+    expect(() => setUserRoleSchema.parse({ userId: 3, role: "User", newOwnerId: 0 })).toThrow();
+  });
+});
+
 describe("transferOwnershipSchema", () => {
   it("accepts class, contest and problem", () => {
     for (const itemType of ["Class", "Contest", "Problem"]) {

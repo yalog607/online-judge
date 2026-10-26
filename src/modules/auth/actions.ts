@@ -178,7 +178,7 @@ export async function setUserRoleAction(
 
   try {
     const target = await getUserById(parsed.data.userId);
-    await service.setUserRole(admin.userId, parsed.data.userId, parsed.data.role);
+    await service.setUserRole(admin.userId, parsed.data.userId, parsed.data.role, parsed.data.newOwnerId);
     // Admin demoting a TA: tell them their TA role was removed.
     if (target?.Role === "TA") await notifyTADemoted(parsed.data.userId);
     revalidatePath("/admin/users");
