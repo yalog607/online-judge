@@ -10,7 +10,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       fullName={user.fullName}
       avatar={user.avatar}
       nav={TEACHER_NAV}
-      notificationsHref="/teacher/notifications"
     >
       {children}
     </AppShell>

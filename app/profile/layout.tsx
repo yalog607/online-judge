@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/dal";
 import { AppShell } from "@/components/app-shell";
-import { getNavForRole, getRoleLabel, getNotificationsHref } from "@/lib/nav";
+import { getNavForRole, getRoleLabel } from "@/lib/nav";
 
 export default async function ProfileLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
@@ -13,7 +13,6 @@ export default async function ProfileLayout({ children }: { children: React.Reac
       fullName={user.fullName}
       avatar={user.avatar}
       nav={nav}
-      notificationsHref={getNotificationsHref(user.role)}
     >
       <div className="w-full max-w-6xl p-6 md:p-8">
         {children}
