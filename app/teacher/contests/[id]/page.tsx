@@ -14,9 +14,6 @@ import { EditProblemScoreDialog } from "./edit-problem-score-dialog";
 import { RemoveProblemButton } from "./remove-problem-button";
 import { StartContestDialog } from "./start-contest-dialog";
 import { DeleteContestDialog } from "../delete-contest-dialog";
-import { listComments } from "@/modules/comment/repo";
-import { Comments } from "@/components/comments";
-import { mapToCommentView } from "@/modules/comment/view";
 import { ContestParticipantPage } from "@/modules/contest/participant-page";
 
 function formatDateTime(iso: string) {
@@ -66,12 +63,11 @@ export default async function TeacherContestDetailPage({
   const selectedResult = sParams?.result || undefined;
   const PAGE_SIZE = 20;
 
-  const [problems, leaderboard, rawComments, { classes }, publicProblems, privateProblems, submissionsData] = await Promise.all(
+  const [problems, leaderboard, { classes }, publicProblems, privateProblems, submissionsData] = await Promise.all(
     [
       contestRepository.listProblems(contestId, actor.userId).catch(() => []),
       contestRepository.getLeaderboard(contestId, actor.userId).catch(() => []),
-      listComments({ kind: "contest", id: contestId }, actor.userId).catch(() => []),
-      classRepository.listClasses({
+        classRepository.listClasses({
         userId: actor.userId,
         onlyMine: true,
         page: 1,
@@ -231,16 +227,6 @@ export default async function TeacherContestDetailPage({
           }`}
         >
           Lịch sử nộp bài ({submissionsData.total})
-        </Link>
-        <Link
-          href={`/teacher/contests/${contestId}?tab=comments`}
-          className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === "comments"
-              ? "border-primary text-primary"
-              : "border-transparent text-fg-muted hover:text-fg"
-          }`}
-        >
-          Bình luận ({rawComments.length})
         </Link>
       </div>
 
@@ -573,18 +559,6 @@ export default async function TeacherContestDetailPage({
               />
             </div>
           )}
-        </div>
-      )}
-
-      {activeTab === "comments" && (
-        <div className="card p-6">
-          <Comments
-            target={{ kind: "contest", id: contestId }}
-            currentUserId={actor.userId}
-            canModerate={canManage}
-            canComment={true}
-            comments={rawComments.map(mapToCommentView)}
-          />
         </div>
       )}
     </div>

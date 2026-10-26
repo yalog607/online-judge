@@ -3,9 +3,6 @@ import Image from "next/image";
 import { logoutAction } from "@/modules/auth/actions";
 import { Icon } from "@/components/icon";
 import { NavLinks, type NavLink } from "@/components/nav-links";
-import { NotificationBell, NotificationProvider } from "@/components/notification-center";
-import { verifySession } from "@/lib/dal";
-import { unreadCountFor } from "@/modules/notification/service";
 
 export type NavItem = NavLink;
 
@@ -17,20 +14,16 @@ export async function AppShell({
   fullName,
   avatar,
   nav,
-  notificationsHref,
   children,
 }: {
   roleLabel: string;
   fullName: string;
   avatar?: string | null;
   nav: NavItem[];
-  notificationsHref: string;
   children: React.ReactNode;
 }) {
   const initial = fullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase() ?? "?";
   const hue = avatarHue(fullName.trim().split(/\s+/).slice(-2).join(" "));
-  const session = await verifySession();
-  const initialUnread = session ? await unreadCountFor(session.userId).catch(() => 0) : 0;
 
   const renderAvatar = (size: 32 | 34) => {
     const box = size === 34 ? "h-[34px] w-[34px]" : "h-8 w-8";
@@ -54,7 +47,7 @@ export async function AppShell({
   };
 
   return (
-    <NotificationProvider href={notificationsHref} initialUnread={initialUnread}>
+    <>
       <div className="flex min-h-screen max-[820px]:flex-col">
         <aside className="sticky top-0 flex h-screen w-60 flex-none flex-col gap-1 border-r border-line p-3 max-[820px]:static max-[820px]:h-auto max-[820px]:w-auto max-[820px]:flex-row max-[820px]:items-center max-[820px]:overflow-x-auto max-[820px]:border-b max-[820px]:border-r-0">
           <Link href="/" className="flex items-center gap-2 px-2 pb-4 max-[820px]:pb-0">
@@ -88,7 +81,6 @@ export async function AppShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-10 flex items-center justify-end gap-4 border-b border-line bg-bg/85 px-8 py-3 backdrop-blur max-[820px]:static max-[820px]:px-4">
             <div className="flex items-center gap-2.5">
-              <NotificationBell href={notificationsHref} />
               {renderAvatar(34)}
               <div className="flex flex-col leading-tight max-[820px]:hidden">
                 <span className="font-semibold">{fullName}</span>
@@ -110,6 +102,6 @@ export async function AppShell({
           <main className="flex-1 px-8 pb-14 max-[820px]:px-4">{children}</main>
         </div>
       </div>
-    </NotificationProvider>
+    </>
   );
 }

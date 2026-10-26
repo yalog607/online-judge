@@ -2,25 +2,20 @@
 
 import { useState } from "react";
 
-type TabKey = "statement" | "discussion" | "history";
+type TabKey = "statement" | "history";
 
 export function ProblemTabs({
-  discussionCount,
   statement,
-  discussion,
   history,
   initialTab = "statement",
 }: {
-  discussionCount: number;
   statement: React.ReactNode;
-  discussion: React.ReactNode;
   history: React.ReactNode;
   initialTab?: TabKey;
 }) {
   const [tab, setTab] = useState<TabKey>(initialTab);
   const tabs: { key: TabKey; label: string }[] = [
     { key: "statement", label: "Đề bài" },
-    { key: "discussion", label: `Thảo luận (${discussionCount})` },
     { key: "history", label: "Bài nộp của tôi" },
   ];
 
@@ -44,9 +39,6 @@ export function ProblemTabs({
       </div>
       <div role="tabpanel" hidden={tab !== "statement"} className="p-5">
         {statement}
-      </div>
-      <div role="tabpanel" hidden={tab !== "discussion"} className="p-5">
-        {discussion}
       </div>
       <div role="tabpanel" hidden={tab !== "history"}>
         {history}

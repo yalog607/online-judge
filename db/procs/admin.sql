@@ -65,3 +65,32 @@ BEGIN
     END CATCH
 END;
 GO
+
+-- Toàn bộ hoạt động quản trị (nhật ký kiểm toán) có phân trang, mới nhất trước.
+CREATE OR ALTER PROCEDURE app.usp_Admin_ListAudit
+    @ActorID INT,
+    @Page INT = 1,
+    @PageSize INT = 30
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserID = @ActorID AND Role = 'Admin')
+        THROW 50031, N'Bạn không có quyền truy cập.', 1;
+
+    IF @Page < 1 SET @Page = 1;
+    IF @PageSize < 1 SET @PageSize = 30;
+    IF @PageSize > 100 SET @PageSize = 100;
+
+    SELECT
+        a.AuditID, a.Action, a.TargetType, a.TargetID, a.Detail, a.CreatedAt,
+        ISNULL(u.FullName, N'Không xác định') AS ActorName,
+        t.FullName AS TargetName,
+        COUNT(*) OVER () AS TotalCount
+    FROM dbo.AuditLog a
+    LEFT JOIN dbo.Users u ON u.UserID = a.ActorID
+    LEFT JOIN dbo.Users t ON a.TargetType = 'User' AND t.UserID = a.TargetID
+    ORDER BY a.CreatedAt DESC, a.AuditID DESC
+    OFFSET (@Page - 1) * @PageSize ROWS FETCH NEXT @PageSize ROWS ONLY;
+END
+GO

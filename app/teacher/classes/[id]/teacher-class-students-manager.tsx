@@ -4,8 +4,6 @@ import { useState } from "react";
 import { RequestTAUpgradeButton } from "./request-ta-button";
 import { DemoteTAButton } from "./demote-ta-button";
 import { RemoveStudentButton } from "./remove-student-button";
-import { ImportStudentsDialog } from "./import-students-dialog";
-import { ExportStudentsButton } from "./export-students-button";
 import { StudentProgressModal } from "./student-progress-modal";
 import type { StudentItem } from "@/modules/class/repo";
 
@@ -64,11 +62,6 @@ export function TeacherClassStudentsManager({
           <p className="text-xs text-fg-muted">
             Xem danh sách và theo dõi tiến độ của học viên.
           </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <ImportStudentsDialog classId={classId} />
-          <ExportStudentsButton classId={classId} />
         </div>
       </div>
 

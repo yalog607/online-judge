@@ -4,9 +4,6 @@ import { requireUser } from "@/lib/dal";
 import { contestRepository } from "@/modules/contest/repo";
 import { ContestStatusBadge, DifficultyBadge } from "@/components/badge";
 import { JoinContestDialog } from "../../../app/user/contests/join-contest-dialog";
-import { listComments } from "@/modules/comment/repo";
-import { Comments } from "@/components/comments";
-import { mapToCommentView } from "@/modules/comment/view";
 import { Pager } from "@/components/pager";
 import { paginate, parsePage } from "@/lib/paginate";
 
@@ -44,11 +41,10 @@ export async function ContestParticipantPage({
   const contestId = Number(id);
   if (isNaN(contestId)) notFound();
 
-  const [contest, problems, leaderboard, rawComments] = await Promise.all([
+  const [contest, problems, leaderboard] = await Promise.all([
     contestRepository.getContest(contestId, user.userId),
     contestRepository.listProblems(contestId, user.userId).catch(() => []),
     contestRepository.getLeaderboard(contestId, user.userId).catch(() => []),
-    listComments({ kind: "contest", id: contestId }, user.userId).catch(() => []),
   ]);
 
   if (!contest) notFound();
@@ -160,16 +156,6 @@ export async function ContestParticipantPage({
           }`}
         >
           Bảng xếp hạng ({leaderboard.length})
-        </Link>
-        <Link
-          href={`${contestBasePath}/${contestId}?tab=comments`}
-          className={`pb-3 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === "comments"
-              ? "border-primary text-primary"
-              : "border-transparent text-fg-muted hover:text-fg"
-          }`}
-        >
-          Bình luận ({rawComments.length})
         </Link>
       </div>
 
@@ -356,18 +342,6 @@ export async function ContestParticipantPage({
             pageSize={LEADERBOARD_PAGE_SIZE}
             total={leaderboardPage.total}
             buildHref={(p) => `${contestBasePath}/${contestId}?tab=leaderboard&page=${p}`}
-          />
-        </div>
-      )}
-
-      {activeTab === "comments" && (
-        <div className="card p-6">
-          <Comments
-            target={{ kind: "contest", id: contestId }}
-            currentUserId={user.userId}
-            canModerate={false}
-            canComment={Boolean(contest.isJoined)}
-            comments={rawComments.map(mapToCommentView)}
           />
         </div>
       )}

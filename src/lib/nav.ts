@@ -1,8 +1,7 @@
 import type { NavItem } from "@/components/app-shell";
 
 export const USER_NAV: NavItem[] = [
-  { href: "/user", label: "Tổng quan", icon: "home" },
-  { href: "/user/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
+  { href: "/user", label: "Trang chủ", icon: "home" },
   { href: "/user/problems", label: "Bài tập", icon: "code" },
   { href: "/user/classes", label: "Lớp học", icon: "users" },
   { href: "/user/contests", label: "Kỳ thi", icon: "trophy" },
@@ -10,8 +9,7 @@ export const USER_NAV: NavItem[] = [
 ];
 
 export const TEACHER_NAV: NavItem[] = [
-  { href: "/teacher", label: "Tổng quan", icon: "home" },
-  { href: "/teacher/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
+  { href: "/teacher", label: "Trang chủ", icon: "home" },
   { href: "/teacher/problems", label: "Ngân hàng bài tập", icon: "code" },
   { href: "/teacher/classes", label: "Lớp học", icon: "users" },
   { href: "/teacher/contests", label: "Kỳ thi", icon: "trophy" },
@@ -19,12 +17,12 @@ export const TEACHER_NAV: NavItem[] = [
 ];
 
 export const ADMIN_NAV: NavItem[] = [
-  { href: "/admin", label: "Tổng quan", icon: "home" },
-  { href: "/admin/notifications", label: "Thông báo", icon: "bell", unreadBadge: true },
+  { href: "/admin", label: "Trang chủ", icon: "home" },
   { href: "/admin/users", label: "Người dùng", icon: "users" },
   { href: "/admin/problems", label: "Bài tập", icon: "code" },
   { href: "/admin/classes", label: "Lớp học", icon: "users" },
   { href: "/admin/contests", label: "Kỳ thi", icon: "trophy" },
+  { href: "/admin/activity", label: "Nhật ký", icon: "shield" },
   { href: "/admin/approvals", label: "Duyệt Yêu Cầu", icon: "shield" },
   { href: "/admin/reports", label: "Báo cáo thống kê", icon: "chart" },
   { href: "/profile", label: "Hồ sơ", icon: "user" },
@@ -41,10 +39,4 @@ export function getRoleLabel(role: string): string {
   if (role === "Teacher") return "Giảng viên";
   if (role === "TA") return "Trợ giảng";
   return "Học viên";
-}
-
-export function getNotificationsHref(role: string): string {
-  if (role === "Admin") return "/admin/notifications";
-  if (role === "Teacher") return "/teacher/notifications";
-  return "/user/notifications";
 }
