@@ -187,7 +187,7 @@ npm run db:migrate   # Tạo/cập nhật database và stored procedure
 npm run db:seed      # Tạo dữ liệu mẫu
 npm run db:clean:sample # Xóa dữ liệu mẫu (dry-run; thêm -- --yes để xóa thật)
 SEED_PASSWORD=... npm run db:seed:sample # 7 tài khoản (admin, teacher, assist, user, teacher2, assist2, user2), ~27 bài, 10 lớp, 8 kỳ thi, bài nộp/bình luận mẫu (idempotent; chạy bằng sa vào DB trong .env)
-SEED_PASSWORD=... npm run db:seed:bulk # Dry run: in kế hoạch nạp ~1000 người dùng, lớp, bài tập, kỳ thi, bài nộp (tài khoản sample_*); thêm -- --yes để ghi thật
+SEED_PASSWORD=... npm run db:seed:bulk # Dry run: in kế hoạch nạp 100 người dùng, 1000 bài tập, 1500 bài nộp cùng lớp, kỳ thi (tài khoản sample_*); thêm -- --yes để ghi thật
 npm run db:test      # Kiểm thử database
 npm run worker:start # Chạy Judge Worker trực tiếp
 ```
@@ -200,7 +200,7 @@ docker compose -f docker-compose.prod.yml run --rm -e SEED_PASSWORD='...' worker
 docker compose -f docker-compose.prod.yml run --rm -e SEED_PASSWORD='...' worker npx tsx scripts/db-seed-bulk.ts --yes    # ghi thật
 ```
 
-Tuỳ chọn: `--users=1000 --problems=120 --contests=25 --submissions=1500`. Chạy lại không nhân đôi dữ liệu; xoá bằng `npm run db:clean:sample -- --yes`.
+Tuỳ chọn: `--users=100 --problems=1000 --contests=25 --submissions=1500`. Chạy lại không nhân đôi dữ liệu; xoá bằng `npm run db:clean:sample -- --yes`.
 
 Judge Worker và web cùng cần Redis (`REDIS_URL`, `JUDGE_CONCURRENCY` trong `.env`). Judge Worker cần Docker CLI, các judge image tương ứng và quyền sử dụng Docker daemon. Không xem lỗi thiếu Docker/image/mount là lỗi `RE` của bài làm.
 

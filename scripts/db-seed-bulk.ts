@@ -5,10 +5,10 @@ import sql from "mssql";
 import { env } from "../src/lib/env";
 import { validateFunctionTestcase, type FunctionSpec } from "../src/modules/problem/function-spec";
 
-// Nạp dữ liệu số lượng lớn (mặc định ~1000 người dùng) cho môi trường production/staging.
+// Nạp dữ liệu số lượng lớn (mặc định 100 người dùng, 1000 bài tập, 1500 bài nộp) cho môi trường production/staging.
 //   SEED_PASSWORD='...' npx tsx scripts/db-seed-bulk.ts            -> chỉ in kế hoạch (dry run)
 //   SEED_PASSWORD='...' npx tsx scripts/db-seed-bulk.ts --yes      -> ghi vào DB (một transaction)
-// Tuỳ chọn: --users=1000 --problems=120 --contests=25 --submissions=1500
+// Tuỳ chọn: --users=100 --problems=1000 --contests=25 --submissions=1500
 // Tất cả tài khoản có username `sample_*` nên `npm run db:clean:sample -- --yes` xoá được toàn bộ.
 // Idempotent: chạy lại không nhân đôi dữ liệu. Không tạo tài khoản Admin (dùng admin đã có). Mã mời lớp dễ đoán (BLK####):
 // đây là dữ liệu mẫu, xoá bằng db:clean:sample ngay sau khi dùng xong.
@@ -34,8 +34,8 @@ function num(name: string, fallback: number): number {
   }
   return n;
 }
-const USERS = num("users", 1000);
-const PROBLEMS = num("problems", 120);
+const USERS = num("users", 100);
+const PROBLEMS = num("problems", 1000);
 const CONTESTS = num("contests", 25);
 const SUBMISSIONS = num("submissions", 1500);
 
@@ -193,8 +193,8 @@ function buildProblems(): ProblemDef[] {
   }
   // Tiêu đề phải khác nhau để tra cứu theo (CreatorID, Title) không đè nhau.
   const seen = new Set<string>();
-  for (const p of out) {
-    while (seen.has(p.title)) p.title += "*";
+  for (const [i, p] of out.entries()) {
+    if (seen.has(p.title)) p.title += ` #${i + 1}`;
     seen.add(p.title);
   }
   return out;

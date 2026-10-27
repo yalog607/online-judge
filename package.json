@@ -17,7 +17,8 @@
     "db:test": "tsx scripts/db-test.ts",
     "worker:start": "tsx worker/index.ts",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:wipe": "tsx scripts/db-wipe-all.ts --yes --confirm=itoj"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",

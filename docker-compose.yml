@@ -9,6 +9,7 @@ services:
       - "14330:1433"
     volumes:
       - db-data:/var/opt/mssql
+      - ./backups:/backups
     healthcheck:
       test:
         [
