@@ -4,6 +4,7 @@ import { env } from "../src/lib/env";
 
 // XÓA SẠCH toàn bộ dữ liệu nghiệp vụ (user, bài, lớp, kỳ thi, bài nộp, bình luận...).
 // Không xóa schema, stored procedure, trigger hay bảng JudgeWorkers.
+// GIỮ LẠI mọi tài khoản Admin (và phiên đăng nhập của họ); chỉ xóa các tài khoản còn lại.
 // Bắt buộc: --yes và --confirm=<tên DB> trùng DB_NAME. Hãy backup trước (deploy/backup.sh).
 
 const WIPE_SQL = `
@@ -37,12 +38,11 @@ DELETE FROM dbo.Problems;
 
 DELETE FROM dbo.Notifications;
 DELETE FROM dbo.OtpCodes;
-DELETE FROM dbo.Sessions;
-DELETE FROM dbo.Users;
+DELETE FROM dbo.Sessions WHERE UserID NOT IN (SELECT UserID FROM dbo.Users WHERE Role = 'Admin');
+DELETE FROM dbo.Users WHERE Role <> 'Admin';
 DELETE FROM dbo.AuditLog;
 
--- Đặt lại IDENTITY để ID bắt đầu từ 1.
-DBCC CHECKIDENT ('dbo.Users', RESEED, 0) WITH NO_INFOMSGS;
+-- Đặt lại IDENTITY để ID bắt đầu từ 1 (không đặt lại dbo.Users vì còn tài khoản Admin).
 DBCC CHECKIDENT ('dbo.Classes', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Problems', RESEED, 0) WITH NO_INFOMSGS;
 DBCC CHECKIDENT ('dbo.Testcases', RESEED, 0) WITH NO_INFOMSGS;
@@ -76,7 +76,7 @@ async function main() {
   try {
     console.log(`Wiping ${e.DB_HOST}:${e.DB_PORT}/${e.DB_NAME} ...`);
     await pool.request().batch(WIPE_SQL);
-    console.log("All business data removed.");
+    console.log("All business data removed (Admin accounts kept).");
   } finally {
     await pool.close();
   }

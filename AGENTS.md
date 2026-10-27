@@ -98,3 +98,9 @@ Nếu thay đổi database, chạy thêm `npm run db:test` trên môi trường 
 - Giao diện khớp artifact thiết kế (xem "Quy tắc giao diện").
 - Có bằng chứng kiểm tra cho phần đã thay đổi.
 - Nêu rõ phần nào chưa thể kiểm tra; không tuyên bố đã sửa xong nếu chưa xác minh.
+
+## Quy tắc commit và Pull Request
+
+- Trước khi tạo commit, gọi skill `git-commit-en`. Trước khi tạo hoặc sửa PR, gọi skill `github-pr-en` (nằm trong `.claude/skills/`).
+- Commit message và PR đều viết bằng tiếng Anh. Commit chỉ một dòng, không co-author.
+- PR có đủ các mục Summary, Changes, Features, Notice và không thêm dòng "Generated with ...".
