@@ -34,7 +34,7 @@ export function ChangePasswordForm() {
           required
           placeholder="Ít nhất 8 ký tự"
           autoComplete="new-password"
-          className="w-full rounded-lg border border-line bg-muted/40 px-3.5 py-2 text-sm text-fg outline-none focus:border-primary focus:bg-surface transition-colors placeholder:text-fg-subtle"
+          className="w-full rounded-lg border border-line bg-muted/40 px-3.5 py-2 text-sm text-fg outline-none focus:border-primary focus:bg-surface transition-colors placeholder:text-fg-muted"
         />
       </div>
 
@@ -52,7 +52,7 @@ export function ChangePasswordForm() {
       </div>
 
       {state.ok && (
-        <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-500">
+        <div className="rounded-lg bg-ok-soft border border-ok/20 p-3 text-xs font-medium text-ok">
           Đã đổi mật khẩu thành công.
         </div>
       )}

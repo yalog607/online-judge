@@ -16,6 +16,9 @@ function isActive(pathname: string, href: string) {
   if (pathname.startsWith("/user/problems") && (href === "/teacher/problems" || href === "/admin/problems")) {
     return true;
   }
+  if (pathname.startsWith("/submissions") && (href === "/user/problems" || href === "/teacher/problems" || href === "/admin/problems")) {
+    return true;
+  }
   if (pathname.startsWith("/user/contests") && (href === "/teacher/contests" || href === "/admin/contests")) {
     return true;
   }

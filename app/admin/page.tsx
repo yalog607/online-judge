@@ -58,7 +58,7 @@ export default async function AdminDashboard() {
     <div className="flex flex-col gap-5 pt-8">
       <PageHeader title="Tổng quan hệ thống" description="Số liệu vận hành 24 giờ gần nhất." />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger-cards grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon="users"
           label="Người dùng"

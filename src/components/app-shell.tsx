@@ -4,6 +4,7 @@ import { logoutAction } from "@/modules/auth/actions";
 import { Icon } from "@/components/icon";
 import { NavLinks, type NavLink } from "@/components/nav-links";
 import { NotificationBell, NotificationProvider } from "@/components/notification-center";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { verifySession } from "@/lib/dal";
 import { unreadCountFor } from "@/modules/notification/service";
 
@@ -67,12 +68,18 @@ export async function AppShell({
             </span>
           </Link>
           <NavLinks items={nav} />
-          <div className="mt-auto flex items-center gap-2.5 border-t border-line px-2 pt-3 max-[820px]:hidden">
-            {renderAvatar(32)}
-            <div className="min-w-0 flex-1 leading-tight">
-              <div className="truncate font-semibold">{fullName}</div>
-              <div className="text-xs text-fg-muted">{roleLabel}</div>
-            </div>
+          <div className="mt-auto flex items-center gap-2 border-t border-line px-1.5 pt-3 max-[820px]:hidden">
+            <Link
+              href="/profile"
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1.5 hover:bg-muted"
+              title="Hồ sơ cá nhân"
+            >
+              {renderAvatar(32)}
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="truncate font-semibold">{fullName}</div>
+                <div className="text-xs text-fg-muted">{roleLabel}</div>
+              </div>
+            </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
@@ -88,12 +95,19 @@ export async function AppShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-10 flex items-center justify-end gap-4 border-b border-line bg-bg/85 px-8 py-3 backdrop-blur max-[820px]:static max-[820px]:px-4">
             <div className="flex items-center gap-2.5">
+              <ThemeToggle />
               <NotificationBell href={notificationsHref} />
-              {renderAvatar(34)}
-              <div className="flex flex-col leading-tight max-[820px]:hidden">
-                <span className="font-semibold">{fullName}</span>
-                <span className="text-xs text-fg-muted">{roleLabel}</span>
-              </div>
+              <Link
+                href="/profile"
+                className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-muted"
+                title="Hồ sơ cá nhân"
+              >
+                {renderAvatar(34)}
+                <div className="flex flex-col leading-tight max-[820px]:hidden">
+                  <span className="font-semibold">{fullName}</span>
+                  <span className="text-xs text-fg-muted">{roleLabel}</span>
+                </div>
+              </Link>
               {/* Thanh bên ẩn khối người dùng ở màn hình hẹp nên đăng xuất được đặt ở header. */}
               <form action={logoutAction} className="hidden max-[820px]:block">
                 <button

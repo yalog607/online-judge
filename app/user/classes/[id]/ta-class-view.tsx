@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
-import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
+import { DifficultyBadge, ProblemStatusBadge, VerdictBadge } from "@/components/badge";
+import { CopyButton } from "@/components/copy-button";
 import { listForManage } from "@/modules/problem/repo";
 import { DocumentUploadForm } from "../../../teacher/classes/[id]/document-upload-form";
 import { TeacherDocumentList } from "../../../teacher/classes/[id]/document-list";
@@ -120,10 +121,11 @@ export async function TAClassView({
               <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
                 Mã mời tham gia
               </span>
-              <div className="mt-2 flex items-center justify-between">
+              <div className="mt-2 flex items-center justify-between gap-2">
                 <span className="font-mono text-xl font-bold text-primary">
-                  {classDetail.InviteCode}
+                  {classDetail.InviteCode ?? "—"}
                 </span>
+                {classDetail.InviteCode && <CopyButton value={classDetail.InviteCode} label="Chép" />}
               </div>
             </div>
 
@@ -326,24 +328,14 @@ export async function TAClassView({
                         </td>
                         <td className="px-4 py-3">
                           <Link
-                            href={`/ta/problems/${s.ProblemID}`}
+                            href={`/user/problems/${s.ProblemID}?classId=${classId}`}
                             className="font-medium text-fg hover:text-primary hover:underline"
                           >
                             {s.ProblemTitle}
                           </Link>
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              s.Result === "AC"
-                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                                : s.Result === "Pending" || s.Result === "Judging"
-                                  ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                                  : "bg-red-500/10 text-red-500 border border-red-500/20"
-                            }`}
-                          >
-                            {s.Result}
-                          </span>
+                          <VerdictBadge value={s.Result} />
                         </td>
                         <td className="px-4 py-3 text-fg-muted">
                           {new Date(s.SubmitTime).toLocaleString("vi-VN")}

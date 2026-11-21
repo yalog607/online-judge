@@ -70,7 +70,7 @@ export function PassFailDonutChart({
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#16a34a"
+                stroke="var(--ok)"
                 strokeWidth={strokeWidth}
                 fill="transparent"
                 strokeDasharray={`${passStrokeDash} ${circumference}`}
@@ -85,7 +85,7 @@ export function PassFailDonutChart({
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke="#dc2626"
+                stroke="var(--bad)"
                 strokeWidth={strokeWidth}
                 fill="transparent"
                 strokeDasharray={`${failStrokeDash} ${circumference}`}

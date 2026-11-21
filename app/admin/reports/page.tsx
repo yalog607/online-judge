@@ -145,7 +145,7 @@ export default async function AdminReportsPage({
       ) : (
         <>
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="stagger-cards grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div className="card p-4">
               <span className="text-xs text-fg-muted font-medium">Tổng lượt nộp</span>
               <div className="mt-1 text-2xl font-bold text-fg">

@@ -7,6 +7,7 @@ import { listForUser as listSubmissions } from "@/modules/submission/repo";
 import { contestRepository } from "@/modules/contest/repo";
 import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
+import { CopyButton } from "@/components/copy-button";
 import { MathContent } from "@/components/math-content";
 import { parseFunctionSpec } from "@/modules/problem/function-spec";
 import { starterCode } from "@/modules/problem/harness";
@@ -89,15 +90,21 @@ export default async function ProblemDetailPage({
         </div>
       )}
       {examples.map((ex, i) => (
-        <div key={ex.TestCaseID} className="grid grid-cols-2 gap-4">
+        <div key={ex.TestCaseID} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <h3 className="font-semibold">Ví dụ vào {examples.length > 1 ? i + 1 : ""}</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold">Ví dụ vào {examples.length > 1 ? i + 1 : ""}</h3>
+              <CopyButton value={ex.InputData} label="Chép" />
+            </div>
             <pre className="mt-1.5 overflow-x-auto rounded-lg bg-muted p-3.5 font-mono text-[13px] leading-relaxed">
               {ex.InputData}
             </pre>
           </div>
           <div>
-            <h3 className="font-semibold">Ví dụ ra {examples.length > 1 ? i + 1 : ""}</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold">Ví dụ ra {examples.length > 1 ? i + 1 : ""}</h3>
+              <CopyButton value={ex.ExpectedOutput} label="Chép" />
+            </div>
             <pre className="mt-1.5 overflow-x-auto rounded-lg bg-muted p-3.5 font-mono text-[13px] leading-relaxed">
               {ex.ExpectedOutput}
             </pre>
@@ -244,11 +251,11 @@ export default async function ProblemDetailPage({
             Bài tập này đã bị khóa. Không thể nộp bài.
           </div>
         ) : contestStatus === "Ended" ? (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm font-semibold text-amber-500">
+          <div className="rounded-xl border border-warn/30 bg-warn-soft p-4 text-center text-sm font-semibold text-warn">
             Kỳ thi này đã kết thúc. Bạn chỉ có thể xem lại đề bài, không thể nộp bài làm.
           </div>
         ) : !functionSpec || !starters ? (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm font-semibold text-amber-500">
+          <div className="rounded-xl border border-warn/30 bg-warn-soft p-4 text-center text-sm font-semibold text-warn">
             Bài tập này chưa được cấu hình hàm nên chưa thể nộp bài. Vui lòng liên hệ người tạo bài tập.
           </div>
         ) : (

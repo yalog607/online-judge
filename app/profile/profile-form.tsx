@@ -129,7 +129,7 @@ export function ProfileForm({
       </div>
 
       {state.ok && (
-        <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-500">
+        <div className="rounded-lg bg-ok-soft border border-ok/20 p-3 text-xs font-medium text-ok">
           Đã lưu thay đổi thông tin cá nhân.
         </div>
       )}

@@ -299,7 +299,7 @@ export function AdminUsersManager({
                 setModalError(null);
                 setIsLockModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed dark:text-rose-400"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 text-xs font-semibold text-bad hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -321,7 +321,7 @@ export function AdminUsersManager({
               }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4 text-ok" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -486,22 +486,22 @@ export function AdminUsersManager({
 
                     <td className="px-4 py-3.5 text-center">
                       {u.Role === "User" && (
-                        <span className="inline-block rounded-md border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">
+                        <span className="inline-block rounded-md bg-neutral-soft px-2.5 py-0.5 text-xs font-medium text-fg-muted">
                           User
                         </span>
                       )}
                       {u.Role === "Teacher" && (
-                        <span className="inline-block rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                        <span className="inline-block rounded-md bg-warn-soft px-2.5 py-0.5 text-xs font-medium text-warn">
                           Teacher
                         </span>
                       )}
                       {u.Role === "Admin" && (
-                        <span className="inline-block rounded-md border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-600 dark:text-purple-400">
+                        <span className="inline-block rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
                           Admin
                         </span>
                       )}
                       {u.Role === "TA" && (
-                        <span className="inline-block rounded-md border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs font-medium text-orange-600 dark:text-orange-400">
+                        <span className="inline-block rounded-md bg-ok-soft px-2.5 py-0.5 text-xs font-medium text-ok">
                           TA
                         </span>
                       )}
@@ -509,11 +509,11 @@ export function AdminUsersManager({
 
                     <td className="px-4 py-3.5 text-center">
                       {u.Status === "Active" ? (
-                        <span className="inline-block rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="inline-block rounded-md bg-ok-soft px-2.5 py-0.5 text-xs font-medium text-ok">
                           Active
                         </span>
                       ) : (
-                        <span className="inline-block rounded-md border border-rose-500/20 bg-rose-500/10 px-2.5 py-0.5 text-xs font-medium text-rose-600 dark:text-rose-400">
+                        <span className="inline-block rounded-md bg-bad-soft px-2.5 py-0.5 text-xs font-medium text-bad">
                           Locked
                         </span>
                       )}

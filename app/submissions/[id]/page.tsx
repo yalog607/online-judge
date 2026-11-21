@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/dal";
 import { getSubmission } from "@/modules/submission/repo";
 import { listPublicTestcases } from "@/modules/problem/repo";
 import { VerdictBadge } from "@/components/badge";
+import { CopyButton } from "@/components/copy-button";
 import { SubmissionLive } from "@/components/submission-live";
 import { DomainError } from "@/db/exec";
 import { RejudgeButton } from "./rejudge-button";
@@ -65,8 +66,24 @@ export default async function SubmissionDetailPage({
 
   return (
     <div className="flex flex-col gap-6 pt-8">
-      {isPending && <SubmissionLive submissionId={detail.SubmissionID} />}
-      <div className="flex items-center justify-between">
+      {isPending && (
+        <>
+          <SubmissionLive submissionId={detail.SubmissionID} />
+          <div className="flex flex-col gap-2 rounded-xl border border-primary/25 bg-primary-soft/60 p-4">
+            <div className="flex items-center justify-between text-xs font-semibold text-primary">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
+                {detail.Result === "Judging"
+                  ? "Hệ thống đang biên dịch và chạy các testcase..."
+                  : "Bài nộp đang trong hàng đợi chấm..."}
+              </span>
+              <span>Tự động cập nhật</span>
+            </div>
+            <div className="judge-progress-bar h-1.5 w-full rounded-full bg-primary/15" />
+          </div>
+        </>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
             {contestId ? (
@@ -141,7 +158,7 @@ export default async function SubmissionDetailPage({
         <VerdictBadge value={detail.Result} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="stagger-cards grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           ["Kết quả", detail.Result],
           ["Thời gian", detail.Runtime ? `${detail.Runtime} ms` : "—"],
@@ -157,8 +174,11 @@ export default async function SubmissionDetailPage({
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="card p-4">
-          <h2 className="mb-3 font-semibold">Mã nguồn</h2>
-          <pre className="overflow-x-auto rounded-lg bg-code-bg p-4 font-mono text-xs">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="font-semibold">Mã nguồn</h2>
+            <CopyButton value={detail.SourceCode} label="Chép mã nguồn" />
+          </div>
+          <pre className="overflow-x-auto rounded-lg bg-code-bg p-4 font-mono text-xs leading-relaxed">
             {detail.SourceCode}
           </pre>
         </div>

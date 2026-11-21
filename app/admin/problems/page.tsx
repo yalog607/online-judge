@@ -6,6 +6,7 @@ import { listForManage } from "@/modules/problem/repo";
 import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
 import { DataTable } from "@/components/data-table";
+import { Select } from "@/components/select";
 import {
   SearchForm,
   TagFilterChip,
@@ -66,20 +67,30 @@ export default async function AdminProblemsPage({
           placeholder="Chủ đề (tag)..."
           className={tagInputClass}
         />
-        <select name="difficulty" defaultValue={sp.difficulty ?? ""} className={filterControlClass}>
-          <option value="">Độ khó: Tất cả</option>
-          <option value="Easy">Độ khó: Dễ</option>
-          <option value="Medium">Độ khó: Trung bình</option>
-          <option value="Hard">Độ khó: Khó</option>
-        </select>
-        <select name="status" defaultValue={sp.status ?? ""} className={filterControlClass}>
-          <option value="">Trạng thái: Tất cả</option>
-          <option value="Public">Trạng thái: Công khai</option>
-          <option value="Private">Trạng thái: Riêng tư</option>
-          <option value="Hidden">Trạng thái: Đã khóa</option>
-          <option value="Pending">Trạng thái: Chờ duyệt</option>
-          <option value="Rejected">Trạng thái: Đã từ chối</option>
-        </select>
+        <Select
+          name="difficulty"
+          label="Độ khó"
+          defaultValue={sp.difficulty ?? ""}
+          className={filterControlClass}
+        >
+          <option value="">Tất cả</option>
+          <option value="Easy">Dễ</option>
+          <option value="Medium">Trung bình</option>
+          <option value="Hard">Khó</option>
+        </Select>
+        <Select
+          name="status"
+          label="Trạng thái"
+          defaultValue={sp.status ?? ""}
+          className={filterControlClass}
+        >
+          <option value="">Tất cả</option>
+          <option value="Public">Công khai</option>
+          <option value="Private">Riêng tư</option>
+          <option value="Hidden">Đã khóa</option>
+          <option value="Pending">Chờ duyệt</option>
+          <option value="Rejected">Đã từ chối</option>
+        </Select>
       </SearchForm>
 
       <TagFilterChip tag={sp.tag} sp={sp} basePath="/admin/problems" />

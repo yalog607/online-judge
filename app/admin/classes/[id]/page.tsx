@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { DataTable } from "@/components/data-table";
 import { Badge, ClassActiveBadge, DifficultyBadge } from "@/components/badge";
+import { CopyButton } from "@/components/copy-button";
 
 export default async function AdminClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const actor = await requireRole("Admin");
@@ -40,17 +41,24 @@ export default async function AdminClassDetailPage({ params }: { params: Promise
         description={detail.Description || "Chưa có mô tả cho lớp học này."}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          ["Giảng viên", detail.TeacherName],
-          ["Mã mời", detail.InviteCode ?? "—"],
-          ["Số học viên", String(students.length)],
-        ].map(([label, value]) => (
-          <div key={label} className="card p-4">
-            <div className="text-sm text-fg-muted">{label}</div>
-            <div className="mt-1 text-lg font-semibold">{value}</div>
+      <div className="stagger-cards grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="card p-4">
+          <div className="text-sm text-fg-muted">Giảng viên</div>
+          <div className="mt-1 text-lg font-semibold">{detail.TeacherName}</div>
+        </div>
+        <div className="card p-4">
+          <div className="text-sm text-fg-muted">Mã mời</div>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="font-mono text-lg font-semibold text-primary">
+              {detail.InviteCode ?? "—"}
+            </span>
+            {detail.InviteCode && <CopyButton value={detail.InviteCode} label="Chép" />}
           </div>
-        ))}
+        </div>
+        <div className="card p-4">
+          <div className="text-sm text-fg-muted">Số học viên</div>
+          <div className="mt-1 text-lg font-semibold">{students.length}</div>
+        </div>
       </div>
 
       <section className="flex flex-col gap-3">

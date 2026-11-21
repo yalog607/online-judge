@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/dal";
 import { classRepository } from "@/modules/class/repo";
+import { ClassApprovalBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
 import { paginate, parsePage } from "@/lib/paginate";
 import { ApprovalButtons, ClassApprovalButtons } from "./action-buttons";
@@ -75,13 +76,7 @@ export default async function AdminApprovalsPage({
                     {new Date(r.RequestDate).toLocaleDateString("vi-VN")}
                   </td>
                   <td className="px-5 py-3">
-                    {r.Status === "Pending" ? (
-                      <span className="text-warn font-medium">Chờ duyệt</span>
-                    ) : r.Status === "Approved" ? (
-                      <span className="text-ok font-medium">Đã duyệt</span>
-                    ) : (
-                      <span className="text-bad font-medium">Từ chối</span>
-                    )}
+                    <ClassApprovalBadge status={r.Status} />
                   </td>
                   <td className="px-5 py-3 text-right">
                     {r.Status === "Pending" ? (
@@ -124,13 +119,7 @@ export default async function AdminApprovalsPage({
                     {new Date(r.CreatedAt).toLocaleDateString("vi-VN")}
                   </td>
                   <td className="px-5 py-3">
-                    {r.ApprovalStatus === "Pending" ? (
-                      <span className="text-warn font-medium">Chờ duyệt</span>
-                    ) : r.ApprovalStatus === "Approved" ? (
-                      <span className="text-ok font-medium">Đã duyệt</span>
-                    ) : (
-                      <span className="text-bad font-medium">Từ chối</span>
-                    )}
+                    <ClassApprovalBadge status={r.ApprovalStatus} />
                   </td>
                   <td className="px-5 py-3 text-right">
                     {r.ApprovalStatus === "Pending" ? (

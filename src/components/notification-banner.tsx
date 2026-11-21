@@ -37,34 +37,34 @@ export function NotificationBanner({
 
   const colorStyles =
     type === "ok"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+      ? "border-ok/30 bg-ok-soft text-ok"
       : type === "bad"
-        ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-        : "border-primary/30 bg-primary/10 text-primary";
+        ? "border-bad/30 bg-bad-soft text-bad"
+        : "border-primary/30 bg-primary-soft text-primary";
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium shadow-xs transition-all animate-in fade-in slide-in-from-top-2 duration-200 ${colorStyles}`}
+      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium shadow-card transition-all ${colorStyles}`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
         {type === "ok" && (
-          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-ok/15 text-ok">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </span>
         )}
         {type === "bad" && (
-          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-bad/15 text-bad">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </span>
         )}
         {type === "info" && (
-          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-primary/20 text-primary">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-primary/15 text-primary">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

@@ -100,7 +100,7 @@ export async function ContestParticipantPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="stagger-cards grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="card p-4">
           <span className="text-xs text-fg-muted">Thời gian bắt đầu</span>
           <p className="mt-1 text-sm font-semibold text-fg">{formatDateTime(contest.startTime)}</p>
@@ -120,8 +120,8 @@ export async function ContestParticipantPage({
       </div>
 
       {contest.status === "Upcoming" && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 text-center">
-          <h3 className="text-base font-semibold text-amber-500">Kỳ thi chưa bắt đầu</h3>
+        <div className="rounded-2xl border border-warn/30 bg-warn-soft p-6 text-center">
+          <h3 className="text-base font-semibold text-warn">Kỳ thi chưa bắt đầu</h3>
           <p className="mt-1 text-xs text-fg-muted">
             Đề thi gồm <strong>{contest.problemCount} bài tập</strong> sẽ chính thức được mở khi đến
             thời gian bắt đầu vào lúc <strong>{formatDateTime(contest.startTime)}</strong>. Vui lòng
@@ -133,7 +133,7 @@ export async function ContestParticipantPage({
       {contest.status === "Ended" && (
         <div className="rounded-2xl border border-line bg-surface p-4 text-center">
           <h3 className="text-sm font-semibold text-fg-muted">Kỳ thi đã kết thúc</h3>
-          <p className="mt-1 text-xs text-fg-subtle">
+          <p className="mt-1 text-xs text-fg-muted">
             Kỳ thi đã đóng bài nộp tính điểm. Bạn có thể xem lại đề bài và bảng xếp hạng chung cuộc
             bên dưới.
           </p>
@@ -228,15 +228,15 @@ export async function ContestParticipantPage({
                         <td className="px-4 py-3 font-semibold text-primary">{p.maxScore} điểm</td>
                         <td className="px-4 py-3">
                           {p.solved ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-ok bg-ok-soft px-2 py-0.5 rounded-full border border-ok/20">
                               ✓ Đã giải (+{p.maxScore})
                             </span>
                           ) : p.wrongCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-warn bg-warn-soft px-2 py-0.5 rounded-full border border-warn/20">
                               Chưa đạt ({p.wrongCount} lần sai)
                             </span>
                           ) : (
-                            <span className="text-xs text-fg-subtle">Chưa nộp</span>
+                            <span className="text-xs text-fg-muted">Chưa nộp</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">

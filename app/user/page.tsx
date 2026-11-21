@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { getUserDashboard } from "@/modules/dashboard/service";
 import { getUserPersonalProgress } from "@/modules/report/repo";
-import { Badge, ContestStatusBadge } from "@/components/badge";
+import { Badge, ContestStatusBadge, VerdictBadge } from "@/components/badge";
 import { Icon } from "@/components/icon";
 import { StatCard, Panel } from "@/components/stat-card";
 import { Heatmap } from "@/components/dashboard-charts";
@@ -67,7 +67,7 @@ export default async function UserDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger-cards grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon="code"
           label="Bài đã giải"
@@ -127,8 +127,8 @@ export default async function UserDashboard() {
         </Panel>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-line bg-surface p-6 shadow-xs">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="card p-6">
           <h2 className="text-base font-bold text-fg">
             Phân bố năng lực theo độ khó
           </h2>
@@ -140,12 +140,12 @@ export default async function UserDashboard() {
             {difficulties.map((diff) => {
               const total = Math.max(1, diff.TotalCount);
               const percent = Math.min(100, Math.round((diff.SolvedCount / total) * 100));
-              const color =
+              const barColor =
                 diff.Difficulty === "Easy"
-                  ? "bg-emerald-500 text-emerald-600 dark:text-emerald-400"
+                  ? "bg-ok"
                   : diff.Difficulty === "Medium"
-                    ? "bg-amber-500 text-amber-600 dark:text-amber-400"
-                    : "bg-rose-500 text-rose-600 dark:text-rose-400";
+                    ? "bg-warn"
+                    : "bg-bad";
 
               const label =
                 diff.Difficulty === "Easy"
@@ -164,7 +164,7 @@ export default async function UserDashboard() {
                   </div>
                   <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${color.split(" ")[0]}`}
+                      className={`h-full rounded-full transition-all duration-500 ${barColor}`}
                       style={{ width: `${percent}%` }}
                     />
                   </div>
@@ -174,7 +174,7 @@ export default async function UserDashboard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-line bg-surface p-6 shadow-xs">
+        <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-fg">
@@ -212,13 +212,13 @@ export default async function UserDashboard() {
                         Giảng viên: {c.TeacherName} · Đã giải: {c.SolvedCount}/{c.TotalProblems} bài
                       </p>
                     </div>
-                    <span className="font-mono text-sm font-black text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono text-sm font-bold text-ok">
                       {c.ProgressPercent}%
                     </span>
                   </div>
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                      className="h-full bg-ok rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, Math.max(0, c.ProgressPercent))}%` }}
                     />
                   </div>
@@ -229,7 +229,7 @@ export default async function UserDashboard() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-line bg-surface p-6 shadow-xs">
+      <div className="card p-6">
         <h2 className="text-base font-bold text-fg">
           Chủ đề & Dạng bài đã giải
         </h2>
@@ -244,22 +244,23 @@ export default async function UserDashboard() {
         ) : (
           <div className="mt-4 flex flex-wrap gap-2">
             {tags.map((t) => (
-              <span
+              <Link
                 key={t.Tag}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-muted/60 px-3 py-1.5 text-xs font-semibold text-fg"
+                href={`/user/problems?tag=${encodeURIComponent(t.Tag)}`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-muted/60 px-3 py-1.5 text-xs font-semibold text-fg hover:border-primary/40 hover:bg-primary-soft/50 hover:text-primary"
               >
                 <span>{t.Tag}</span>
-                <span className="rounded-full bg-primary/10 px-1.5 py-0.2 text-[10px] font-bold text-primary">
+                <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] font-bold text-primary">
                   {t.SolvedCount}
                 </span>
-              </span>
+              </Link>
             ))}
           </div>
         )}
       </div>
 
-      <div className="rounded-2xl border border-line bg-surface p-6 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+      <div className="card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
             <h2 className="text-base font-bold text-fg">
               Lịch sử bài nộp gần đây
@@ -277,66 +278,58 @@ export default async function UserDashboard() {
         </div>
 
         {recentSubmissions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-line p-10 text-center text-xs text-fg-muted">
+          <div className="p-10 text-center text-xs text-fg-muted">
             Bạn chưa có bài nộp nào trong hệ thống. Hãy chọn một bài tập để bắt đầu làm bài!
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-line bg-muted text-[10px] uppercase font-semibold text-fg-muted">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-line bg-muted text-xs font-medium text-fg-muted">
                 <tr>
-                  <th className="px-4 py-3">Mã bài nộp</th>
-                  <th className="px-4 py-3">Bài tập</th>
-                  <th className="px-4 py-3">Ngôn ngữ</th>
-                  <th className="px-4 py-3">Kết quả</th>
-                  <th className="px-4 py-3">Thời gian</th>
-                  <th className="px-4 py-3">Bộ nhớ</th>
-                  <th className="px-4 py-3">Thời điểm nộp</th>
-                  <th className="px-4 py-3 text-right">Chi tiết</th>
+                  <th className="px-5 py-3">Mã bài nộp</th>
+                  <th className="px-5 py-3">Bài tập</th>
+                  <th className="px-5 py-3">Ngôn ngữ</th>
+                  <th className="px-5 py-3">Kết quả</th>
+                  <th className="px-5 py-3">Thời gian</th>
+                  <th className="px-5 py-3">Bộ nhớ</th>
+                  <th className="px-5 py-3">Thời điểm nộp</th>
+                  <th className="px-5 py-3 text-right">Chi tiết</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {recentSubmissions.map((s) => (
                   <tr key={s.SubmissionID} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-fg-muted">
+                    <td className="px-5 py-3 font-mono text-xs font-semibold text-fg-muted">
                       #{s.SubmissionID}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-fg">
+                    <td className="px-5 py-3 font-semibold text-fg">
                       <Link
                         href={`/user/problems/${s.ProblemID}`}
-                        className="hover:text-primary transition-colors"
+                        className="hover:text-primary hover:underline transition-colors"
                       >
                         {s.ProblemTitle}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-fg-muted">{s.Language}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block font-mono font-bold text-xs ${
-                          s.Result === "AC"
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400"
-                        }`}
-                      >
-                        {s.Result}
-                      </span>
+                    <td className="px-5 py-3 text-fg-muted">{s.Language}</td>
+                    <td className="px-5 py-3">
+                      <VerdictBadge value={s.Result} />
                     </td>
-                    <td className="px-4 py-3 text-fg-muted font-mono">
-                      {s.Runtime != null ? `${s.Runtime} ms` : "-"}
+                    <td className="px-5 py-3 text-fg-muted font-mono text-xs">
+                      {s.Runtime != null ? `${s.Runtime} ms` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-fg-muted font-mono">
-                      {s.Memory != null ? `${s.Memory} MB` : "-"}
+                    <td className="px-5 py-3 text-fg-muted font-mono text-xs">
+                      {s.Memory != null ? `${s.Memory} MB` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-fg-muted whitespace-nowrap">
+                    <td className="px-5 py-3 text-fg-muted whitespace-nowrap text-xs">
                       {new Date(s.SubmitTime).toLocaleString("vi-VN", {
                         dateStyle: "short",
                         timeStyle: "short",
                       })}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-5 py-3 text-right">
                       <Link
                         href={`/submissions/${s.SubmissionID}`}
-                        className="font-semibold text-primary hover:underline"
+                        className="text-xs font-semibold text-primary hover:underline"
                       >
                         Xem bài làm →
                       </Link>

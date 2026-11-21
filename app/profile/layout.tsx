@@ -15,7 +15,7 @@ export default async function ProfileLayout({ children }: { children: React.Reac
       nav={nav}
       notificationsHref={getNotificationsHref(user.role)}
     >
-      <div className="w-full max-w-6xl p-6 md:p-8">
+      <div className="w-full max-w-6xl pt-8">
         {children}
       </div>
     </AppShell>

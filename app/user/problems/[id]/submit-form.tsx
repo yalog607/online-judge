@@ -1,7 +1,7 @@
 "use client";
 
 import { Select } from "@/components/select";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { EditorLanguage } from "@/components/code-editor";
@@ -24,7 +24,7 @@ const LANGUAGES = [
 
 const CodeEditor = dynamic(() => import("@/components/code-editor").then((m) => m.CodeEditor), {
   ssr: false,
-  loading: () => <div className="min-h-[320px] bg-muted" aria-hidden />,
+  loading: () => <div className="min-h-[320px] animate-pulse bg-muted/60" aria-hidden />,
 });
 
 // Language-specific rules the generated driver relies on.
@@ -88,9 +88,43 @@ export function SubmitForm({
   const [state, action] = useActionState(submitCodeAction, initial);
   const router = useRouter();
   const dialog = useDialog();
-  const [language, setLanguage] = useState<EditorLanguage>("cpp");
-  const [code, setCode] = useState(starters.cpp ?? "");
+  const formRef = useRef<HTMLFormElement>(null);
+  const draftKey = (lang: string) => `itoj:draft:${problemId}:${lang}`;
+
+  const [language, setLanguage] = useState<EditorLanguage>(() => {
+    if (typeof window === "undefined") return "cpp";
+    try {
+      const savedLang = localStorage.getItem(`itoj:lang:${problemId}`) as EditorLanguage | null;
+      return savedLang && LANGUAGES.some((l) => l.value === savedLang) ? savedLang : "cpp";
+    } catch {
+      return "cpp";
+    }
+  });
+  const [code, setCode] = useState(() => {
+    if (typeof window === "undefined") return starters.cpp ?? "";
+    try {
+      const savedLang = localStorage.getItem(`itoj:lang:${problemId}`) as EditorLanguage | null;
+      const lang: EditorLanguage =
+        savedLang && LANGUAGES.some((l) => l.value === savedLang) ? savedLang : "cpp";
+      return localStorage.getItem(`itoj:draft:${problemId}:${lang}`) ?? starters[lang] ?? "";
+    } catch {
+      return starters.cpp ?? "";
+    }
+  });
   const [clientError, setClientError] = useState<string>();
+
+  const updateCode = (nextCode: string, lang: EditorLanguage = language) => {
+    setCode(nextCode);
+    try {
+      if (nextCode.trim() && nextCode !== (starters[lang] ?? "")) {
+        localStorage.setItem(draftKey(lang), nextCode);
+      } else {
+        localStorage.removeItem(draftKey(lang));
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+  };
 
   useEffect(() => {
     if (state.ok && state.submissionId) {
@@ -105,7 +139,14 @@ export function SubmitForm({
 
   return (
     <form
+      ref={formRef}
       action={action}
+      onKeyDown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          formRef.current?.requestSubmit();
+        }
+      }}
       onSubmit={(e) => {
         if (!code.trim()) {
           e.preventDefault();
@@ -117,15 +158,23 @@ export function SubmitForm({
       <input type="hidden" name="problemId" value={problemId} />
       {contestId && <input type="hidden" name="contestId" value={contestId} />}
       {classId && !contestId && <input type="hidden" name="classId" value={classId} />}
-      <div className="flex items-center justify-between gap-3 border-b border-line px-3.5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-3.5 py-3">
         <Select
           name="language"
           value={language}
           onChange={(e) => {
             const next = e.target.value as EditorLanguage;
-            // Swap the stub only while the student has not written anything of their own.
-            if (!code.trim() || code === starters[language])
-              setCode(starters[next] ?? "");
+            try {
+              localStorage.setItem(`itoj:lang:${problemId}`, next);
+              const savedNextDraft = localStorage.getItem(draftKey(next));
+              if (savedNextDraft) {
+                setCode(savedNextDraft);
+              } else if (!code.trim() || code === starters[language]) {
+                setCode(starters[next] ?? "");
+              }
+            } catch {
+              if (!code.trim() || code === starters[language]) setCode(starters[next] ?? "");
+            }
             setLanguage(next);
           }}
           aria-label="Ngôn ngữ"
@@ -151,19 +200,19 @@ export function SubmitForm({
                 });
                 if (!ok) return;
               }
-              setCode(starter);
+              updateCode(starter, language);
             }}
             className="rounded-lg bg-muted px-3 py-2 text-sm font-medium text-fg-muted hover:text-fg"
           >
             Reset code mẫu
           </button>
-          <SubmitButton>Nộp bài</SubmitButton>
+          <SubmitButton title="Nộp bài (Ctrl + Enter)">Nộp bài</SubmitButton>
         </div>
       </div>
       <input type="hidden" name="sourceCode" value={code} />
       <CodeEditor
         value={code}
-        onChange={setCode}
+        onChange={(v) => updateCode(v, language)}
         language={language}
         placeholder="Dán hoặc viết mã nguồn tại đây..."
       />

@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/dal";
 import { listForManage } from "@/modules/problem/repo";
 import { DifficultyBadge, ProblemStatusBadge } from "@/components/badge";
 import { Pager } from "@/components/pager";
-import { SearchForm, TagFilterChip, filterControlClass } from "@/components/search-form";
+import { SearchForm, TagFilterChip, searchInputClass, tagInputClass, filterControlClass } from "@/components/search-form";
 import { RowActions } from "./row-actions";
 
 import { NotificationBanner } from "@/components/notification-banner";
@@ -109,13 +109,13 @@ export default async function ManageProblemsPage({
           name="q"
           defaultValue={sp.q}
           placeholder="Tìm theo mã hoặc tên bài tập..."
-          className={filterControlClass}
+          className={searchInputClass}
         />
         <input
           name="tag"
           defaultValue={sp.tag}
           placeholder="Chủ đề (tag)..."
-          className={filterControlClass}
+          className={tagInputClass}
         />
         <Select
           name="difficulty"

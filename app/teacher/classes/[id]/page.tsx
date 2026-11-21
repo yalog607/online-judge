@@ -6,6 +6,7 @@ import { classRepository } from "@/modules/class/repo";
 import { documentRepository } from "@/modules/document/repo";
 import { listForManage as listProblemsForManage } from "@/modules/problem/repo";
 import { DifficultyBadge, ProblemStatusBadge, VerdictBadge } from "@/components/badge";
+import { CopyButton } from "@/components/copy-button";
 import { Pager } from "@/components/pager";
 import { AddStudentForm } from "./add-student-form";
 import { DocumentUploadForm } from "./document-upload-form";
@@ -219,10 +220,11 @@ export default async function TeacherClassDetailPage({
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
             Mã mời tham gia
           </span>
-          <div className="mt-2 flex items-center justify-between">
+          <div className="mt-2 flex items-center justify-between gap-2">
             <span className="font-mono text-xl font-bold text-primary">
-              {classDetail.InviteCode}
+              {classDetail.InviteCode ?? "—"}
             </span>
+            {classDetail.InviteCode && <CopyButton value={classDetail.InviteCode} label="Chép" />}
           </div>
         </div>
 
@@ -370,7 +372,7 @@ export default async function TeacherClassDetailPage({
 
       {activeTab === "submissions" && (
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3 rounded-xl border border-line bg-card p-4">
+          <div className="card flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold uppercase text-fg-muted mr-1">Bài tập:</span>
               <Link

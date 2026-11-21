@@ -7,6 +7,7 @@ import { classRepository } from "@/modules/class/repo";
 import { Pager } from "@/components/pager";
 import { DataTable } from "@/components/data-table";
 import { ContestStatusBadge } from "@/components/badge";
+import { Select } from "@/components/select";
 
 const PAGE_SIZE = 20;
 
@@ -101,18 +102,19 @@ export default async function AdminContestsPage({
 
         <form className="flex flex-wrap items-center gap-2" method="get">
           <input type="hidden" name="status" value={statusParam} />
-          <select
+          <Select
             name="classId"
+            label="Lớp học"
             defaultValue={sp.classId ?? ""}
             className="rounded-lg border border-line bg-muted px-3 py-1.5 text-xs text-fg outline-none focus:border-primary"
           >
-            <option value="">Lớp học (Tất cả)</option>
+            <option value="">Tất cả lớp</option>
             {classOptions.map((c) => (
               <option key={c.classId} value={c.classId}>
                 {c.className}
               </option>
             ))}
-          </select>
+          </Select>
           <input
             name="q"
             defaultValue={sp.q}

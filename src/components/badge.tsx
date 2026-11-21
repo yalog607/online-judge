@@ -108,9 +108,9 @@ export function ContestStatusBadge({
   if (status === "Ongoing") {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500 border border-emerald-500/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
+        className={`inline-flex items-center gap-1.5 rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-semibold text-ok border border-ok/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse shrink-0" />
         Đang diễn ra
       </span>
     );
@@ -118,7 +118,7 @@ export function ContestStatusBadge({
   if (status === "Upcoming") {
     return (
       <span
-        className={`inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
+        className={`inline-flex items-center rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn border border-warn/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
       >
         Sắp diễn ra
       </span>
@@ -126,7 +126,7 @@ export function ContestStatusBadge({
   }
   return (
     <span
-      className={`inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20 whitespace-nowrap shrink-0 ${className ?? ""}`}
+      className={`inline-flex items-center rounded-full bg-neutral-soft px-2.5 py-0.5 text-xs font-semibold text-fg-muted border border-line whitespace-nowrap shrink-0 ${className ?? ""}`}
     >
       Đã kết thúc
     </span>

@@ -85,7 +85,7 @@ export function RowActions({
 
   if (status === "Pending" && actorRole === "Teacher") {
     return (
-      <div className="grid grid-cols-[112px_112px_86px] items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-1.5">
         {(["Private", "Public"] as const).map((nextStatus) => {
           const label = nextStatus === "Private" ? "Riêng tư" : "Công khai";
           const isSuggested = suggestedStatus === nextStatus;
@@ -100,9 +100,9 @@ export function RowActions({
                 await setProblemStatusAction(problemId, nextStatus);
                 router.refresh();
               })}
-              className={`inline-flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border px-2 py-2 text-[11px] font-semibold transition-colors disabled:cursor-wait disabled:opacity-60 ${
+              className={`inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-wait disabled:opacity-60 ${
                 isSuggested
-                  ? "border-primary bg-primary text-primary-fg shadow-sm hover:opacity-90"
+                  ? "border-primary bg-primary text-primary-fg shadow-card hover:opacity-90"
                   : nextStatus === "Private"
                     ? "border-line bg-surface text-fg hover:bg-muted"
                     : "border-ok/30 bg-ok-soft text-ok hover:bg-ok-soft/70"
@@ -112,7 +112,7 @@ export function RowActions({
             </button>
           );
         })}
-        <button disabled={pending} type="button" onClick={() => setRejectOpen(true)} className="inline-flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border border-bad/30 bg-bad-soft px-2 py-2 text-[11px] font-semibold text-bad transition-colors hover:bg-bad-soft/70 disabled:cursor-wait disabled:opacity-60">
+        <button disabled={pending} type="button" onClick={() => setRejectOpen(true)} className="inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border border-bad/30 bg-bad-soft px-2.5 py-1.5 text-[11px] font-semibold text-bad transition-colors hover:bg-bad-soft/70 disabled:cursor-wait disabled:opacity-60">
           Từ chối
         </button>
         <Modal isOpen={rejectOpen} onClose={() => setRejectOpen(false)}>

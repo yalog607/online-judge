@@ -3,6 +3,7 @@ import { verifySession, roleHome } from "@/lib/dal";
 import { Logo } from "@/components/logo";
 import { Icon, type IconName } from "@/components/icon";
 import { Badge } from "@/components/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SAMPLE_CODE = `#include <bits/stdc++.h>
 using namespace std;
@@ -145,9 +146,9 @@ async function currentHome() {
 }
 
 const BTN_PRIMARY =
-  "inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-fg shadow-card hover:opacity-90 btn-shine";
+  "inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-fg shadow-card hover:opacity-90 btn-shine";
 const BTN_SECONDARY =
-  "inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-5 py-2.5 font-medium transition-colors hover:bg-muted";
+  "inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-surface px-5 py-2.5 font-medium transition-colors hover:bg-muted";
 
 function SectionHead({ kicker, title, lead }: { kicker: string; title: string; lead?: string }) {
   return (
@@ -188,6 +189,7 @@ export default async function Home() {
             ))}
           </nav>
           <span className="flex-1" />
+          <ThemeToggle />
           {home ? (
             <Link href={home} className={`${BTN_PRIMARY} !px-4 !py-2`}>
               Vào trang của tôi
@@ -403,21 +405,21 @@ export default async function Home() {
         {!home && (
           <section className="py-[72px] max-[820px]:py-[52px]">
             <div className="mx-auto w-full max-w-[1200px] px-5">
-              <div className="reveal flex flex-col items-center gap-3.5 rounded-[20px] bg-fg px-6 py-[52px] text-center text-bg">
+              <div className="reveal flex flex-col items-center gap-3.5 rounded-[20px] border border-primary/20 bg-surface bg-[radial-gradient(75%_80%_at_50%_0%,var(--primary-soft),transparent_75%)] px-6 py-[52px] text-center text-fg shadow-pop">
                 <h2 className="text-[clamp(26px,3.4vw,36px)] font-bold tracking-[-0.03em]">
                   Sẵn sàng cho bài đầu tiên?
                 </h2>
-                <p className="opacity-75">
+                <p className="text-fg-muted">
                   Tạo tài khoản bằng email và xác thực OTP trong một phút.
                 </p>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="mt-1 flex flex-wrap justify-center gap-3">
                   <Link href="/register" className={BTN_PRIMARY}>
                     <Icon name="send" size={16} />
                     Tạo tài khoản
                   </Link>
                   <Link
                     href="/login"
-                    className="inline-flex items-center rounded-lg px-5 py-2.5 font-medium hover:bg-bg/15"
+                    className={BTN_SECONDARY}
                   >
                     Tôi đã có tài khoản
                   </Link>

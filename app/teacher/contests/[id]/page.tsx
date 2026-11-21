@@ -258,8 +258,8 @@ export default async function TeacherContestDetailPage({
           </div>
 
           {contest.status === "Ongoing" && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-300">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-2.5 rounded-xl border border-ok/30 bg-ok-soft px-4 py-3 text-xs text-ok">
+              <span className="flex h-2 w-2 rounded-full bg-ok animate-pulse" />
               <span>
                 Kỳ thi đang diễn ra. Bạn vẫn có thể thêm bài, gỡ bài hoặc đổi điểm số; hệ thống sẽ tự động đồng bộ và tính lại điểm số trên bảng xếp hạng theo thời gian thực.
               </span>
@@ -420,7 +420,7 @@ export default async function TeacherContestDetailPage({
 
       {activeTab === "submissions" && (
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="stagger-cards grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               icon="send"
               label="Tổng lượt nộp"
@@ -445,7 +445,7 @@ export default async function TeacherContestDetailPage({
             />
           </div>
 
-          <div className="flex flex-col gap-3 rounded-xl border border-line bg-card p-4">
+          <div className="card flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold uppercase text-fg-muted mr-1">Bài tập:</span>
               <Link

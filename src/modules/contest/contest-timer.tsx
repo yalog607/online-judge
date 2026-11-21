@@ -52,14 +52,14 @@ export function ContestTimer({
     const diff = startMs - now;
     if (diff <= 0) {
       return (
-        <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+        <div className="inline-flex items-center gap-2 rounded-lg bg-ok-soft px-3 py-1.5 text-xs font-semibold text-ok border border-ok/20">
+          <span className="h-2 w-2 rounded-full bg-ok animate-ping" />
           Đang mở phòng thi...
         </div>
       );
     }
     return (
-      <div className="inline-flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+      <div className="inline-flex items-center gap-2 rounded-lg bg-warn-soft px-3 py-1.5 text-xs font-semibold text-warn border border-warn/20">
         <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -71,8 +71,8 @@ export function ContestTimer({
   if (status === "Ongoing") {
     const diff = endMs - now;
     return (
-      <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+      <div className="inline-flex items-center gap-2 rounded-lg bg-ok-soft px-3 py-1.5 text-xs font-semibold text-ok border border-ok/20">
+        <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
         <span>Còn lại: <strong className="font-mono text-sm">{formatDuration(diff)}</strong></span>
       </div>
     );

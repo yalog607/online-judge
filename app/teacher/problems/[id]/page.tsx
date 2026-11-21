@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/dal";
 import { checkProblemAccess, getProblem, listPublicTestcases, getProblemSubmissions } from "@/modules/problem/repo";
 import { listComments } from "@/modules/comment/repo";
 import { DifficultyBadge, VerdictBadge } from "@/components/badge";
+import { CopyButton } from "@/components/copy-button";
 import { MathContent } from "@/components/math-content";
 import { Comments } from "@/components/comments";
 import { mapToCommentView } from "@/modules/comment/view";
@@ -167,13 +168,19 @@ export default async function TeacherProblemPreviewPage({
             {examples.map((ex, i) => (
               <div key={ex.TestCaseID} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-semibold">Ví dụ vào {examples.length > 1 ? i + 1 : ""}</h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold">Ví dụ vào {examples.length > 1 ? i + 1 : ""}</h3>
+                    <CopyButton value={ex.InputData} label="Chép" />
+                  </div>
                   <pre className="mt-1.5 overflow-x-auto rounded-lg bg-muted p-3.5 font-mono text-[13px] leading-relaxed">
                     {ex.InputData}
                   </pre>
                 </div>
                 <div>
-                  <h3 className="font-semibold">Ví dụ ra {examples.length > 1 ? i + 1 : ""}</h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold">Ví dụ ra {examples.length > 1 ? i + 1 : ""}</h3>
+                    <CopyButton value={ex.ExpectedOutput} label="Chép" />
+                  </div>
                   <pre className="mt-1.5 overflow-x-auto rounded-lg bg-muted p-3.5 font-mono text-[13px] leading-relaxed">
                     {ex.ExpectedOutput}
                   </pre>

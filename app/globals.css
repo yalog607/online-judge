@@ -126,10 +126,12 @@
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-card: var(--surface);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-muted);
   --color-primary: var(--primary);
   --color-primary-soft: var(--primary-soft);
   --color-indigo: var(--indigo);
@@ -255,18 +257,14 @@ body {
       opacity 0.15s ease,
       transform 0.12s ease;
   }
-  button:not(:disabled):active,
+  button:not(:disabled):not([role="tab"]):not([role="combobox"]):active,
   [role="button"]:not([aria-disabled="true"]):active,
   input[type="submit"]:not(:disabled):active {
-    transform: scale(0.97);
-  }
-  button:not(:disabled):hover,
-  [role="button"]:not([aria-disabled="true"]):hover {
-    box-shadow: var(--sh);
+    transform: scale(0.98);
   }
 
   tbody tr {
-    transition: background-color 0.15s ease;
+    transition: background-color 0.16s ease;
   }
   tbody tr:hover {
     background: color-mix(in srgb, var(--primary) 5%, transparent);
@@ -282,9 +280,9 @@ body {
   /* Card dạng thẻ có tiêu đề là liên kết: tự có hiệu ứng hover như card-hover */
   .card:not(.overflow-hidden):has(> div > h2 > a, > div > h3 > a, > h2 > a, > h3 > a) {
     transition:
-      transform 0.15s,
-      box-shadow 0.15s,
-      border-color 0.15s;
+      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.18s ease;
   }
   .card:not(.overflow-hidden):has(> div > h2 > a, > div > h3 > a, > h2 > a, > h3 > a):hover {
     transform: translateY(-2px);
@@ -320,6 +318,15 @@ body {
   }
 }
 
+@keyframes shimmer-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
 /* Modal: lớp phủ mờ dần, hộp thoại bật lên; menu/popover trượt xuống */
 div.fixed.inset-0.z-50,
 div.fixed.inset-0.z-\[100\],
@@ -335,12 +342,43 @@ div.fixed.inset-0.z-\[100\] > div:not(.fixed),
 [role="listbox"],
 [role="dialog"]:not(.fixed),
 .popover {
-  animation: slide-down 0.16s ease-out both;
+  animation: slide-down 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Nội dung trang xuất hiện nhẹ nhàng */
-main {
-  animation: rise 0.35s ease-out;
+/* Nội dung trang và tab xuất hiện mượt mà */
+main,
+[role="tabpanel"]:not([hidden]) {
+  animation: rise 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stagger nhẹ cho lưới thẻ thống kê (StatCard / KPI) */
+.stagger-cards > * {
+  animation: rise 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-cards > *:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.stagger-cards > *:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.stagger-cards > *:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.stagger-cards > *:nth-child(5) {
+  animation-delay: 0.16s;
+}
+
+.judge-progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+.judge-progress-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: shimmer-bar 1.35s ease-in-out infinite;
 }
 
 /* Thông báo/toast, badge trạng thái */
